@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  Owner
+  Admin
+  Member
+}
+
+model User {
+  id            String       @id @default(uuid())
+  clerkId       String       @unique
+  email         String       @unique
+  firstName     String?
+  lastName      String?
+  imageUrl      String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  ownedBoards   Board[]      @relation("BoardOwner")
+  memberships   BoardMember[]
+  cardAssignees CardAssignee[]
+  comments      Comment[]
+
+  @@map("users")
+}
+
+model Board {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  isPublic    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  ownerId     String
+  owner       User         @relation("BoardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  memberships BoardMember[]
+  lists       List[]
+  labels      Label[]       
+
+  @@map("boards")
+}
+
+model BoardMember {
+  id     String @id @default(uuid())
+  role   Role   @default(Member)
+
+  boardId String
+  userId  String
+
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId])
+  @@map("board_members")
+}
+
+model List {
+  id        String   @id @default(uuid())
+  name      String
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  boardId String
+  board   Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards   Card[]
+
+  @@map("lists")
+}
+
+model Card {
+  id          String        @id @default(uuid())
+  title       String
+  description String?
+  position    Int
+  startDate   DateTime?     
+  endDate     DateTime?     
+  dueDate     DateTime?     
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  listId String
+  list   List    @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  // Subtasks (self-relation)
+  parentCardId String?  
+  parentCard   Card?   @relation("Subtasks", fields: [parentCardId], references: [id], onDelete: Cascade)
+  subtasks     Card[]  @relation("Subtasks")
+
+  assignees CardAssignee[]
+  comments  Comment[]
+  attachments Attachment[]    
+  cardLabels CardLabel[]      
+
+  @@map("cards")
+}
+
+model CardAssignee {
+  id     String @id @default(uuid())
+
+  cardId String
+  userId String
+
+  card   Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId])
+  @@map("card_assignees")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cardId String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Label {
+  id        String   @id @default(uuid())
+  name      String
+  color     String
+  isSystem  Boolean  @default(false) 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  boardId String?  
+  board   Board?   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  cardLabels CardLabel[]
+
+  @@map("labels")
+}
+
+model CardLabel {
+  id      String @id @default(uuid())
+
+  cardId  String
+  labelId String
+
+  card    Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label   Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, labelId])
+  @@map("card_labels")
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  url       String
+  fileName  String?
+  fileType  String?
+  createdAt DateTime @default(now())
+
+  cardId String
+  card   Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}

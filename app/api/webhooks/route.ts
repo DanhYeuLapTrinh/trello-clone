@@ -22,7 +22,6 @@ export async function POST(req: NextRequest) {
 
         return new Response(JSON.stringify(newUser), { status: 201 })
       } catch (error) {
-        // FIXME: need to handle this more carefully
         console.error('Error creating user:', error)
         return new Response('Error creating user', { status: 400 })
       }

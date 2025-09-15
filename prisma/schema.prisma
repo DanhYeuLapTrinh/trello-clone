@@ -14,50 +14,94 @@ enum Role {
 }
 
 model User {
-  id            String       @id @default(uuid())
-  clerkId       String       @unique
-  email         String       @unique
-  firstName     String?
-  lastName      String?
-  imageUrl      String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id        String   @id @default(uuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  ownedBoards   Board[]      @relation("BoardOwner")
-  memberships   BoardMember[]
+  // Workspaces
+  ownedWorkspaces      Workspace[]       @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+
+  // Boards
+  ownedBoards Board[]       @relation("BoardOwner")
+  memberships BoardMember[]
+
+  // Cards, Comments
   cardAssignees CardAssignee[]
   comments      Comment[]
 
   @@map("users")
 }
 
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  shortName   String   @unique
+  websiteUrl  String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  memberships WorkspaceMember[]
+  boards      Board[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id   String @id @default(uuid())
+  role Role   @default(Member)
+
+  workspaceId String
+  userId      String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
 model Board {
-  id          String       @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   description String?
-  isPublic    Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  ownerId     String
-  owner       User         @relation("BoardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  // Workspace link
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Owner
+  ownerId String
+  owner   User   @relation("BoardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
   memberships BoardMember[]
   lists       List[]
-  labels      Label[]       
+  labels      Label[]
 
   @@map("boards")
 }
 
 model BoardMember {
-  id     String @id @default(uuid())
-  role   Role   @default(Member)
+  id   String @id @default(uuid())
+  role Role   @default(Member)
 
   boardId String
   userId  String
 
-  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([boardId, userId])
   @@map("board_members")
@@ -71,47 +115,47 @@ model List {
   updatedAt DateTime @updatedAt
 
   boardId String
-  board   Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
   cards   Card[]
 
   @@map("lists")
 }
 
 model Card {
-  id          String        @id @default(uuid())
+  id          String    @id @default(uuid())
   title       String
   description String?
   position    Int
-  startDate   DateTime?     
-  endDate     DateTime?     
-  dueDate     DateTime?     
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  startDate   DateTime?
+  endDate     DateTime?
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   listId String
-  list   List    @relation(fields: [listId], references: [id], onDelete: Cascade)
+  list   List   @relation(fields: [listId], references: [id], onDelete: Cascade)
 
   // Subtasks (self-relation)
-  parentCardId String?  
+  parentCardId String?
   parentCard   Card?   @relation("Subtasks", fields: [parentCardId], references: [id], onDelete: Cascade)
   subtasks     Card[]  @relation("Subtasks")
 
-  assignees CardAssignee[]
-  comments  Comment[]
-  attachments Attachment[]    
-  cardLabels CardLabel[]      
+  assignees   CardAssignee[]
+  comments    Comment[]
+  attachments Attachment[]
+  cardLabels  CardLabel[]
 
   @@map("cards")
 }
 
 model CardAssignee {
-  id     String @id @default(uuid())
+  id String @id @default(uuid())
 
   cardId String
   userId String
 
-  card   Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  user   User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([cardId, userId])
   @@map("card_assignees")
@@ -136,12 +180,12 @@ model Label {
   id        String   @id @default(uuid())
   name      String
   color     String
-  isSystem  Boolean  @default(false) 
+  isSystem  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  boardId String?  
-  board   Board?   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId String?
+  board   Board?  @relation(fields: [boardId], references: [id], onDelete: Cascade)
 
   cardLabels CardLabel[]
 
@@ -149,13 +193,13 @@ model Label {
 }
 
 model CardLabel {
-  id      String @id @default(uuid())
+  id String @id @default(uuid())
 
   cardId  String
   labelId String
 
-  card    Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  label   Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+  card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
 
   @@unique([cardId, labelId])
   @@map("card_labels")
@@ -169,7 +213,7 @@ model Attachment {
   createdAt DateTime @default(now())
 
   cardId String
-  card   Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@map("attachments")
 }

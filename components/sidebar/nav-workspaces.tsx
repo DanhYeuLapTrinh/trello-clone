@@ -1,7 +1,8 @@
 'use client'
 
-import { ChevronRight, type LucideIcon } from 'lucide-react'
+import { ChevronRight, Settings, Trello, Users } from 'lucide-react'
 
+import { getMeWorkspaces } from '@/app/actions/workspaces/actions'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   SidebarGroup,
@@ -14,60 +15,68 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem
 } from '@/components/ui/sidebar'
+import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 
-export function NavWorkspaces({
-  items
-}: {
-  items: {
-    title: string
-    url: string
-    icon: LucideIcon
-    isActive?: boolean
-    items?: {
-      title: string
-      url: string
-      icon: LucideIcon
-    }[]
-  }[]
-}) {
+const subItems = [
+  {
+    title: 'Bảng',
+    icon: Trello,
+    url: (id: string) => `/workspaces/${id}/boards`
+  },
+  {
+    title: 'Thành viên',
+    icon: Users,
+    url: (id: string) => `/workspaces/${id}/members`
+  },
+  {
+    title: 'Cài đặt',
+    icon: Settings,
+    url: (id: string) => `/workspaces/${id}/settings`
+  }
+]
+
+export function NavWorkspaces({ userId }: { userId: string }) {
+  const { data: workspaces } = useQuery({
+    queryKey: ['workspaces', userId],
+    queryFn: getMeWorkspaces
+  })
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Các Không gian làm việc</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
+        {workspaces?.map((item) => (
+          <Collapsible key={item.name} asChild>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <Link href={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
+              <SidebarMenuButton asChild tooltip={item.name}>
+                <Link href={`/workspaces/${item.shortName}`}>
+                  <span>{item.name}</span>
                 </Link>
               </SidebarMenuButton>
-              {item.items?.length ? (
-                <>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuAction className='data-[state=open]:rotate-90'>
-                      <ChevronRight />
-                      <span className='sr-only'>Toggle</span>
-                    </SidebarMenuAction>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.items?.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <Link href={subItem.url}>
-                              <subItem.icon />
-                              <span>{subItem.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
-                </>
-              ) : null}
+
+              <>
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuAction className='data-[state=open]:rotate-90'>
+                    <ChevronRight />
+                    <span className='sr-only'>Toggle</span>
+                  </SidebarMenuAction>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    {subItems?.map((subItem) => (
+                      <SidebarMenuSubItem key={subItem.title}>
+                        <SidebarMenuSubButton asChild>
+                          <Link href={subItem.url(item.id)}>
+                            <subItem.icon />
+                            <span>{subItem.title}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    ))}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </>
             </SidebarMenuItem>
           </Collapsible>
         ))}

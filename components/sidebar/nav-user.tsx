@@ -43,7 +43,9 @@ export function NavUser() {
                 <AvatarFallback className='rounded-lg'>CN</AvatarFallback>
               </Avatar>
               <div className='grid flex-1 text-left text-sm leading-tight'>
-                <span className='truncate font-medium'>{user?.firstName}</span>
+                <span className='truncate font-medium'>
+                  {user?.firstName} {user?.lastName}
+                </span>
                 <span className='truncate text-xs'>{user?.email}</span>
               </div>
               <ChevronsUpDown className='ml-auto size-4' />
@@ -62,7 +64,9 @@ export function NavUser() {
                   <AvatarFallback className='rounded-lg'>CN</AvatarFallback>
                 </Avatar>
                 <div className='grid flex-1 text-left text-sm leading-tight'>
-                  <span className='truncate font-medium'>{user?.firstName}</span>
+                  <span className='truncate font-medium'>
+                    {user?.firstName} {user?.lastName}
+                  </span>
                   <span className='truncate text-xs'>{user?.email}</span>
                 </div>
               </div>

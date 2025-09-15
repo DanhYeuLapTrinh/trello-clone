@@ -10,21 +10,35 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
+import { redirect } from 'next/navigation'
 import { getMe } from '../actions/users/actions'
+import { getMeWorkspaces } from '../actions/workspaces/actions'
 
-export default async function Page() {
+export default async function DashboardPage() {
   // NOTE: always make a new query client for each Server Component that fetches data
   const queryClient = new QueryClient()
+
+  const { id } = await getMe()
+  const workspaces = await getMeWorkspaces()
+
+  if (workspaces.length === 0) {
+    redirect('/workspaces/create')
+  }
 
   await queryClient.prefetchQuery({
     queryKey: ['me'],
     queryFn: getMe
   })
 
+  await queryClient.prefetchQuery({
+    queryKey: ['workspaces', id],
+    queryFn: getMeWorkspaces
+  })
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar userId={id} />
         <SidebarInset>
           <header className='flex h-16 shrink-0 items-center gap-2'>
             <div className='flex items-center gap-2 px-4'>

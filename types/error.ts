@@ -55,3 +55,14 @@ export class ValidationError extends AppError {
     })
   }
 }
+
+export class ConflictError extends AppError {
+  constructor(message: string, details?: unknown) {
+    super({
+      name: 'ConflictError',
+      message,
+      statusCode: 409,
+      details
+    })
+  }
+}

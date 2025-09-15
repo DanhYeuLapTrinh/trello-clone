@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, Command, Settings, SquareTerminal, Trello, Users } from 'lucide-react'
+import { Activity, Command, Trello } from 'lucide-react'
 import * as React from 'react'
 
 import { NavMain } from '@/components/sidebar/nav-main'
@@ -17,31 +17,6 @@ import {
 } from '@/components/ui/sidebar'
 
 const data = {
-  workspaces: [
-    {
-      title: 'Dahn',
-      url: '#',
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: 'Bảng',
-          icon: Trello,
-          url: '#'
-        },
-        {
-          title: 'Thành viên',
-          icon: Users,
-          url: '#'
-        },
-        {
-          title: 'Cài đặt',
-          icon: Settings,
-          url: '#'
-        }
-      ]
-    }
-  ],
   main: [
     {
       name: 'Bảng',
@@ -56,7 +31,7 @@ const data = {
   ]
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ userId, ...props }: React.ComponentProps<typeof Sidebar> & { userId: string }) {
   return (
     <Sidebar variant='inset' {...props}>
       <SidebarHeader>
@@ -78,7 +53,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain projects={data.main} />
-        <NavWorkspaces items={data.workspaces} />
+        <NavWorkspaces userId={userId} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

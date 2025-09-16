@@ -1,11 +1,11 @@
 'use client'
 
-import { createWorkspace } from '@/app/actions/workspaces/actions'
-import { createWorkspaceSchema, CreateWorkspaceSchema } from '@/app/actions/workspaces/validations'
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { createWorkspace } from '@/features/workspaces/actions'
+import { createWorkspaceSchema, CreateWorkspaceSchema } from '@/features/workspaces/validations'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useAction } from 'next-safe-action/hooks'

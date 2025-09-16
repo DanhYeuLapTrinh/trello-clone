@@ -27,6 +27,7 @@ export const getWorkspacesByUserId = async (userId: string) => {
   return workspaces
 }
 
+// FIXME: Cover the visibility of the boards
 export const getWorkspaceWithBoards = async (shortName: string) => {
   const workspace = await prisma.workspace.findUnique({
     where: {

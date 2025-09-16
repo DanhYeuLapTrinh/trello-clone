@@ -2,7 +2,6 @@
 
 import { ChevronRight, Settings, Trello, Users } from 'lucide-react'
 
-import { getMeWorkspaces } from '@/app/actions/workspaces/actions'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
   SidebarGroup,
@@ -15,6 +14,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem
 } from '@/components/ui/sidebar'
+import { getMeWorkspaces } from '@/features/workspaces/actions'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'

@@ -1,8 +1,11 @@
-import { getWorkspaceWithBoards } from '@/app/actions/workspaces/actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
+import { getWorkspaceWithBoards } from '@/features/workspaces/actions'
+import { boardBackgroundClasses } from '@/lib/constants'
+import { cn } from '@/lib/utils'
 import { LockKeyhole, Plus, Trello } from 'lucide-react'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 export default async function WorkspaceDetailPage({ params }: { params: { shortName: string } }) {
@@ -14,7 +17,7 @@ export default async function WorkspaceDetailPage({ params }: { params: { shortN
   }
 
   return (
-    <div>
+    <div className='max-w-4xl mx-auto'>
       <div className='px-12 py-10'>
         <div className='flex flex-col gap-2'>
           <div className='flex flex-row items-center gap-3'>
@@ -43,14 +46,19 @@ export default async function WorkspaceDetailPage({ params }: { params: { shortN
         </div>
         <div className='grid grid-cols-4 gap-4'>
           {workspace?.boards?.map((board) => (
-            <div key={board.id} className='h-28'>
-              <p>{board.name}</p>
-            </div>
+            <Link href={`/b/${board.id}`} key={board.id} className='h-28 rounded-md shadow-sm'>
+              <div className={cn(boardBackgroundClasses[board.background], 'p-8 rounded-t-md h-[70%]')} />
+              <div className='h-[30%] flex items-center px-2'>
+                <p className='text-sm font-medium'>{board.name}</p>
+              </div>
+            </Link>
           ))}
-          <Button variant='secondary' className='h-28'>
-            <Plus className='size-4' />
-            <p>Tạo bảng mới</p>
-          </Button>
+          <CreateBoardDialog>
+            <div className='h-28 border border-border rounded-md border-dashed flex flex-row items-center gap-2 justify-center bg-muted/20 cursor-pointer'>
+              <Plus className='size-4' />
+              <p className='text-sm font-medium'>Tạo bảng mới</p>
+            </div>
+          </CreateBoardDialog>
         </div>
       </div>
     </div>

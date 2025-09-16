@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
             }
           })
 
-          await tx.workspace.create({
+          const createdWorkspace = await tx.workspace.create({
             data: {
               name: `${first_name ?? ''} ${last_name ?? ''}`.trim()
                 ? `${first_name ?? ''} ${last_name ?? ''}`.trim() + "'s Workspace"
@@ -35,6 +35,14 @@ export async function POST(req: NextRequest) {
                   role: 'Owner'
                 }
               }
+            }
+          })
+
+          await tx.board.create({
+            data: {
+              name: 'My Board',
+              workspaceId: createdWorkspace.id,
+              ownerId: createdUser.id
             }
           })
 

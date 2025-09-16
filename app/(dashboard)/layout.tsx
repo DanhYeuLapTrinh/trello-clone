@@ -1,5 +1,3 @@
-import { getMe } from '@/app/actions/users/actions'
-import { getMeWorkspaces } from '@/app/actions/workspaces/actions'
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import {
   Breadcrumb,
@@ -11,6 +9,8 @@ import {
 } from '@/components/ui/breadcrumb'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
+import { getMe } from '@/features/users/actions'
+import { getMeWorkspaces } from '@/features/workspaces/actions'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { redirect } from 'next/navigation'
 

@@ -13,6 +13,25 @@ enum Role {
   Member
 }
 
+enum BoardBackground {
+  OCEAN
+  SUNSET
+  FOREST
+  ROYAL_PURPLE
+  GOLDEN
+  FIRE
+  SKY
+  ROSE
+  AQUA
+  GRAY
+}
+
+enum BoardVisibility {
+  PUBLIC
+  WORKSPACE
+  PRIVATE
+}
+
 model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique
@@ -68,12 +87,13 @@ model WorkspaceMember {
 }
 
 model Board {
-  id          String   @id @default(uuid())
-  name        String   @unique
+  id          String          @id @default(uuid())
+  name        String          @unique
   description String?
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  background  BoardBackground @default(OCEAN)
+  visibility  BoardVisibility @default(WORKSPACE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   // Workspace link
   workspaceId String

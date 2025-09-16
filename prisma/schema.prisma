@@ -13,6 +13,25 @@ enum Role {
   Member
 }
 
+enum BoardBackground {
+  OCEAN
+  SUNSET
+  FOREST
+  ROYAL_PURPLE
+  GOLDEN
+  FIRE
+  SKY
+  ROSE
+  AQUA
+  GRAY
+}
+
+enum BoardVisibility {
+  PUBLIC
+  WORKSPACE
+  PRIVATE
+}
+
 model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique
@@ -24,7 +43,6 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Workspaces
-  ownedWorkspaces      Workspace[]       @relation("WorkspaceOwner")
   workspaceMemberships WorkspaceMember[]
 
   // Boards
@@ -40,15 +58,13 @@ model User {
 
 model Workspace {
   id          String   @id @default(uuid())
-  name        String
+  name        String   @unique
   shortName   String   @unique
   websiteUrl  String?
   description String?
+  imageUrl    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  ownerId String
-  owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
   memberships WorkspaceMember[]
   boards      Board[]
@@ -71,12 +87,13 @@ model WorkspaceMember {
 }
 
 model Board {
-  id          String   @id @default(uuid())
-  name        String
+  id          String          @id @default(uuid())
+  name        String          @unique
   description String?
-  isPublic    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  background  BoardBackground @default(OCEAN)
+  visibility  BoardVisibility @default(WORKSPACE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   // Workspace link
   workspaceId String
@@ -109,7 +126,7 @@ model BoardMember {
 
 model List {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
   position  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -123,7 +140,7 @@ model List {
 
 model Card {
   id          String    @id @default(uuid())
-  title       String
+  title       String    @unique
   description String?
   position    Int
   startDate   DateTime?
@@ -178,7 +195,7 @@ model Comment {
 
 model Label {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
   color     String
   isSystem  Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -207,8 +224,8 @@ model CardLabel {
 
 model Attachment {
   id        String   @id @default(uuid())
-  url       String
-  fileName  String?
+  url       String   @unique
+  fileName  String?  @unique
   fileType  String?
   createdAt DateTime @default(now())
 

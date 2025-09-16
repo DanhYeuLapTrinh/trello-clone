@@ -9,13 +9,13 @@ import { useCreateBoard } from '../hooks/use-create-board'
 import { CreateBoardSchema } from '../validations'
 import CreateBoardForm from './create-board-form'
 
-export default function CreateBoardDialog({
-  workspaceId,
-  children
-}: {
+interface CreateBoardDialogProps {
   workspaceId: string
   children: React.ReactNode
-}) {
+  asChild?: boolean
+}
+
+export default function CreateBoardDialog({ workspaceId, children, asChild = false }: CreateBoardDialogProps) {
   const { methods, execute, isPending } = useCreateBoard(workspaceId)
 
   const onSubmit: SubmitHandler<CreateBoardSchema> = (data) => {
@@ -24,7 +24,7 @@ export default function CreateBoardDialog({
 
   return (
     <Dialog>
-      <DialogTrigger>{children}</DialogTrigger>
+      <DialogTrigger asChild={asChild}>{children}</DialogTrigger>
       <DialogContent aria-describedby='Tạo bảng'>
         <DialogHeader>
           <DialogTitle className='text-center'>Tạo bảng</DialogTitle>

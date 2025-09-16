@@ -62,7 +62,7 @@ export const createWorkspaceInternal = async (workspaceData: CreateWorkspaceSche
 
     return workspace
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       throw new ConflictError('Tên hoặc tên ngắn gọn đã tồn tại.')
     }
     throw error

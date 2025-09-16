@@ -30,7 +30,7 @@ export default function CreateWorkspaceForm() {
     onSuccess: () => {
       toast.success('Không gian làm việc đã được tạo thành công.')
       methods.reset()
-      router.replace(`/workspaces/${result.data?.shortName}`)
+      router.replace(`/w/${result.data?.shortName}/home`)
     },
     onError: (err) => {
       const errorMessage = err.error?.serverError || 'Lỗi khi tạo không gian làm việc.'

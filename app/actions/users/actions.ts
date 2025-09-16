@@ -9,7 +9,7 @@ export const getMe = async () => {
     const { userId } = await auth()
 
     if (!userId) {
-      throw new UnauthorizedError('Please sign in to continue')
+      throw new UnauthorizedError('No user ID found')
     }
 
     const user = await prisma.user.findUnique({
@@ -19,7 +19,7 @@ export const getMe = async () => {
     })
 
     if (!user) {
-      throw new NotFoundError('User not found')
+      throw new NotFoundError('User')
     }
 
     return user

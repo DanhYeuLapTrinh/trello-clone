@@ -1,3 +1,5 @@
+import { getMe } from '@/app/actions/users/actions'
+import { getMeWorkspaces } from '@/app/actions/workspaces/actions'
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import {
   Breadcrumb,
@@ -11,10 +13,12 @@ import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { redirect } from 'next/navigation'
-import { getMe } from '../actions/users/actions'
-import { getMeWorkspaces } from '../actions/workspaces/actions'
 
-export default async function DashboardPage() {
+export default async function DashboardLayout({
+  children
+}: Readonly<{
+  children: React.ReactNode
+}>) {
   // NOTE: always make a new query client for each Server Component that fetches data
   const queryClient = new QueryClient()
 
@@ -22,7 +26,7 @@ export default async function DashboardPage() {
   const workspaces = await getMeWorkspaces()
 
   if (workspaces.length === 0) {
-    redirect('/workspaces/create')
+    redirect('/w/create')
   }
 
   await queryClient.prefetchQuery({
@@ -57,14 +61,7 @@ export default async function DashboardPage() {
               </Breadcrumb>
             </div>
           </header>
-          <div className='flex flex-1 flex-col gap-4 p-4 pt-0'>
-            <div className='grid auto-rows-min gap-4 md:grid-cols-3'>
-              <div className='bg-muted/50 aspect-video rounded-xl' />
-              <div className='bg-muted/50 aspect-video rounded-xl' />
-              <div className='bg-muted/50 aspect-video rounded-xl' />
-            </div>
-            <div className='bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min' />
-          </div>
+          <div className='px-4 pb-4'>{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </HydrationBoundary>

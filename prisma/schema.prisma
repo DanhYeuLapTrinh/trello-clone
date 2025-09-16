@@ -92,6 +92,7 @@ model Board {
   description String?
   background  BoardBackground @default(OCEAN)
   visibility  BoardVisibility @default(WORKSPACE)
+  slug        String          @unique
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 

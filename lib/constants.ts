@@ -1,4 +1,5 @@
-import { BoardBackground } from '@prisma/client'
+import { BoardBackground, BoardVisibility } from '@prisma/client'
+import { Globe, LockKeyhole, LucideIcon, Users } from 'lucide-react'
 
 export const boardBackgroundClasses: Record<BoardBackground, string> = {
   OCEAN: 'bg-gradient-to-br from-sky-400 via-teal-500 to-blue-600',
@@ -11,4 +12,24 @@ export const boardBackgroundClasses: Record<BoardBackground, string> = {
   ROSE: 'bg-gradient-to-br from-rose-300 via-pink-400 to-fuchsia-500',
   AQUA: 'bg-gradient-to-br from-cyan-300 via-teal-400 to-blue-500',
   GRAY: 'bg-gradient-to-br from-gray-200 via-slate-400 to-gray-500'
+}
+
+export const boardVisibility: Record<BoardVisibility, { title: string; description: string; icon: LucideIcon }> = {
+  PUBLIC: {
+    title: 'Công khai',
+    description:
+      'Bất kỳ ai trên mạng internet đều có thể xem bảng thông tin này. Chỉ thành viên bảng thông tin mới có quyền chỉnh sửa.',
+    icon: Globe
+  },
+  WORKSPACE: {
+    title: 'Không gian làm việc',
+    description: 'Tất cả thành viên của Không gian làm việc có thể xem và sửa bảng thông tin này.',
+    icon: Users
+  },
+  PRIVATE: {
+    title: 'Riêng tư',
+    description:
+      'Chỉ thành viên bảng thông tin mới có quyền xem bảng thông tin này. Quản trị viên có thể đóng bảng thông tin hoặc xóa thành viên.',
+    icon: LockKeyhole
+  }
 }

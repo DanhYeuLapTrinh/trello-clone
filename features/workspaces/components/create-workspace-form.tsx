@@ -29,8 +29,10 @@ export default function CreateWorkspaceForm() {
   const { execute, isPending, result } = useAction(createWorkspace, {
     onSuccess: () => {
       toast.success('Không gian làm việc đã được tạo thành công.')
-      methods.reset()
       router.replace(`/w/${result.data?.shortName}/home`)
+      setTimeout(() => {
+        methods.reset()
+      }, 500)
     },
     onError: (err) => {
       const errorMessage = err.error?.serverError || 'Lỗi khi tạo không gian làm việc.'

@@ -1,25 +1,55 @@
-import { Card } from '@/components/ui/card'
+import Draggable from '@/components/dnd/draggable'
+import Droppable from '@/components/dnd/droppable'
 import CardItem from '@/features/cards/components/card-item'
-import CreateCardButton from '@/features/cards/components/create-card-button'
-import { List } from '@prisma/client'
-import { getListCards } from '../actions'
+import { Card as CardType, List } from '@prisma/client'
 import ListNameInput from './list-name-input'
 
 interface ListItemProps {
-  list: List
-  slug: string
+  list: List & { cards: CardType[] }
 }
 
-export default async function ListItem({ list, slug }: ListItemProps) {
-  const cards = await getListCards(list.id)
+export default function ListItem({ list }: ListItemProps) {
+  const cards = list.cards
 
   return (
-    <Card className='w-72 p-2 shadow-sm bg-muted flex flex-col gap-2'>
+    <Droppable
+      id={`list>${list.id}>${list.name}`}
+      data={{
+        type: 'list',
+        listId: list.id,
+        listName: list.name
+      }}
+      className='flex flex-col gap-2'
+    >
       <ListNameInput name={list.name} />
+
       {cards.map((card) => (
-        <CardItem key={card.id} card={card} />
+        <div key={card.id}>
+          <Droppable
+            id={`card>${card.id}`}
+            data={{
+              type: 'card',
+              cardId: card.id,
+              cardName: card.title,
+              listId: list.id,
+              listName: list.name
+            }}
+          >
+            <Draggable
+              id={`card>${card.id}`}
+              data={{
+                type: 'card',
+                cardId: card.id,
+                cardName: card.title,
+                listId: list.id,
+                listName: list.name
+              }}
+            >
+              <CardItem card={card} />
+            </Draggable>
+          </Droppable>
+        </div>
       ))}
-      <CreateCardButton listId={list.id} slug={slug} />
-    </Card>
+    </Droppable>
   )
 }

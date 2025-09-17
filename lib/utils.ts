@@ -15,3 +15,10 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, '')
     .replace(/-{2,}/g, '-')
 }
+
+export function arrayMove<T>(array: T[], from: number, to: number): T[] {
+  const newArray = array.slice()
+  const [item] = newArray.splice(from, 1)
+  newArray.splice(to, 0, item)
+  return newArray
+}

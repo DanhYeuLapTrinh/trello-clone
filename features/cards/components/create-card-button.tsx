@@ -9,7 +9,12 @@ import { SubmitHandler } from 'react-hook-form'
 import { useCreateCard } from '../hooks/use-create-card'
 import { CreateCardSchema } from '../validations'
 
-export default function CreateCardButton({ listId, slug }: { listId: string; slug: string }) {
+interface CreateCardButtonProps {
+  listId: string
+  slug: string
+}
+
+export default function CreateCardButton({ listId, slug }: CreateCardButtonProps) {
   const [isAdding, setIsAdding] = useState(false)
 
   const toggleAdding = () => {
@@ -40,6 +45,10 @@ export default function CreateCardButton({ listId, slug }: { listId: string; slu
                       if (field.value) return
                       toggleAdding()
                     }}
+                    // Prevent the input from being dragged
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => e.stopPropagation()}
                   />
                 </FormControl>
               </FormItem>
@@ -54,7 +63,15 @@ export default function CreateCardButton({ listId, slug }: { listId: string; slu
     )
   } else {
     return (
-      <Button variant='ghost' className='hover:bg-muted-foreground/20 justify-start' onClick={toggleAdding}>
+      <Button
+        variant='ghost'
+        className='hover:bg-muted-foreground/20 justify-start'
+        onClick={toggleAdding}
+        // Prevent the button from being dragged
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+      >
         <Plus className='size-4' />
         Thêm thẻ
       </Button>

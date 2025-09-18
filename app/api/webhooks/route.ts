@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
           await tx.board.create({
             data: {
               name: 'My Board',
+              slug: Date.now().toString(),
               workspaceId: createdWorkspace.id,
               ownerId: createdUser.id
             }

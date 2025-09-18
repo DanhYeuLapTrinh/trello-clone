@@ -40,13 +40,23 @@ export default function CreateCardButton({ listId, slug }: { listId: string; slu
                       if (field.value) return
                       toggleAdding()
                     }}
+                    // prevent dnd
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
                   />
                 </FormControl>
               </FormItem>
             )}
           />
 
-          <Button className='w-full' type='submit' disabled={createCardAction.isPending}>
+          <Button
+            className='w-full'
+            type='submit'
+            disabled={createCardAction.isPending}
+            // prevent dnd
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             {createCardAction.isPending ? <Loader2 className='w-4 h-4 animate-spin' /> : 'Thêm danh sách'}
           </Button>
         </form>
@@ -54,7 +64,14 @@ export default function CreateCardButton({ listId, slug }: { listId: string; slu
     )
   } else {
     return (
-      <Button variant='ghost' className='hover:bg-muted-foreground/20 justify-start' onClick={toggleAdding}>
+      <Button
+        variant='ghost'
+        className='hover:bg-muted-foreground/20 justify-start'
+        onClick={toggleAdding}
+        // prevent dnd
+        onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <Plus className='size-4' />
         Thêm thẻ
       </Button>

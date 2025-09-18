@@ -55,7 +55,7 @@ export const getBoardWithWorkspace = async (slug: string) => {
   }
 }
 
-export const getBoardLists = async (slug: string) => {
+export const getBoardListsWithCards = async (slug: string) => {
   try {
     const board = await prisma.board.findUnique({
       where: {
@@ -65,6 +65,13 @@ export const getBoardLists = async (slug: string) => {
         lists: {
           orderBy: {
             position: 'asc'
+          },
+          include: {
+            cards: {
+              orderBy: {
+                position: 'asc'
+              }
+            }
           }
         }
       }

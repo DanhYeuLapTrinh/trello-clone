@@ -2,9 +2,9 @@
 
 import { moveCardWithinList } from '@/features/cards/actions'
 import CardItem from '@/features/cards/components/card-item'
+import { moveList } from '@/features/lists/actions'
 import CreateListButton from '@/features/lists/components/create-list-button'
 import ListItem from '@/features/lists/components/list-item'
-import { cn } from '@/lib/utils'
 import { ListWithCards } from '@/types/common'
 import {
   DndContext,
@@ -15,15 +15,20 @@ import {
   KeyboardSensor,
   PointerSensor,
   rectIntersection,
-  useDroppable,
   useSensor,
   useSensors
 } from '@dnd-kit/core'
-import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import {
+  arrayMove,
+  horizontalListSortingStrategy,
+  SortableContext,
+  sortableKeyboardCoordinates
+} from '@dnd-kit/sortable'
 import { Card } from '@prisma/client'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { getBoardListsWithCards } from '../actions'
 
 interface BoardContentProps {
@@ -39,13 +44,23 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
   })
 
   const [activeCard, setActiveCard] = useState<Card | null>(null)
+  const [activeList, setActiveList] = useState<ListWithCards | null>(null)
 
   const { execute: moveCardWithinListAction } = useAction(moveCardWithinList, {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
     },
     onError: (err) => {
-      console.error('Failed to move card:', err)
+      toast.error(err.error?.serverError || 'Lỗi khi di chuyển thẻ.')
+    }
+  })
+
+  const { execute: moveListAction } = useAction(moveList, {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
+    },
+    onError: (err) => {
+      toast.error(err.error?.serverError || 'Lỗi khi di chuyển danh sách.')
     }
   })
 
@@ -56,9 +71,20 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
     })
   )
 
-  const handleDragStart = (event: DragStartEvent) => {
-    const card = lists?.flatMap((list) => list.cards).find((card) => card.id === event.active.id)
-    setActiveCard(card ?? null)
+  const handleDragStart = ({ active }: DragStartEvent) => {
+    const activeId = active.id
+    // Find the list that has the cardId === activeId
+    const activeList = lists?.find((list) => list.cards.some((card) => card.id === activeId))
+
+    if (activeList) {
+      // If found the user is dragging a card
+      const card = lists?.flatMap((list) => list.cards).find((card) => card.id === active.id)
+      setActiveCard(card ?? null)
+    } else {
+      // If not found the user is dragging a list
+      const list = lists?.find((list) => list.id === activeId)
+      setActiveList(list ?? null)
+    }
   }
 
   const handleDragOver = ({ active, over }: DragOverEvent) => {
@@ -68,6 +94,7 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     console.log('Drag ended: ', { active, over })
+
     if (!over) return
 
     const activeId = active.id
@@ -78,7 +105,7 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
 
     if (activeList && overList) {
       if (activeList.id === overList.id) {
-        console.log('Move card within list')
+        // Move card within list
         const activeIndex = activeList.cards.findIndex((card) => card.id === activeId)
         const overIndex = activeList.cards.findIndex((card) => card.id === overId)
 
@@ -104,11 +131,34 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
           })
         }
       } else {
-        console.log('Move card to another list')
+        // Move card to another list
       }
     } else if (activeList && !overList) {
-      console.log('Move card to empty list')
+      // Move card to empty list
+    } else {
+      // Move
+      const activeIndex = lists?.findIndex((list) => list.id === activeId)
+      const overIndex = lists?.findIndex((list) => list.id === overId)
+
+      if (activeIndex !== overIndex && activeIndex !== undefined && overIndex !== undefined) {
+        queryClient.setQueryData(['board', 'lists', slug], (oldLists: ListWithCards[]) => {
+          if (!oldLists) return oldLists
+
+          const newLists = [...oldLists]
+
+          return arrayMove(newLists, activeIndex, overIndex)
+        })
+
+        moveListAction({
+          listId: activeId as string,
+          newPosition: overIndex,
+          slug
+        })
+      }
     }
+
+    setActiveCard(null)
+    setActiveList(null)
   }
 
   return (
@@ -121,13 +171,20 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
     >
       <div className='flex-1 p-3 overflow-x-auto overflow-y-hidden'>
         <div className='flex gap-3 min-w-max items-start'>
-          {lists?.map((list) => (
-            <DroppableListItem key={list.id} id={list.id}>
-              <ListItem list={list} slug={slug} />
-            </DroppableListItem>
-          ))}
+          <SortableContext
+            id={slug}
+            items={lists?.map((list) => list.id) ?? []}
+            strategy={horizontalListSortingStrategy}
+          >
+            {lists?.map((list) => (
+              <ListItem key={list.id} list={list} slug={slug} />
+            ))}
+          </SortableContext>
 
-          <DragOverlay>{activeCard ? <CardItem card={activeCard} /> : null}</DragOverlay>
+          <DragOverlay>
+            {activeCard ? <CardItem card={activeCard} /> : null}
+            {activeList ? <ListItem list={activeList} slug={slug} /> : null}
+          </DragOverlay>
           <div className='flex-shrink-0'>
             <CreateListButton boardId={boardId} slug={slug} />
           </div>
@@ -137,14 +194,14 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
   )
 }
 
-const DroppableListItem = ({ id, children }: { id: string; children: React.ReactNode }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id
-  })
+// const DroppableArea = ({ id, children, className }: { id: string; children: React.ReactNode; className?: string }) => {
+//   const { setNodeRef, isOver } = useDroppable({
+//     id
+//   })
 
-  return (
-    <div ref={setNodeRef} className={cn(isOver && 'border-2 rounded-2xl border-primary')}>
-      {children}
-    </div>
-  )
-}
+//   return (
+//     <div ref={setNodeRef} className={cn(className, isOver && 'border-2 rounded-2xl border-primary')}>
+//       {children}
+//     </div>
+//   )
+// }

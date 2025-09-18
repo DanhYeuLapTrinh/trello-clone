@@ -2,7 +2,7 @@
 
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
-import { ConflictError } from '@/types/error'
+import { ConflictError, NotFoundError } from '@/types/error'
 import { Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
@@ -61,7 +61,7 @@ export const moveCardWithinList = protectedActionClient
       // Find the card being moved
       const cardToMove = cards.find((card) => card.id === parsedInput.cardId)
       if (!cardToMove) {
-        throw new Error('Card not found')
+        throw new NotFoundError('Card')
       }
 
       // Remove the card from its current position
@@ -82,7 +82,7 @@ export const moveCardWithinList = protectedActionClient
         })
       )
 
-      await Promise.all(updatePromises)
+      await prisma.$transaction(updatePromises)
 
       revalidatePath(`/b/${parsedInput.slug}`)
 

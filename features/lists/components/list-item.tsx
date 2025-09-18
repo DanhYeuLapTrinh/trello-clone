@@ -15,21 +15,23 @@ export default function ListItem({ list, slug }: ListItemProps) {
   const cards = list.cards
 
   return (
-    <Card className='w-72 p-2 shadow-sm bg-muted flex flex-col gap-2'>
-      <ListNameInput name={list.name} />
-      <SortableContext items={cards.map((card) => card.id)} strategy={verticalListSortingStrategy}>
-        {cards.map((card) => (
-          <SortableCardItem key={card.id} id={card.id}>
-            <CardItem card={card} />
-          </SortableCardItem>
-        ))}
-      </SortableContext>
-      <CreateCardButton listId={list.id} slug={slug} />
-    </Card>
+    <SortableItem id={list.id}>
+      <Card className='w-72 p-2 shadow-sm bg-muted flex flex-col gap-2'>
+        <ListNameInput name={list.name} />
+        <SortableContext items={cards.map((card) => card.id)} strategy={verticalListSortingStrategy}>
+          {cards.map((card) => (
+            <SortableItem key={card.id} id={card.id}>
+              <CardItem card={card} />
+            </SortableItem>
+          ))}
+        </SortableContext>
+        <CreateCardButton listId={list.id} slug={slug} />
+      </Card>
+    </SortableItem>
   )
 }
 
-const SortableCardItem = ({ id, children }: { id: string; children: React.ReactNode }) => {
+const SortableItem = ({ id, children }: { id: string; children: React.ReactNode }) => {
   const { attributes, listeners, setNodeRef, transition, transform, isDragging } = useSortable({ id })
 
   const style = {

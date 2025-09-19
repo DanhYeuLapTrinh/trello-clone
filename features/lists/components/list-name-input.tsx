@@ -18,7 +18,7 @@ export default function ListNameInput({ name }: ListNameInputProps) {
   }
 
   return (
-    <div className='flex flex-row items-center justify-between gap-2'>
+    <div className='flex items-center justify-between gap-2'>
       {isEditingName ? (
         <Input
           value={newName}

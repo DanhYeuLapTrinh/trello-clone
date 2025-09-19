@@ -29,12 +29,12 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className={cn('h-screen flex flex-col', boardBackgroundClasses[board.background])}>
-        <div className='px-3 py-2 bg-background flex flex-row items-center justify-between gap-4 flex-shrink-0'>
+        <div className='px-3 py-2 bg-background flex items-center justify-between gap-4 flex-shrink-0'>
           <Link href={`/w/${workspace.shortName}/home`}>
             <Trello className='size-7' />
           </Link>
 
-          <div className='flex flex-row items-center justify-end gap-2 w-full'>
+          <div className='flex items-center justify-end gap-2 w-full'>
             <Input placeholder='Tìm kiếm' className='w-1/2' />
             <CreateBoardDialog workspaceId={workspace.id} asChild>
               <Button>Tạo mới</Button>

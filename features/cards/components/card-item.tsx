@@ -39,20 +39,20 @@ export default function CardItem({ card, slug }: CardItemProps) {
       {isHovering ? <SquarePen className='size-3.5 absolute right-2 top-2' /> : null}
 
       {card.cardLabels && Array.isArray(card.cardLabels) && card.cardLabels.length > 0 && (
-        <div className='flex flex-row items-start gap-2 flex-wrap'>
+        <div className='flex  items-start gap-2 flex-wrap'>
           {card.cardLabels.map((label) => (
             <div className={cn('w-10 h-2 rounded-full', label)} key={label.id} />
           ))}
         </div>
       )}
 
-      <div className='flex flex-row items-start gap-2'>
+      <div className='flex  items-start gap-2'>
         {isHovering ? <Checkbox className='rounded-full border-foreground mt-0.5' /> : null}
         <p className='text-sm w-[85%]'>{card.title}</p>
       </div>
 
       {isDisplayIcon ? (
-        <div className='flex flex-row items-center gap-2 flex-wrap'>
+        <div className='flex items-center gap-2 flex-wrap'>
           {card.description ? <PreviewIcon icon={TextAlignStart} /> : null}
 
           {card._count.comments > 0 ? (
@@ -74,7 +74,7 @@ export default function CardItem({ card, slug }: CardItemProps) {
 
 const PreviewIcon = ({ icon, count, label }: { icon: LucideIcon; count?: number; label?: string }) => {
   return (
-    <div className='flex flex-row items-center gap-2'>
+    <div className='flex items-center gap-2'>
       {createElement(icon, { className: 'size-3.5' })}
       {count ? <span className='text-sm'>{count}</span> : null}
       {label ? <span className='text-sm'>{label}</span> : null}

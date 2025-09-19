@@ -1,7 +1,9 @@
 'use server'
 
 import { protectedActionClient } from '@/lib/safe-action'
+import { slugify } from '@/lib/utils'
 import prisma from '@/prisma/prisma'
+import { CardDetail } from '@/types/common'
 import { ConflictError, NotFoundError } from '@/types/error'
 import { Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
@@ -26,6 +28,7 @@ export const createCard = protectedActionClient
       const card = await prisma.card.create({
         data: {
           title: parsedInput.title,
+          slug: slugify(parsedInput.title),
           listId: parsedInput.listId,
           position: (latestPosition?.position ?? -1) + 1
         }
@@ -41,6 +44,36 @@ export const createCard = protectedActionClient
       throw error
     }
   })
+
+export const getCard = async (cardSlug: string): Promise<CardDetail> => {
+  try {
+    const card = await prisma.card.findUnique({
+      where: {
+        slug: cardSlug
+      },
+      include: {
+        list: true,
+        cardLabels: true,
+        subtasks: true,
+        assignees: {
+          include: {
+            user: true
+          }
+        },
+        attachments: true,
+        comments: true
+      }
+    })
+
+    if (!card) {
+      throw new NotFoundError('Card')
+    }
+
+    return card
+  } catch (error) {
+    throw error
+  }
+}
 
 export const moveCardWithinList = protectedActionClient
   .inputSchema(moveCardWithinListSchema, {

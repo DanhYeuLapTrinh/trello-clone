@@ -142,6 +142,7 @@ model List {
 model Card {
   id          String    @id @default(uuid())
   title       String    @unique
+  slug        String    @unique
   description String?
   position    Int
   startDate   DateTime?

@@ -21,7 +21,7 @@ export default function ListItem({ list, slug }: ListItemProps) {
         <SortableContext items={cards.map((card) => card.id)} strategy={verticalListSortingStrategy}>
           {cards.map((card) => (
             <SortableItem key={card.id} id={card.id}>
-              <CardItem card={card} />
+              <CardItem card={card} slug={slug} />
             </SortableItem>
           ))}
         </SortableContext>

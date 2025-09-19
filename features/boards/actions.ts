@@ -70,6 +70,21 @@ export const getBoardListsWithCards = async (slug: string) => {
             cards: {
               orderBy: {
                 position: 'asc'
+              },
+              include: {
+                cardLabels: true,
+                subtasks: true,
+                assignees: {
+                  include: {
+                    user: true
+                  }
+                },
+                _count: {
+                  select: {
+                    attachments: true,
+                    comments: true
+                  }
+                }
               }
             }
           }

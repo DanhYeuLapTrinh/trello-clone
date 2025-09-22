@@ -43,6 +43,7 @@ export default function CreateCardButton({ listId, slug }: { listId: string; slu
                     // prevent dnd
                     onMouseDown={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
                   />
                 </FormControl>
               </FormItem>

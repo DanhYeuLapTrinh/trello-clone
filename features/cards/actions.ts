@@ -15,6 +15,7 @@ import {
   createLabelSchema,
   moveCardBetweenListsSchema,
   moveCardWithinListSchema,
+  unassignLabelSchema,
   updateCardSchema
 } from './validations'
 
@@ -399,7 +400,7 @@ export const createLabel = protectedActionClient
     }
   })
 
-export const getLabelsByBoard = async (slug: string): Promise<Label[]> => {
+export const getBoardLabels = async (slug: string): Promise<Label[]> => {
   try {
     const labels = await prisma.label.findMany({
       where: { board: { slug } },
@@ -419,4 +420,63 @@ export const assignLabel = protectedActionClient
   .inputSchema(assignLabelSchema, {
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
   })
-  .action(async ({ parsedInput }) => {})
+  .action(async ({ parsedInput }) => {
+    try {
+      const card = await prisma.card.findUnique({
+        where: {
+          slug: parsedInput.cardSlug
+        }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      await prisma.cardLabel.create({
+        data: {
+          cardId: card.id,
+          labelId: parsedInput.labelId
+        }
+      })
+
+      revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
+
+      return { message: 'Label đã được gán thành công' }
+    } catch (error) {
+      throw error
+    }
+  })
+
+// Unassign label from card
+export const unassignLabel = protectedActionClient
+  .inputSchema(unassignLabelSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput }) => {
+    try {
+      const card = await prisma.card.findUnique({
+        where: {
+          slug: parsedInput.cardSlug
+        }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      await prisma.cardLabel.delete({
+        where: {
+          cardId_labelId: {
+            cardId: card.id,
+            labelId: parsedInput.labelId
+          }
+        }
+      })
+
+      revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
+
+      return { message: 'Label đã được gỡ bỏ thành công' }
+    } catch (error) {
+      throw error
+    }
+  })

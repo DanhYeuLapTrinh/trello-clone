@@ -4,7 +4,7 @@ import { getBoardListsWithCards, getBoardWithWorkspace } from '@/features/boards
 import BoardContent from '@/features/boards/components/board-content'
 import BoardNameInput from '@/features/boards/components/board-name-input'
 import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
-import { getLabelsByBoard } from '@/features/cards/actions'
+import { getBoardLabels } from '@/features/cards/actions'
 import { boardBackgroundClasses } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
@@ -25,7 +25,7 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
 
   await queryClient.prefetchQuery({
     queryKey: ['board', 'labels', slug],
-    queryFn: () => getLabelsByBoard(slug)
+    queryFn: () => getBoardLabels(slug)
   })
 
   if (!board || !workspace) {

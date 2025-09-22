@@ -16,7 +16,6 @@ export const useCreateLabel = (boardSlug: string, cardSlug: string) => {
 
   const createLabelAction = useAction(createLabel, {
     onSuccess: () => {
-      toast.success('Label đã được tạo thành công.')
       methods.reset()
     },
     onError: (err) => {

@@ -39,10 +39,22 @@ export const createLabelSchema = z
     message: 'Tiêu đề hoặc màu phải được cung cấp'
   })
 
-export const assignLabelSchema = z.object({})
+export const assignLabelSchema = z.object({
+  labelId: z.uuid(),
+  boardSlug: z.string().min(1, 'Slug không được để trống'),
+  cardSlug: z.string().min(1, 'Slug không được để trống')
+})
+
+export const unassignLabelSchema = z.object({
+  labelId: z.uuid(),
+  boardSlug: z.string().min(1, 'Slug không được để trống'),
+  cardSlug: z.string().min(1, 'Slug không được để trống')
+})
 
 export type CreateCardSchema = z.infer<typeof createCardSchema>
 export type MoveCardWithinListSchema = z.infer<typeof moveCardWithinListSchema>
 export type MoveCardBetweenListsSchema = z.infer<typeof moveCardBetweenListsSchema>
 export type UpdateCardSchema = z.infer<typeof updateCardSchema>
 export type CreateLabelSchema = z.infer<typeof createLabelSchema>
+export type AssignLabelSchema = z.infer<typeof assignLabelSchema>
+export type UnassignLabelSchema = z.infer<typeof unassignLabelSchema>

@@ -40,7 +40,7 @@ export default function CardItem({ card, slug }: CardItemProps) {
       {isHovering ? <SquarePen className='size-3.5 absolute right-2 top-2' /> : null}
 
       {card.cardLabels && Array.isArray(card.cardLabels) && card.cardLabels.length > 0 && (
-        <div className='flex items-start gap-2 flex-wrap'>
+        <div className='flex items-start gap-1 flex-wrap'>
           {card.cardLabels.map((cardLabel) => (
             <div className={cn('w-10 h-2 rounded-full', cardLabel.label.color)} key={cardLabel.id} />
           ))}

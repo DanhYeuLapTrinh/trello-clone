@@ -13,9 +13,11 @@ import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, Loader2, Pencil, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
-import { getLabelsByBoard } from '../../actions'
+import { getBoardLabels } from '../../actions'
+import { useAssignLabel } from '../../hooks/use-assign-label'
 import { useCreateLabel } from '../../hooks/use-create-label'
-import { CreateLabelSchema } from '../../validations'
+import { useUnassignLabel } from '../../hooks/use-unassign-label'
+import { AssignLabelSchema, CreateLabelSchema, UnassignLabelSchema } from '../../validations'
 
 interface LabelAction {
   action: 'create' | 'edit'
@@ -29,17 +31,23 @@ interface LabelPopoverProps {
   children?: React.ReactNode
 }
 
+// TODO: improve this component
+
 export default function LabelPopover({ boardSlug, cardSlug, cardLabels, children }: LabelPopoverProps) {
   const [open, setOpen] = useState(false)
   const [labelAction, setLabelAction] = useState<LabelAction | null>(null)
+  const [localCardLabels, setLocalCardLabels] = useState<CardLabelDetail[]>(cardLabels)
 
-  const { methods, createLabelAction } = useCreateLabel(boardSlug, cardSlug)
-  const color = methods.watch('color')
-  const title = methods.watch('title')
+  const { methods: createLabelMethods, createLabelAction } = useCreateLabel(boardSlug, cardSlug)
+  const { methods: assignLabelMethods, assignLabelAction } = useAssignLabel(boardSlug, cardSlug)
+  const { methods: unassignLabelMethods, unassignLabelAction } = useUnassignLabel(boardSlug, cardSlug)
+
+  const color = createLabelMethods.watch('color')
+  const title = createLabelMethods.watch('title')
 
   const { data: boardLabels } = useQuery({
     queryKey: ['board', 'labels', boardSlug],
-    queryFn: () => getLabelsByBoard(boardSlug)
+    queryFn: () => getBoardLabels(boardSlug)
   })
 
   const handleClose = () => {
@@ -49,19 +57,61 @@ export default function LabelPopover({ boardSlug, cardSlug, cardLabels, children
     }, 100)
   }
 
-  const onSubmit: SubmitHandler<CreateLabelSchema> = async (data) => {
+  const onSubmitCreate: SubmitHandler<CreateLabelSchema> = async (data) => {
     await createLabelAction.executeAsync(data)
     setTimeout(() => {
       setLabelAction(null)
     }, 100)
   }
 
+  const onSubmitAssign: SubmitHandler<AssignLabelSchema> = (data) => {
+    assignLabelAction.execute(data)
+  }
+
+  const onSubmitUnassign: SubmitHandler<UnassignLabelSchema> = (data) => {
+    unassignLabelAction.execute(data)
+  }
+
+  const handleLabelToggle = (labelId: string, isCurrentlyAssigned: boolean) => {
+    if (isCurrentlyAssigned) {
+      setLocalCardLabels((prev) => prev.filter((cardLabel) => cardLabel.labelId !== labelId))
+    } else {
+      const tempLabel: CardLabelDetail = {
+        labelId,
+        cardId: '',
+        id: `temp-${labelId}`,
+        label: {
+          id: labelId,
+          title: null,
+          color: null,
+          isDeleted: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          boardId: null
+        }
+      }
+      setLocalCardLabels((prev) => [...prev, tempLabel])
+    }
+
+    if (isCurrentlyAssigned) {
+      unassignLabelMethods.setValue('labelId', labelId)
+      unassignLabelMethods.handleSubmit(onSubmitUnassign)()
+    } else {
+      assignLabelMethods.setValue('labelId', labelId)
+      assignLabelMethods.handleSubmit(onSubmitAssign)()
+    }
+  }
+
+  useEffect(() => {
+    setLocalCardLabels(cardLabels)
+  }, [cardLabels])
+
   useEffect(() => {
     if (labelAction && labelAction.action === 'create') {
       const color = sortedCardLabelColors.flatMap((col) => col.shades).find((shade) => shade.isDefaultSelect)?.value
-      methods.setValue('color', color ?? '')
+      createLabelMethods.setValue('color', color ?? '')
     }
-  }, [labelAction, methods])
+  }, [labelAction, createLabelMethods])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -104,12 +154,12 @@ export default function LabelPopover({ boardSlug, cardSlug, cardLabels, children
               </div>
             </div>
 
-            <Form {...methods}>
+            <Form {...createLabelMethods}>
               <div className='p-2 space-y-2'>
                 <div>
                   <p className='font-semibold text-xs py-1 text-muted-foreground'>Tiêu đề</p>
                   <div className='flex items-center gap-2'>
-                    <Input className='w-full' onChange={(e) => methods.setValue('title', e.target.value)} />
+                    <Input className='w-full' onChange={(e) => createLabelMethods.setValue('title', e.target.value)} />
                   </div>
                 </div>
                 <div>
@@ -125,14 +175,18 @@ export default function LabelPopover({ boardSlug, cardSlug, cardLabels, children
                               shade.value === color ? 'ring-2 ring-primary ring-offset-2' : '',
                               'w-full h-8 rounded cursor-pointer'
                             )}
-                            onClick={() => methods.setValue('color', shade.value)}
+                            onClick={() => createLabelMethods.setValue('color', shade.value)}
                           />
                         ))}
                       </div>
                     ))}
                   </div>
                   <div className='space-y-4 mt-4'>
-                    <Button className='w-full' variant='secondary' onClick={() => methods.setValue('color', '')}>
+                    <Button
+                      className='w-full'
+                      variant='secondary'
+                      onClick={() => createLabelMethods.setValue('color', '')}
+                    >
                       <X />
                       Gỡ bỏ màu
                     </Button>
@@ -140,7 +194,7 @@ export default function LabelPopover({ boardSlug, cardSlug, cardLabels, children
                     <Button
                       className='w-full'
                       disabled={(!title && !color) || createLabelAction.isPending}
-                      onClick={methods.handleSubmit(onSubmit)}
+                      onClick={createLabelMethods.handleSubmit(onSubmitCreate)}
                     >
                       {createLabelAction.isPending ? <Loader2 className='size-4 animate-spin' /> : 'Tạo mới'}
                     </Button>
@@ -157,7 +211,14 @@ export default function LabelPopover({ boardSlug, cardSlug, cardLabels, children
             <div className='space-y-0'>
               {boardLabels?.map((label) => (
                 <div key={label.id} className='flex items-center gap-1 pl-1'>
-                  <Checkbox className='mr-2' checked={cardLabels.some((cardLabel) => cardLabel.labelId === label.id)} />
+                  <Checkbox
+                    className='mr-2'
+                    checked={localCardLabels.some((cardLabel) => cardLabel.labelId === label.id)}
+                    onCheckedChange={() => {
+                      const isCurrentlyAssigned = localCardLabels.some((cardLabel) => cardLabel.labelId === label.id)
+                      handleLabelToggle(label.id, isCurrentlyAssigned)
+                    }}
+                  />
                   <div className={cn(label.color, 'flex-1 min-w-0 h-8 rounded-sm flex items-center px-2')}>
                     {label.title ? (
                       <p className={cn('text-sm font-semibold truncate', getColorTextClass(label.color ?? ''))}>
@@ -172,7 +233,7 @@ export default function LabelPopover({ boardSlug, cardSlug, cardLabels, children
               ))}
 
               {sortedCardLabelColors
-                .slice(0, 7)
+                .slice(0, 7 - (boardLabels?.length ?? 0))
                 .filter(
                   (color) =>
                     !boardLabels?.some(
@@ -180,21 +241,64 @@ export default function LabelPopover({ boardSlug, cardSlug, cardLabels, children
                     )
                 )
                 .map((color) => (
-                  <div key={color.baseColor} className='flex items-center gap-1 pl-1'>
-                    <Checkbox className='mr-2' />
-                    <div
-                      className={cn(
-                        color.shades.find((shade) => shade.isDefaultDisplay)?.value,
-                        'w-full h-8 rounded-sm'
-                      )}
-                    />
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      onClick={() => setLabelAction({ action: 'edit', labelId: null })}
-                    >
-                      <Pencil className='size-3.5' />
-                    </Button>
+                  <div key={color.baseColor}>
+                    {color.shades.map((shade) => {
+                      if (shade.isDefaultDisplay) {
+                        return (
+                          <div key={shade.value} className='flex items-center gap-1 pl-1'>
+                            <Checkbox
+                              className='mr-2'
+                              checked={localCardLabels.some((cardLabel) => cardLabel.label.color === shade.value)}
+                              onCheckedChange={() => {
+                                const isCurrentlyAssigned = localCardLabels.some(
+                                  (cardLabel) => cardLabel.label.color === shade.value
+                                )
+
+                                if (!isCurrentlyAssigned) {
+                                  const labelId = Date.now().toString()
+                                  const tempLabel: CardLabelDetail = {
+                                    labelId,
+                                    cardId: '',
+                                    id: `temp-${labelId}`,
+                                    label: {
+                                      id: labelId,
+                                      title: null,
+                                      color: shade.value,
+                                      isDeleted: false,
+                                      createdAt: new Date(),
+                                      updatedAt: new Date(),
+                                      boardId: null
+                                    }
+                                  }
+                                  setLocalCardLabels((prev) => [...prev, tempLabel])
+
+                                  createLabelAction.execute({
+                                    boardSlug,
+                                    cardSlug,
+                                    color: shade.value
+                                  })
+                                }
+                              }}
+                            />
+                            <div
+                              className={cn(
+                                color.shades.find((shade) => shade.isDefaultDisplay)?.value,
+                                'w-full h-8 rounded-sm'
+                              )}
+                            />
+                            <Button
+                              variant='ghost'
+                              size='icon'
+                              onClick={() => setLabelAction({ action: 'edit', labelId: null })}
+                            >
+                              <Pencil className='size-3.5' />
+                            </Button>
+                          </div>
+                        )
+                      } else {
+                        return null
+                      }
+                    })}
                   </div>
                 ))}
             </div>

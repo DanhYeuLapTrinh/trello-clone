@@ -27,11 +27,14 @@ import { Button } from './ui/button'
 
 interface EditorProps {
   isDisplay: boolean
+  content: string
+  isSaving: boolean
+  onChange: (html: string) => void
   onSave: () => void
   onCancel: () => void
 }
 
-export default function Editor({ isDisplay, onSave, onCancel }: EditorProps) {
+export default function Editor({ content, isSaving, isDisplay, onChange, onSave, onCancel }: EditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -45,17 +48,28 @@ export default function Editor({ isDisplay, onSave, onCancel }: EditorProps) {
         onError: (error) => console.error('Upload failed:', error)
       }),
       Placeholder.configure({
-        placeholder: "Mẹo chuyên nghiệp: Nhấn 'Enter' để xuống dòng và 'Shift + Enter' để ngắt dòng đơn giản.",
+        placeholder: ({ editor }) => {
+          if (editor.isEmpty) {
+            return "Mẹo chuyên nghiệp: Nhấn 'Enter' để xuống dòng và 'Shift + Enter' để ngắt dòng đơn giản."
+          }
+          return ''
+        },
         emptyEditorClass: 'is-editor-empty'
       })
     ],
     editorProps: {
       attributes: {
+        // FIXME: overflow if content is too long
         class: 'prose prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-4 min-h-48'
       }
     },
+    content,
     onUpdate: ({ editor }) => {
-      console.log(editor.getJSON())
+      if (editor.isEmpty || editor.getHTML() === '<p></p>') {
+        onChange('')
+      } else {
+        onChange(editor.getHTML())
+      }
     },
     // Don't render immediately on the server to avoid SSR issues
     immediatelyRender: false
@@ -68,6 +82,12 @@ export default function Editor({ isDisplay, onSave, onCancel }: EditorProps) {
       }, 0)
     }
   }, [isDisplay, editor])
+
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content)
+    }
+  }, [content, editor])
 
   if (isDisplay && editor) {
     return (
@@ -145,8 +165,10 @@ export default function Editor({ isDisplay, onSave, onCancel }: EditorProps) {
         </EditorContext.Provider>
 
         <div className='flex items-center gap-2'>
-          <Button onClick={onSave}>Lưu</Button>
-          <Button variant='ghost' onClick={onCancel}>
+          <Button onClick={onSave} disabled={isSaving}>
+            Lưu
+          </Button>
+          <Button variant='ghost' onClick={onCancel} disabled={isSaving}>
             Hủy
           </Button>
         </div>

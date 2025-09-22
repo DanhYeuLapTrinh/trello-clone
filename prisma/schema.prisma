@@ -39,19 +39,15 @@ model User {
   firstName String?
   lastName  String?
   imageUrl  String?
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Workspaces
   workspaceMemberships WorkspaceMember[]
-
-  // Boards
-  ownedBoards Board[]       @relation("BoardOwner")
-  memberships BoardMember[]
-
-  // Cards, Comments
-  cardAssignees CardAssignee[]
-  comments      Comment[]
+  ownedBoards          Board[]           @relation("BoardOwner")
+  memberships          BoardMember[]
+  cardAssignees        CardAssignee[]
+  comments             Comment[]
 
   @@map("users")
 }
@@ -63,6 +59,7 @@ model Workspace {
   websiteUrl  String?
   description String?
   imageUrl    String?
+  isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -93,14 +90,13 @@ model Board {
   background  BoardBackground @default(OCEAN)
   visibility  BoardVisibility @default(WORKSPACE)
   slug        String          @unique
+  isDeleted   Boolean         @default(false)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  // Workspace link
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  // Owner
   ownerId String
   owner   User   @relation("BoardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
@@ -129,6 +125,7 @@ model List {
   id        String   @id @default(uuid())
   name      String   @unique
   position  Int
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -141,20 +138,20 @@ model List {
 
 model Card {
   id          String    @id @default(uuid())
-  title       String    @unique
+  title       String
   slug        String    @unique
   description String?
   position    Int
   startDate   DateTime?
   endDate     DateTime?
   dueDate     DateTime?
+  isDeleted   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   listId String
   list   List   @relation(fields: [listId], references: [id], onDelete: Cascade)
 
-  // Subtasks (self-relation)
   parentCardId String?
   parentCard   Card?   @relation("Subtasks", fields: [parentCardId], references: [id], onDelete: Cascade)
   subtasks     Card[]  @relation("Subtasks")
@@ -183,6 +180,7 @@ model CardAssignee {
 model Comment {
   id        String   @id @default(uuid())
   content   String
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -197,9 +195,9 @@ model Comment {
 
 model Label {
   id        String   @id @default(uuid())
-  name      String   @unique
-  color     String
-  isSystem  Boolean  @default(false)
+  title     String?
+  color     String?
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -229,6 +227,7 @@ model Attachment {
   url       String   @unique
   fileName  String?  @unique
   fileType  String?
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
 
   cardId String

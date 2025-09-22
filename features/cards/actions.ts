@@ -5,11 +5,20 @@ import { slugify } from '@/lib/utils'
 import prisma from '@/prisma/prisma'
 import { CardDetail } from '@/types/common'
 import { ConflictError, NotFoundError } from '@/types/error'
-import { Prisma } from '@prisma/client/edge'
+import { Label, Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
-import { createCardSchema, moveCardBetweenListsSchema, moveCardWithinListSchema } from './validations'
+import { permanentRedirect, RedirectType } from 'next/navigation'
+import {
+  assignLabelSchema,
+  createCardSchema,
+  createLabelSchema,
+  moveCardBetweenListsSchema,
+  moveCardWithinListSchema,
+  updateCardSchema
+} from './validations'
 
+// Create new card
 export const createCard = protectedActionClient
   .inputSchema(createCardSchema, {
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
@@ -45,6 +54,7 @@ export const createCard = protectedActionClient
     }
   })
 
+// Get card detail
 export const getCard = async (cardSlug: string): Promise<CardDetail> => {
   try {
     const card = await prisma.card.findUnique({
@@ -53,7 +63,16 @@ export const getCard = async (cardSlug: string): Promise<CardDetail> => {
       },
       include: {
         list: true,
-        cardLabels: true,
+        cardLabels: {
+          include: {
+            label: true
+          },
+          orderBy: {
+            label: {
+              color: 'asc'
+            }
+          }
+        },
         subtasks: true,
         assignees: {
           include: {
@@ -75,6 +94,7 @@ export const getCard = async (cardSlug: string): Promise<CardDetail> => {
   }
 }
 
+// Move card within list (dnd)
 export const moveCardWithinList = protectedActionClient
   .inputSchema(moveCardWithinListSchema, {
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
@@ -125,6 +145,7 @@ export const moveCardWithinList = protectedActionClient
     }
   })
 
+// Move card between lists (dnd)
 export const moveCardBetweenLists = protectedActionClient
   .inputSchema(moveCardBetweenListsSchema, {
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
@@ -213,3 +234,189 @@ export const moveCardBetweenLists = protectedActionClient
       throw error
     }
   })
+
+// Update card title, description, slug
+export const updateCard = protectedActionClient
+  .inputSchema(updateCardSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput }) => {
+    try {
+      const card = await prisma.card.findUnique({
+        where: { id: parsedInput.cardId },
+        select: { title: true, slug: true }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      let slug = card.slug
+
+      if (parsedInput.title && parsedInput.title !== card.title) {
+        // Create new slug (and ensure uniqueness)
+        const baseSlug = slugify(parsedInput.title)
+        let candidate = baseSlug
+        let counter = 1
+
+        while (
+          await prisma.card.findFirst({
+            where: { slug: candidate, NOT: { id: parsedInput.cardId } },
+            select: { id: true }
+          })
+        ) {
+          // Add counter to slug if it already exists
+          candidate = `${baseSlug}-${counter++}`
+        }
+        slug = candidate
+      }
+
+      const data: {
+        title?: string
+        description?: string
+        slug?: string
+      } = {}
+
+      if (parsedInput.title) {
+        data.title = parsedInput.title
+      }
+
+      if (parsedInput.description !== undefined) {
+        data.description = parsedInput.description
+      }
+
+      if (parsedInput.title) {
+        data.slug = slug
+      }
+
+      console.log(data)
+
+      const updatedCard = await prisma.card.update({
+        where: { id: parsedInput.cardId },
+        data,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          updatedAt: true
+        }
+      })
+
+      revalidatePath(`/b/${parsedInput.boardSlug}/c/${updatedCard.slug}`)
+
+      if (data.title) {
+        permanentRedirect(`/b/${parsedInput.boardSlug}/c/${updatedCard.slug}`, RedirectType.replace)
+      }
+
+      return updatedCard
+    } catch (error) {
+      throw error
+    }
+  })
+
+// Create and assign new label to card
+export const createLabel = protectedActionClient
+  .inputSchema(createLabelSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput }) => {
+    try {
+      const board = await prisma.board.findUnique({
+        where: {
+          slug: parsedInput.boardSlug
+        }
+      })
+
+      if (!board) {
+        throw new NotFoundError('Board')
+      }
+
+      const card = await prisma.card.findUnique({
+        where: {
+          slug: parsedInput.cardSlug
+        }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      const duplicateLabel = await prisma.label.findFirst({
+        where: {
+          OR: [{ title: parsedInput.title }, { color: parsedInput.color }],
+          boardId: board.id
+        }
+      })
+
+      let label
+
+      if (duplicateLabel) {
+        // Update existing label and ensure it's connected to the card
+        label = await prisma.label.update({
+          where: {
+            id: duplicateLabel.id
+          },
+          data: {
+            title: parsedInput.title,
+            color: parsedInput.color,
+            cardLabels: {
+              connectOrCreate: {
+                where: {
+                  cardId_labelId: {
+                    cardId: card.id,
+                    labelId: duplicateLabel.id
+                  }
+                },
+                create: {
+                  cardId: card.id
+                }
+              }
+            }
+          }
+        })
+      } else {
+        // Create new label
+        label = await prisma.label.create({
+          data: {
+            title: parsedInput.title,
+            boardId: board.id,
+            color: parsedInput.color,
+            cardLabels: {
+              create: {
+                cardId: card.id
+              }
+            }
+          }
+        })
+      }
+
+      revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
+
+      return label
+    } catch (error) {
+      throw error
+    }
+  })
+
+export const getLabelsByBoard = async (slug: string): Promise<Label[]> => {
+  try {
+    const labels = await prisma.label.findMany({
+      where: { board: { slug } },
+      orderBy: {
+        color: 'asc'
+      }
+    })
+
+    return labels
+  } catch (error) {
+    throw error
+  }
+}
+
+// Assign label to card
+export const assignLabel = protectedActionClient
+  .inputSchema(assignLabelSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput }) => {})

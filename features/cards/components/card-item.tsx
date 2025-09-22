@@ -21,7 +21,8 @@ export default function CardItem({ card, slug }: CardItemProps) {
     setIsHovering((prev) => !prev)
   }
 
-  const isDisplayIcon = card._count.comments > 0 || card._count.attachments > 0
+  const isDisplayIcon =
+    card._count.comments > 0 || card._count.attachments > 0 || card.description || card.subtasks.length > 0
 
   const handleCardClick = () => {
     if (slug) {
@@ -31,7 +32,7 @@ export default function CardItem({ card, slug }: CardItemProps) {
 
   return (
     <Card
-      className='px-3 py-2 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary relative'
+      className='p-3 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary relative gap-2'
       onMouseEnter={toggleHovering}
       onMouseLeave={toggleHovering}
       onClick={handleCardClick}
@@ -39,14 +40,14 @@ export default function CardItem({ card, slug }: CardItemProps) {
       {isHovering ? <SquarePen className='size-3.5 absolute right-2 top-2' /> : null}
 
       {card.cardLabels && Array.isArray(card.cardLabels) && card.cardLabels.length > 0 && (
-        <div className='flex  items-start gap-2 flex-wrap'>
-          {card.cardLabels.map((label) => (
-            <div className={cn('w-10 h-2 rounded-full', label)} key={label.id} />
+        <div className='flex items-start gap-2 flex-wrap'>
+          {card.cardLabels.map((cardLabel) => (
+            <div className={cn('w-10 h-2 rounded-full', cardLabel.label.color)} key={cardLabel.id} />
           ))}
         </div>
       )}
 
-      <div className='flex  items-start gap-2'>
+      <div className='flex items-start gap-2'>
         {isHovering ? <Checkbox className='rounded-full border-foreground mt-0.5' /> : null}
         <p className='text-sm w-[85%]'>{card.title}</p>
       </div>

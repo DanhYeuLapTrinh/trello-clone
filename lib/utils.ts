@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { sortedCardLabelColors } from './constants'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -14,4 +15,8 @@ export function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .replace(/-{2,}/g, '-')
+}
+
+export function getColorTextClass(color: string) {
+  return sortedCardLabelColors.flatMap((col) => col.shades).find((shade) => shade.value === color)?.textColor
 }

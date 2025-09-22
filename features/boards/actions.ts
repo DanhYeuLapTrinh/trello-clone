@@ -3,6 +3,7 @@
 import { protectedActionClient } from '@/lib/safe-action'
 import { slugify } from '@/lib/utils'
 import prisma from '@/prisma/prisma'
+import { ListWithCards } from '@/types/common'
 import { NotFoundError } from '@/types/error'
 import { flattenValidationErrors } from 'next-safe-action'
 import { createBoardSchema } from './validations'
@@ -55,7 +56,7 @@ export const getBoardWithWorkspace = async (slug: string) => {
   }
 }
 
-export const getBoardListsWithCards = async (slug: string) => {
+export const getBoardListsWithCards = async (slug: string): Promise<ListWithCards[]> => {
   try {
     const board = await prisma.board.findUnique({
       where: {
@@ -72,7 +73,16 @@ export const getBoardListsWithCards = async (slug: string) => {
                 position: 'asc'
               },
               include: {
-                cardLabels: true,
+                cardLabels: {
+                  include: {
+                    label: true
+                  },
+                  orderBy: {
+                    label: {
+                      color: 'asc'
+                    }
+                  }
+                },
                 subtasks: true,
                 assignees: {
                   include: {

@@ -42,19 +42,6 @@ export const createList = protectedActionClient
     }
   })
 
-export const getListCards = async (listId: string) => {
-  const cards = await prisma.card.findMany({
-    where: {
-      listId: listId
-    },
-    orderBy: {
-      position: 'asc'
-    }
-  })
-
-  return cards
-}
-
 export const moveList = protectedActionClient
   .inputSchema(moveListSchema, {
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors

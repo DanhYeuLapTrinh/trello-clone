@@ -2,8 +2,8 @@ import { getCard } from '@/features/cards/actions'
 import CardDetailDialog from '@/features/cards/components/card-detail-dialog'
 import { notFound } from 'next/navigation'
 
-export default async function InterceptedCardDetailPage({ params }: { params: { cardSlug: string } }) {
-  const { cardSlug } = await params
+export default async function InterceptedCardDetailPage({ params }: { params: { slug: string; cardSlug: string } }) {
+  const { slug, cardSlug } = await params
 
   const cardDetail = await getCard(cardSlug)
 
@@ -11,5 +11,5 @@ export default async function InterceptedCardDetailPage({ params }: { params: { 
     notFound()
   }
 
-  return <CardDetailDialog isOpen={true} cardDetail={cardDetail} />
+  return <CardDetailDialog isOpen={true} cardDetail={cardDetail} boardSlug={slug} />
 }

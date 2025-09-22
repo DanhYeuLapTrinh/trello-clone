@@ -10,20 +10,20 @@ interface ListNameInputProps {
 }
 
 export default function ListNameInput({ name }: ListNameInputProps) {
-  const [isEditingName, setIsEditingName] = useState(false)
+  const [isEditName, setIsEditName] = useState(false)
   const [newName, setNewName] = useState(name)
 
-  const toggleEditingName = () => {
-    setIsEditingName((prev) => !prev)
+  const toggleEditName = () => {
+    setIsEditName((prev) => !prev)
   }
 
   return (
     <div className='flex items-center justify-between gap-2'>
-      {isEditingName ? (
+      {isEditName ? (
         <Input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
-          onBlur={toggleEditingName}
+          onBlur={toggleEditName}
           autoFocus
           // prevent dnd
           onMouseDown={(e) => e.stopPropagation()}
@@ -33,7 +33,7 @@ export default function ListNameInput({ name }: ListNameInputProps) {
         // FIXME: UI broken when the name is too long and harder to drag
         <Button
           variant='ghost'
-          onClick={toggleEditingName}
+          onClick={toggleEditName}
           className='hover:bg-muted-foreground/20'
           // prevent dnd
           onMouseDown={(e) => e.stopPropagation()}

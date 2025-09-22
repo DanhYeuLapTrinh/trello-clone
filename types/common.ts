@@ -1,4 +1,4 @@
-import { Attachment, Card, CardLabel, Comment, List, User } from '@prisma/client'
+import { Attachment, Card, CardLabel, Comment, Label, List, User } from '@prisma/client'
 
 export interface AppResponse<T> {
   data: T
@@ -6,8 +6,10 @@ export interface AppResponse<T> {
   status: 'success' | 'error'
 }
 
+export type CardLabelDetail = CardLabel & { label: Label }
+
 export type CardPreview = Card & {
-  cardLabels: CardLabel[]
+  cardLabels: CardLabelDetail[]
   subtasks: Card[]
   assignees: { user: User }[]
   _count: {
@@ -18,7 +20,7 @@ export type CardPreview = Card & {
 
 export type CardDetail = Card & {
   list: List
-  cardLabels: CardLabel[]
+  cardLabels: CardLabelDetail[]
   subtasks: Card[]
   assignees: { user: User }[]
   attachments: Attachment[]

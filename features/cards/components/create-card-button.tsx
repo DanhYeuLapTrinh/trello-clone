@@ -10,19 +10,19 @@ import { useCreateCard } from '../hooks/use-create-card'
 import { CreateCardSchema } from '../validations'
 
 export default function CreateCardButton({ listId, slug }: { listId: string; slug: string }) {
-  const [isAdding, setIsAdding] = useState(false)
+  const [isCreate, setIsCreate] = useState(false)
 
-  const toggleAdding = () => {
-    setIsAdding((prev) => !prev)
+  const toggleCreate = () => {
+    setIsCreate((prev) => !prev)
   }
 
-  const { methods, createCardAction } = useCreateCard(listId, slug, toggleAdding)
+  const { methods, createCardAction } = useCreateCard(listId, slug, toggleCreate)
 
   const onSubmit: SubmitHandler<CreateCardSchema> = (data) => {
     createCardAction.execute(data)
   }
 
-  if (isAdding) {
+  if (isCreate) {
     return (
       <Form {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} className='w-full flex flex-col gap-2'>
@@ -38,7 +38,7 @@ export default function CreateCardButton({ listId, slug }: { listId: string; slu
                     autoFocus
                     onBlur={() => {
                       if (field.value) return
-                      toggleAdding()
+                      toggleCreate()
                     }}
                     // prevent dnd
                     onMouseDown={(e) => e.stopPropagation()}
@@ -68,7 +68,7 @@ export default function CreateCardButton({ listId, slug }: { listId: string; slu
       <Button
         variant='ghost'
         className='hover:bg-muted-foreground/20 justify-start'
-        onClick={toggleAdding}
+        onClick={toggleCreate}
         // prevent dnd
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}

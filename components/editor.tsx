@@ -11,7 +11,6 @@ import '@/components/tiptap-node/paragraph-node/paragraph-node.scss'
 import { BlockquoteButton } from '@/components/tiptap-ui/blockquote-button'
 import { MAX_FILE_SIZE } from '@/lib/tiptap-utils'
 import { Image } from '@tiptap/extension-image'
-import { Link } from '@tiptap/extension-link'
 import { Placeholder } from '@tiptap/extensions'
 import { EditorContent, EditorContext, useEditor } from '@tiptap/react'
 import { StarterKit } from '@tiptap/starter-kit'
@@ -38,7 +37,6 @@ export default function Editor({ content, isSaving, isDisplay, onChange, onSave,
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Link.configure({ openOnClick: false }),
       Image,
       ImageUploadNode.configure({
         accept: 'image/*',

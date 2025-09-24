@@ -83,7 +83,22 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
                     }
                   }
                 },
-                subtasks: true,
+                subtasks: {
+                  where: {
+                    parentId: null,
+                    isDeleted: false
+                  },
+                  include: {
+                    children: {
+                      where: {
+                        isDeleted: false
+                      },
+                      orderBy: {
+                        createdAt: 'asc'
+                      }
+                    }
+                  }
+                },
                 assignees: {
                   include: {
                     user: true

@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { CardPreview } from '@/types/common'
-import { CircleCheckBig, LucideIcon, MessageSquare, Paperclip, SquarePen, TextAlignStart } from 'lucide-react'
+import { LucideIcon, MessageSquare, Paperclip, SquareCheckBig, SquarePen, TextAlignStart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createElement, useState } from 'react'
 
@@ -23,6 +23,12 @@ export default function CardItem({ card, slug }: CardItemProps) {
 
   const isDisplayIcon =
     card._count.comments > 0 || card._count.attachments > 0 || card.description || card.subtasks.length > 0
+
+  const doneSubtasks = card.subtasks.reduce(
+    (acc, subtask) => acc + subtask.children.filter((child) => child.isDone).length,
+    0
+  )
+  const totalSubtasks = card.subtasks.reduce((acc, subtask) => acc + subtask.children.length, 0)
 
   const handleCardClick = () => {
     if (slug) {
@@ -53,19 +59,15 @@ export default function CardItem({ card, slug }: CardItemProps) {
       </div>
 
       {isDisplayIcon ? (
-        <div className='flex items-center gap-2 flex-wrap'>
+        <div className='flex items-center gap-4 flex-wrap'>
           {card.description ? <PreviewIcon icon={TextAlignStart} /> : null}
 
-          {card._count.comments > 0 ? (
-            <PreviewIcon icon={MessageSquare} count={card._count.comments} label='Comments' />
-          ) : null}
+          {card._count.comments > 0 ? <PreviewIcon icon={MessageSquare} count={card._count.comments} /> : null}
 
-          {card._count.attachments > 0 ? (
-            <PreviewIcon icon={Paperclip} count={card._count.comments} label='Comments' />
-          ) : null}
+          {card._count.attachments > 0 ? <PreviewIcon icon={Paperclip} count={card._count.attachments} /> : null}
 
           {card.subtasks.length > 0 ? (
-            <PreviewIcon icon={CircleCheckBig} count={card.subtasks.length} label='Subtasks' />
+            <PreviewIcon icon={SquareCheckBig} label={`${doneSubtasks}/${totalSubtasks}`} />
           ) : null}
         </div>
       ) : null}
@@ -75,10 +77,10 @@ export default function CardItem({ card, slug }: CardItemProps) {
 
 const PreviewIcon = ({ icon, count, label }: { icon: LucideIcon; count?: number; label?: string }) => {
   return (
-    <div className='flex items-center gap-2'>
-      {createElement(icon, { className: 'size-3.5' })}
+    <div className='flex items-center gap-1'>
+      {createElement(icon, { className: 'size-3.5 stroke-[2.5]' })}
       {count ? <span className='text-sm'>{count}</span> : null}
-      {label ? <span className='text-sm'>{label}</span> : null}
+      {label ? <span className='text-xs font-medium text-muted-foreground'>{label}</span> : null}
     </div>
   )
 }

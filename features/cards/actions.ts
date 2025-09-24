@@ -13,10 +13,12 @@ import {
   assignLabelSchema,
   createCardSchema,
   createLabelSchema,
+  createSubtaskSchema,
   moveCardBetweenListsSchema,
   moveCardWithinListSchema,
   unassignLabelSchema,
-  updateCardSchema
+  updateCardSchema,
+  updateTaskSchema
 } from './validations'
 
 // Create new card
@@ -74,7 +76,25 @@ export const getCard = async (cardSlug: string): Promise<CardDetail> => {
             }
           }
         },
-        subtasks: true,
+        subtasks: {
+          where: {
+            parentId: null,
+            isDeleted: false
+          },
+          orderBy: {
+            createdAt: 'asc'
+          },
+          include: {
+            children: {
+              where: {
+                isDeleted: false
+              },
+              orderBy: {
+                createdAt: 'asc'
+              }
+            }
+          }
+        },
         assignees: {
           include: {
             user: true
@@ -290,8 +310,6 @@ export const updateCard = protectedActionClient
         data.slug = slug
       }
 
-      console.log(data)
-
       const updatedCard = await prisma.card.update({
         where: { id: parsedInput.cardId },
         data,
@@ -476,6 +494,85 @@ export const unassignLabel = protectedActionClient
       revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
 
       return { message: 'Label đã được gỡ bỏ thành công' }
+    } catch (error) {
+      throw error
+    }
+  })
+
+// Create subtask to card
+export const createSubtask = protectedActionClient
+  .inputSchema(createSubtaskSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput }) => {
+    const card = await prisma.card.findUnique({
+      where: { slug: parsedInput.cardSlug },
+      select: { id: true }
+    })
+
+    if (!card) {
+      throw new NotFoundError('Card')
+    }
+
+    const subtask = await prisma.subtask.create({
+      data: {
+        title: parsedInput.title,
+        cardId: card.id,
+        parentId: parsedInput.parentId ?? null
+      }
+    })
+
+    revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
+
+    return subtask
+  })
+
+// Update subtasks completion status (bulk update with debounce)
+export const updateTask = protectedActionClient
+  .inputSchema(updateTaskSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput }) => {
+    try {
+      const card = await prisma.card.findUnique({
+        where: {
+          slug: parsedInput.cardSlug
+        }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      // Verify all tasks belong to this card and are children (not parents)
+      const tasks = await prisma.subtask.findMany({
+        where: {
+          id: { in: parsedInput.tasks.map((task) => task.taskId) },
+          cardId: card.id,
+          parentId: { not: null },
+          isDeleted: false
+        }
+      })
+
+      if (tasks.length !== parsedInput.tasks.length) {
+        throw new NotFoundError('Some tasks not found or are not children tasks')
+      }
+
+      const updatePromises = parsedInput.tasks.map((task) =>
+        prisma.subtask.update({
+          where: { id: task.taskId },
+          data: { isDone: task.isDone }
+        })
+      )
+
+      await prisma.$transaction(updatePromises)
+
+      revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
+
+      return {
+        message: 'Trạng thái việc cần làm đã được cập nhật thành công',
+        updatedCount: parsedInput.tasks.length
+      }
     } catch (error) {
       throw error
     }

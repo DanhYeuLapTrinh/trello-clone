@@ -149,12 +149,9 @@ model Card {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  listId String
-  list   List   @relation(fields: [listId], references: [id], onDelete: Cascade)
-
-  parentCardId String?
-  parentCard   Card?   @relation("Subtasks", fields: [parentCardId], references: [id], onDelete: Cascade)
-  subtasks     Card[]  @relation("Subtasks")
+  listId   String
+  list     List      @relation(fields: [listId], references: [id], onDelete: Cascade)
+  subtasks Subtask[]
 
   assignees   CardAssignee[]
   comments    Comment[]
@@ -162,6 +159,24 @@ model Card {
   cardLabels  CardLabel[]
 
   @@map("cards")
+}
+
+model Subtask {
+  id     String  @id @default(uuid())
+  title  String
+  isDone Boolean @default(false)
+
+  cardId   String
+  card     Card      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  parentId String?
+  parent   Subtask?  @relation("Subtasks", fields: [parentId], references: [id])
+  children Subtask[] @relation("Subtasks")
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subtasks")
 }
 
 model CardAssignee {

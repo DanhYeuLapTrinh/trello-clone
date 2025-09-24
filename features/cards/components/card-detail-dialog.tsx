@@ -21,7 +21,8 @@ import { UpdateCardSchema } from '../validations'
 import AsigneePopover from './popover/asignee-popover'
 import DatePopover from './popover/date-popover'
 import LabelPopover from './popover/label-popover'
-import SubtaskPopover from './popover/subtask-popover'
+import SubtaskPopover from './subtask/subtask-popover'
+import SubtaskSection from './subtask/subtask-section'
 
 interface CardDetailDialogProps {
   children?: React.ReactNode
@@ -35,17 +36,22 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
   const [internalOpen, setInternalOpen] = useState(isOpen)
   const [isEditDescription, setIsEditDescription] = useState(false)
   const [isEditTitle, setIsEditTitle] = useState(false)
+  const [openParentId, setOpenParentId] = useState<string | null>(null)
 
   const { methods, updateCardAction } = useUpdateCard()
 
   const formTitle = methods.watch('title')
   const formDescription = methods.watch('description')
 
+  const hasSubtasks = cardDetail.subtasks && Array.isArray(cardDetail.subtasks) && cardDetail.subtasks.length > 0
   const hadCardLabels =
     cardDetail.cardLabels && Array.isArray(cardDetail.cardLabels) && cardDetail.cardLabels.length > 0
 
   const handleClose = () => {
     setInternalOpen(false)
+    setOpenParentId(null)
+    setIsEditDescription(false)
+    setIsEditTitle(false)
     router.back()
   }
 
@@ -105,13 +111,13 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
 
       <DialogContent
         showCloseButton={false}
-        className='p-0 gap-0'
+        className='p-0 gap-0 overflow-auto'
         position='tc'
         size='xxl'
         aria-describedby='card-detail-dialog'
       >
         <Form {...methods}>
-          <div className='p-6 py-2.5 flex items-center justify-between gap-2'>
+          <div className='p-6 py-3 flex items-center justify-between gap-2'>
             <Badge variant='secondary' className='inline-flex px-3 py-0.5'>
               <p className='text-sm'>{cardDetail.list.name}</p>
             </Badge>
@@ -130,9 +136,9 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
 
           <Separator />
 
-          <div className='flex-1 overflow-y-auto'>
+          <div className='flex-1'>
             <div className='grid grid-cols-12'>
-              <div className='col-span-7 p-6 border-r border-border'>
+              <div className='col-span-7 p-6 border-r border-border overflow-auto max-h-[calc(100vh-7rem)]'>
                 <div className='flex items-start gap-3'>
                   <Checkbox className='rounded-full border-foreground mt-2' />
                   <div className='space-y-6'>
@@ -179,9 +185,13 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
                           </Button>
                         </LabelPopover>
                       ) : null}
+
                       <DatePopover />
-                      <SubtaskPopover />
+
+                      <SubtaskPopover boardSlug={boardSlug} cardSlug={cardDetail.slug} />
+
                       <AsigneePopover />
+
                       <Button variant='outline' size='sm'>
                         <Paperclip className='size-3.5' />
                         <p className='text-xs'>Đính kèm</p>
@@ -228,7 +238,7 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
                 </div>
 
                 <div className='flex items-start gap-3 mt-8 mb-6'>
-                  <TextAlignStart className='size-4 mt-0.5' />
+                  <TextAlignStart className='size-5 stroke-[2.5]' />
                   <div className='space-y-2 w-full'>
                     <p className='text-sm font-bold'>Mô tả</p>
 
@@ -236,7 +246,7 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
                       cardDetail.description ? (
                         // FIXME: overflow if content is too long
                         <div className='cursor-pointer hover:bg-muted mt-4' onClick={startEditDescription}>
-                          <SanitizedHtml html={formDescription ? formDescription : cardDetail.description} />
+                          <SanitizedHtml html={cardDetail.description} />
                         </div>
                       ) : (
                         <Textarea
@@ -267,6 +277,16 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
                     />
                   </div>
                 </div>
+
+                {hasSubtasks ? (
+                  <SubtaskSection
+                    subtasks={cardDetail.subtasks}
+                    boardSlug={boardSlug}
+                    cardSlug={cardDetail.slug}
+                    openParentId={openParentId}
+                    setOpenParentId={setOpenParentId}
+                  />
+                ) : null}
               </div>
 
               <div className='col-span-5 p-6 bg-muted rounded-br-md'>

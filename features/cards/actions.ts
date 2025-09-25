@@ -73,9 +73,7 @@ export const getCard = async (cardSlug: string): Promise<CardDetail> => {
             label: true
           },
           orderBy: {
-            label: {
-              updatedAt: 'asc'
-            }
+            updatedAt: 'asc'
           }
         },
         subtasks: {

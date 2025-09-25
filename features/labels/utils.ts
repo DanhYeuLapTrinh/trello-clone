@@ -193,7 +193,7 @@ export const createLabelWithAssignment = (
 
   // Update board labels query
   updateBoardLabelsQuery(queryClient, boardSlug, (prev) => {
-    return [...prev.filter((label) => label.color !== color), tempLabel]
+    return [tempLabel, ...prev.filter((label) => label.color !== color)]
   })
 
   return tempLabel
@@ -220,9 +220,15 @@ export const updateLabelInQueries = (
       }
     }
 
+    const newCardLabels = [
+      ...prev.cardLabels.slice(0, labelIndex).filter((label) => label.label.id !== labelId),
+      newLabel,
+      ...prev.cardLabels.slice(labelIndex + 1).filter((label) => label.label.id !== labelId)
+    ]
+
     return {
       ...prev,
-      cardLabels: [...prev.cardLabels.slice(0, labelIndex), newLabel, ...prev.cardLabels.slice(labelIndex + 1)]
+      cardLabels: newCardLabels
     }
   })
 
@@ -269,7 +275,7 @@ export const updateLabelInQueries = (
       title: updates.title !== undefined ? updates.title : prev[labelIndex].title
     }
 
-    return [...prev.slice(0, labelIndex), newLabel, ...prev.slice(labelIndex + 1)]
+    return [newLabel, ...prev.filter((label) => label.id !== labelId)]
   })
 }
 

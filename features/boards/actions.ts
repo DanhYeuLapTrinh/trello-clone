@@ -84,9 +84,7 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
                     label: true
                   },
                   orderBy: {
-                    label: {
-                      updatedAt: 'asc'
-                    }
+                    updatedAt: 'asc'
                   }
                 },
                 subtasks: {
@@ -142,7 +140,7 @@ export const getBoardLabels = async (slug: string): Promise<Label[]> => {
         isDeleted: false
       },
       orderBy: {
-        updatedAt: 'asc'
+        updatedAt: 'desc'
       }
     })
 

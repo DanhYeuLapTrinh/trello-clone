@@ -20,3 +20,7 @@ export function slugify(text: string): string {
 export function getColorTextClass(color: string) {
   return sortedCardLabelColors.flatMap((col) => col.shades).find((shade) => shade.value === color)?.textColor
 }
+
+export function getTempId(prefix: string) {
+  return `${prefix}-${Date.now().toString()}`
+}

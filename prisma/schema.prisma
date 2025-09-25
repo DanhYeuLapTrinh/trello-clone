@@ -169,7 +169,7 @@ model Subtask {
   cardId   String
   card     Card      @relation(fields: [cardId], references: [id], onDelete: Cascade)
   parentId String?
-  parent   Subtask?  @relation("Subtasks", fields: [parentId], references: [id])
+  parent   Subtask?  @relation("Subtasks", fields: [parentId], references: [id], onDelete: Cascade)
   children Subtask[] @relation("Subtasks")
 
   isDeleted Boolean  @default(false)

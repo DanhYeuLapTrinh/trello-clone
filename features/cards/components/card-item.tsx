@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import { CardPreview } from '@/types/common'
 import { LucideIcon, MessageSquare, Paperclip, SquareCheckBig, SquarePen, TextAlignStart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { createElement, useState } from 'react'
+import { createElement } from 'react'
 
 interface CardItemProps {
   card: CardPreview
@@ -14,12 +14,7 @@ interface CardItemProps {
 }
 
 export default function CardItem({ card, slug }: CardItemProps) {
-  const [isHovering, setIsHovering] = useState(false)
   const router = useRouter()
-
-  const toggleHovering = () => {
-    setIsHovering((prev) => !prev)
-  }
 
   const isDisplayIcon =
     card._count.comments > 0 || card._count.attachments > 0 || card.description || card.subtasks.length > 0
@@ -38,12 +33,10 @@ export default function CardItem({ card, slug }: CardItemProps) {
 
   return (
     <Card
-      className='p-3 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary relative gap-2'
-      onMouseEnter={toggleHovering}
-      onMouseLeave={toggleHovering}
+      className='p-3 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary group relative gap-2 '
       onClick={handleCardClick}
     >
-      {isHovering ? <SquarePen className='size-3.5 absolute right-2 top-2' /> : null}
+      <SquarePen className='size-3.5 absolute right-2 top-2 hidden group-hover:block' />
 
       {card.cardLabels && Array.isArray(card.cardLabels) && card.cardLabels.filter((l) => l.label.color).length > 0 && (
         <div className='flex items-start gap-1 flex-wrap'>
@@ -56,7 +49,7 @@ export default function CardItem({ card, slug }: CardItemProps) {
       )}
 
       <div className='flex items-start gap-2'>
-        {isHovering ? <Checkbox className='rounded-full border-foreground mt-0.5' /> : null}
+        <Checkbox className='rounded-full border-foreground mt-0.5 hidden group-hover:block' />
         <p className='text-sm w-[85%]'>{card.title}</p>
       </div>
 
@@ -68,7 +61,7 @@ export default function CardItem({ card, slug }: CardItemProps) {
 
           {card._count.attachments > 0 ? <PreviewIcon icon={Paperclip} count={card._count.attachments} /> : null}
 
-          {card.subtasks.length > 0 ? (
+          {card.subtasks.flatMap((subtask) => subtask.children).length > 0 ? (
             <PreviewIcon icon={SquareCheckBig} label={`${doneSubtasks}/${totalSubtasks}`} />
           ) : null}
         </div>

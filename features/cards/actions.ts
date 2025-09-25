@@ -9,14 +9,7 @@ import { Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
 import { permanentRedirect, RedirectType } from 'next/navigation'
-import {
-  createCardSchema,
-  createSubtaskSchema,
-  moveCardBetweenListsSchema,
-  moveCardWithinListSchema,
-  updateCardSchema,
-  updateTaskSchema
-} from './validations'
+import { createCardSchema, moveCardBetweenListsSchema, moveCardWithinListSchema, updateCardSchema } from './validations'
 
 // Create new card
 export const createCard = protectedActionClient
@@ -329,85 +322,6 @@ export const updateCard = protectedActionClient
       }
 
       return updatedCard
-    } catch (error) {
-      throw error
-    }
-  })
-
-// Create subtask to card
-export const createSubtask = protectedActionClient
-  .inputSchema(createSubtaskSchema, {
-    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
-  })
-  .action(async ({ parsedInput }) => {
-    const card = await prisma.card.findUnique({
-      where: { slug: parsedInput.cardSlug },
-      select: { id: true }
-    })
-
-    if (!card) {
-      throw new NotFoundError('Card')
-    }
-
-    const subtask = await prisma.subtask.create({
-      data: {
-        title: parsedInput.title,
-        cardId: card.id,
-        parentId: parsedInput.parentId ?? null
-      }
-    })
-
-    revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
-
-    return subtask
-  })
-
-// Update subtasks completion status (bulk update with debounce)
-export const updateTask = protectedActionClient
-  .inputSchema(updateTaskSchema, {
-    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
-  })
-  .action(async ({ parsedInput }) => {
-    try {
-      const card = await prisma.card.findUnique({
-        where: {
-          slug: parsedInput.cardSlug
-        }
-      })
-
-      if (!card) {
-        throw new NotFoundError('Card')
-      }
-
-      // Verify all tasks belong to this card and are children (not parents)
-      const tasks = await prisma.subtask.findMany({
-        where: {
-          id: { in: parsedInput.tasks.map((task) => task.taskId) },
-          cardId: card.id,
-          parentId: { not: null },
-          isDeleted: false
-        }
-      })
-
-      if (tasks.length !== parsedInput.tasks.length) {
-        throw new NotFoundError('Some tasks not found or are not children tasks')
-      }
-
-      const updatePromises = parsedInput.tasks.map((task) =>
-        prisma.subtask.update({
-          where: { id: task.taskId },
-          data: { isDone: task.isDone }
-        })
-      )
-
-      await prisma.$transaction(updatePromises)
-
-      revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
-
-      return {
-        message: 'Trạng thái việc cần làm đã được cập nhật thành công',
-        updatedCount: parsedInput.tasks.length
-      }
     } catch (error) {
       throw error
     }

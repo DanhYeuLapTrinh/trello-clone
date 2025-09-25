@@ -5,10 +5,14 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import { SubtaskDetail } from '@/types/common'
+import { useQueryClient } from '@tanstack/react-query'
 import { SquareCheckBig } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useUpdateSubtask } from '../../hooks/use-update-subtask'
+import { useDeleteSubtask } from '../hooks/use-delete-subtask'
+import { useUpdateSubtask } from '../hooks/use-update-subtask'
+import { removeSubtaskFromCard, toggleSubtaskStatus } from '../utils'
 import CreateSubtaskButton from './create-subtask-button'
+import SubtaskActions from './subtask-actions'
 
 interface SubtaskSectionProps {
   subtasks: SubtaskDetail[]
@@ -25,13 +29,11 @@ export default function SubtaskSection({
   openParentId,
   setOpenParentId
 }: SubtaskSectionProps) {
+  const queryClient = useQueryClient()
   const [isHiddenDone, setIsHiddenDone] = useState<Record<string, boolean>>({})
 
-  const { updateTaskStatus, getTaskStatus, isExecuting } = useUpdateSubtask({
-    boardSlug,
-    cardSlug,
-    subtasks
-  })
+  const { updateTaskStatusDebounced } = useUpdateSubtask(boardSlug, cardSlug)
+  const { deleteSubtaskAction } = useDeleteSubtask(boardSlug, cardSlug)
 
   useEffect(() => {
     setIsHiddenDone(
@@ -52,20 +54,31 @@ export default function SubtaskSection({
     }))
   }
 
+  const handleDeleteSubtask = (subtaskId: string) => {
+    removeSubtaskFromCard(queryClient, boardSlug, cardSlug, subtaskId)
+    deleteSubtaskAction.execute({
+      boardSlug,
+      cardSlug,
+      subtaskId
+    })
+  }
+
   const handleToggleSubtask = (childrenId: string, checked: boolean) => {
-    updateTaskStatus(childrenId, checked)
+    // Perform optimistic updates to the query cache for immediate UI feedback
+    toggleSubtaskStatus(queryClient, boardSlug, cardSlug, childrenId, checked)
+    // Then send the update to the server with debounce
+    updateTaskStatusDebounced(childrenId, checked)
   }
 
   return (
     <>
       {subtasks.map((subtask) => {
-        // Calculate progress using form state for accurate real-time updates
-        const done = subtask.children.filter((child) => getTaskStatus(child.id)).length
+        const done = subtask.children.filter((child) => child.isDone).length
         const total = subtask.children.length
         const progress = total > 0 ? (done / total) * 100 : 0
 
         const visibleChildren = isHiddenDone[subtask.id]
-          ? subtask.children.filter((child) => !getTaskStatus(child.id))
+          ? subtask.children.filter((child) => !child.isDone)
           : subtask.children
 
         return (
@@ -91,39 +104,35 @@ export default function SubtaskSection({
                       </Button>
                     )
                   ) : null}
-                  <Button size='sm' variant='secondary'>
+                  <Button size='sm' variant='secondary' onClick={() => handleDeleteSubtask(subtask.id)}>
                     Xóa
                   </Button>
                 </div>
               </div>
 
-              <div className='space-y-2 mb-4'>
-                <Progress value={progress} />
+              <div className='mb-4'>
+                <Progress value={progress} className='mb-2' />
 
                 {/* Children */}
-                {visibleChildren.length === 0 ? (
+                {visibleChildren.length === 0 && subtask.children.length > 0 ? (
                   <p className='text-sm text-muted-foreground'>
                     Mọi thứ trong danh sách công việc này đều đã hoàn tất!
                   </p>
                 ) : (
                   visibleChildren.map((children) => (
-                    <div key={children.id} className='flex items-center gap-2'>
+                    <div key={children.id} className='flex items-center gap-1'>
                       <Checkbox
-                        checked={getTaskStatus(children.id)}
-                        disabled={isExecuting}
+                        checked={children.isDone}
                         onCheckedChange={(checked) => {
                           handleToggleSubtask(children.id, Boolean(checked))
                         }}
                       />
-                      <p
-                        className={cn(
-                          'text-sm transition-opacity',
-                          getTaskStatus(children.id) && 'line-through',
-                          isExecuting && 'opacity-50'
-                        )}
-                      >
-                        {children.title}
-                      </p>
+                      <div className='flex-1 justify-between flex items-center hover:bg-muted px-3 py-2 rounded-sm cursor-pointer group'>
+                        <p className={cn('text-sm transition-opacity', children.isDone && 'line-through')}>
+                          {children.title}
+                        </p>
+                        <SubtaskActions boardSlug={boardSlug} cardSlug={cardSlug} subtaskId={children.id} />
+                      </div>
                     </div>
                   ))
                 )}

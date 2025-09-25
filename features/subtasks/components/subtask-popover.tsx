@@ -7,8 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Loader2, SquareCheckBig, X } from 'lucide-react'
 import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
-import { useCreateSubtask } from '../../hooks/use-create-subtask'
-import { CreateSubtaskSchema } from '../../validations'
+import { useCreateSubtask } from '../hooks/use-create-subtask'
+import { CreateSubtaskSchema } from '../validations'
 
 interface SubtaskPopoverProps {
   boardSlug: string
@@ -22,7 +22,9 @@ export default function SubtaskPopover({ boardSlug, cardSlug }: SubtaskPopoverPr
       boardSlug,
       cardSlug,
       title: 'Việc cần làm'
-    }
+    },
+    boardSlug,
+    cardSlug
   })
 
   const onSubmit: SubmitHandler<CreateSubtaskSchema> = async (data) => {

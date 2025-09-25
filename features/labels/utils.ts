@@ -1,3 +1,4 @@
+import { getTempId } from '@/lib/utils'
 import { CardDetail, LabelDetail, ListWithCards } from '@/types/common'
 import { UpdateCardFn } from '@/types/ui'
 import { Label } from '@prisma/client'
@@ -27,8 +28,6 @@ export const updateCardInLists = (lists: ListWithCards[], cardSlug: string, upda
   // Replace list in lists array
   return [...lists.slice(0, listIndex), updatedList, ...lists.slice(listIndex + 1)]
 }
-
-export const getTempId = (prefix: string) => `${prefix}-${Date.now().toString()}`
 
 export const getDisplayLabels = (
   boardLabels: Label[] | undefined,

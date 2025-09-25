@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import LabelPopover from '@/features/labels/components/label-popover'
+import SubtaskPopover from '@/features/subtasks/components/subtask-popover'
+import SubtaskSection from '@/features/subtasks/components/subtask-section'
 import { cn, getColorTextClass } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, MessageSquareText, MoreHorizontal, Paperclip, Plus, Tag, TextAlignStart, X } from 'lucide-react'
@@ -22,7 +24,6 @@ import { useUpdateCard } from '../hooks/use-update-card'
 import { UpdateCardSchema } from '../validations'
 import AsigneePopover from './popover/asignee-popover'
 import DatePopover from './popover/date-popover'
-import SubtaskSection from './subtask/subtask-section'
 
 interface CardDetailDialogProps {
   children?: React.ReactNode
@@ -194,7 +195,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
 
                       <DatePopover />
 
-                      {/* <SubtaskPopover boardSlug={boardSlug} cardSlug={cardDetail!.slug} /> */}
+                      <SubtaskPopover boardSlug={boardSlug} cardSlug={cardDetail!.slug} />
 
                       <AsigneePopover />
 

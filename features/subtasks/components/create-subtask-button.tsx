@@ -3,10 +3,11 @@
 import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Loader2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { SubmitHandler } from 'react-hook-form'
-import { useCreateSubtask } from '../../hooks/use-create-subtask'
-import { CreateSubtaskSchema } from '../../validations'
+import { useCreateSubtask } from '../hooks/use-create-subtask'
+import { addSubtaskToCard } from '../utils'
+import { CreateSubtaskSchema } from '../validations'
 
 interface CreateSubtaskButtonProps {
   boardSlug: string
@@ -25,16 +26,22 @@ export default function CreateSubtaskButton({
   onOpen,
   onClose
 }: CreateSubtaskButtonProps) {
+  const queryClient = useQueryClient()
+
   const { methods, createSubtaskAction } = useCreateSubtask({
     defaultValues: {
       boardSlug,
       cardSlug,
       title: '',
       parentId
-    }
+    },
+    boardSlug,
+    cardSlug
   })
 
   const onSubmit: SubmitHandler<CreateSubtaskSchema> = (data) => {
+    addSubtaskToCard(queryClient, boardSlug, cardSlug, data.title, parentId)
+    methods.reset()
     createSubtaskAction.execute(data)
   }
 
@@ -54,15 +61,12 @@ export default function CreateSubtaskButton({
             )}
           />
           <div className='flex items-center gap-2'>
-            <Button type='submit' disabled={createSubtaskAction.isPending}>
-              {createSubtaskAction.isPending ? <Loader2 className='w-4 h-4 animate-spin' /> : 'Thêm'}
-            </Button>
+            <Button type='submit'>Thêm</Button>
             <Button
               type='button'
               variant='ghost'
-              disabled={createSubtaskAction.isPending}
               onClick={() => {
-                methods.setValue('title', '')
+                methods.reset()
                 onClose()
               }}
             >

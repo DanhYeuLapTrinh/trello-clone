@@ -3,9 +3,12 @@ import { useAction } from 'next-safe-action/hooks'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { createLabel } from '../actions'
-import { CreateLabelSchema, createLabelSchema } from '../validations'
+import { createLabelSchema, CreateLabelSchema } from '../validations'
+import { useQueryClient } from '@tanstack/react-query'
 
 export const useCreateLabel = (boardSlug: string, cardSlug: string) => {
+  const queryClient = useQueryClient()
+
   const methods = useForm<CreateLabelSchema>({
     resolver: zodResolver(createLabelSchema),
     defaultValues: {
@@ -17,6 +20,10 @@ export const useCreateLabel = (boardSlug: string, cardSlug: string) => {
   const createLabelAction = useAction(createLabel, {
     onSuccess: () => {
       methods.reset()
+
+      queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
+      queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
+      queryClient.invalidateQueries({ queryKey: ['board', 'labels', boardSlug] })
     },
     onError: (err) => {
       toast.error(err.error?.serverError || 'Lỗi khi tạo label.')

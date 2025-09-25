@@ -10,29 +10,35 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import LabelPopover from '@/features/labels/components/label-popover'
 import { cn, getColorTextClass } from '@/lib/utils'
-import { CardDetail } from '@/types/common'
+import { useQuery } from '@tanstack/react-query'
 import { ImageIcon, MessageSquareText, MoreHorizontal, Paperclip, Plus, Tag, TextAlignStart, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
+import { getCard } from '../actions'
 import { useUpdateCard } from '../hooks/use-update-card'
 import { UpdateCardSchema } from '../validations'
 import AsigneePopover from './popover/asignee-popover'
 import DatePopover from './popover/date-popover'
-import LabelPopover from './popover/label-popover'
-import SubtaskPopover from './subtask/subtask-popover'
 import SubtaskSection from './subtask/subtask-section'
 
 interface CardDetailDialogProps {
   children?: React.ReactNode
   isOpen: boolean
-  cardDetail: CardDetail
+  cardSlug: string
   boardSlug: string
 }
 
-export default function CardDetailDialog({ children, isOpen, cardDetail, boardSlug }: CardDetailDialogProps) {
+export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug }: CardDetailDialogProps) {
   const router = useRouter()
+
+  const { data: cardDetail } = useQuery({
+    queryKey: ['card', boardSlug, cardSlug],
+    queryFn: () => getCard(cardSlug)
+  })
+
   const [internalOpen, setInternalOpen] = useState(isOpen)
   const [isEditDescription, setIsEditDescription] = useState(false)
   const [isEditTitle, setIsEditTitle] = useState(false)
@@ -43,9 +49,9 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
   const formTitle = methods.watch('title')
   const formDescription = methods.watch('description')
 
-  const hasSubtasks = cardDetail.subtasks && Array.isArray(cardDetail.subtasks) && cardDetail.subtasks.length > 0
+  const hasSubtasks = cardDetail!.subtasks && Array.isArray(cardDetail!.subtasks) && cardDetail!.subtasks.length > 0
   const hadCardLabels =
-    cardDetail.cardLabels && Array.isArray(cardDetail.cardLabels) && cardDetail.cardLabels.length > 0
+    cardDetail!.cardLabels && Array.isArray(cardDetail!.cardLabels) && cardDetail!.cardLabels.length > 0
 
   const handleClose = () => {
     setInternalOpen(false)
@@ -58,8 +64,8 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
   const startEditDescription = () => {
     methods.reset({
       title: '',
-      cardId: cardDetail.id,
-      description: cardDetail.description || '',
+      cardId: cardDetail!.id,
+      description: cardDetail!.description || '',
       boardSlug
     })
     setIsEditDescription(true)
@@ -71,8 +77,8 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
 
   const startEditTitle = () => {
     methods.reset({
-      title: cardDetail.title,
-      cardId: cardDetail.id,
+      title: cardDetail!.title,
+      cardId: cardDetail!.id,
       description: '',
       boardSlug
     })
@@ -80,7 +86,7 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
   }
 
   const onBlurTitle = () => {
-    if (formTitle === cardDetail.title) {
+    if (formTitle === cardDetail!.title) {
       setIsEditTitle(false)
       return
     }
@@ -89,7 +95,7 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
   }
 
   const onSaveDescription = () => {
-    if (formDescription === cardDetail.description) {
+    if (formDescription === cardDetail!.description) {
       setIsEditDescription(false)
       return
     }
@@ -119,7 +125,7 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
         <Form {...methods}>
           <div className='p-6 py-3 flex items-center justify-between gap-2'>
             <Badge variant='secondary' className='inline-flex px-3 py-0.5'>
-              <p className='text-sm'>{cardDetail.list.name}</p>
+              <p className='text-sm'>{cardDetail!.list.name}</p>
             </Badge>
             <div className='flex items-center gap-2'>
               <Button className='rounded-full' variant='ghost' size='icon'>
@@ -168,7 +174,7 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
                       />
                     ) : (
                       <p className='text-2xl font-bold' onClick={startEditTitle}>
-                        {formTitle ? formTitle : cardDetail.title}
+                        {formTitle ? formTitle : cardDetail!.title}
                       </p>
                     )}
 
@@ -176,8 +182,8 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
                       {!hadCardLabels ? (
                         <LabelPopover
                           boardSlug={boardSlug}
-                          cardSlug={cardDetail.slug}
-                          cardLabels={cardDetail.cardLabels}
+                          cardSlug={cardDetail!.slug}
+                          cardLabels={cardDetail!.cardLabels || []}
                         >
                           <Button variant='outline' size='sm'>
                             <Tag className='size-3.5' />
@@ -188,7 +194,7 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
 
                       <DatePopover />
 
-                      <SubtaskPopover boardSlug={boardSlug} cardSlug={cardDetail.slug} />
+                      {/* <SubtaskPopover boardSlug={boardSlug} cardSlug={cardDetail!.slug} /> */}
 
                       <AsigneePopover />
 
@@ -202,11 +208,11 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
                       <div className='space-y-1 mt-8'>
                         <p className='text-xs font-semibold text-muted-foreground'>Nhãn</p>
                         <div className='flex items-center gap-1 flex-wrap'>
-                          {cardDetail.cardLabels.map((cardLabel) => (
+                          {cardDetail!.cardLabels?.map((cardLabel) => (
                             <div
                               className={cn(
                                 'min-w-14 px-3 h-8 rounded-md flex justify-center items-center',
-                                cardLabel.label.color
+                                cardLabel.label.color || 'bg-muted-foreground/5'
                               )}
                               key={cardLabel.id}
                             >
@@ -222,10 +228,11 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
                               ) : null}
                             </div>
                           ))}
+
                           <LabelPopover
                             boardSlug={boardSlug}
-                            cardSlug={cardDetail.slug}
-                            cardLabels={cardDetail.cardLabels}
+                            cardSlug={cardDetail!.slug}
+                            cardLabels={cardDetail!.cardLabels || []}
                           >
                             <Button variant='secondary' size='icon' className='size-8'>
                               <Plus />
@@ -243,10 +250,10 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
                     <p className='text-sm font-bold'>Mô tả</p>
 
                     {!isEditDescription ? (
-                      cardDetail.description ? (
+                      cardDetail!.description ? (
                         // FIXME: overflow if content is too long
                         <div className='cursor-pointer hover:bg-muted mt-4' onClick={startEditDescription}>
-                          <SanitizedHtml html={cardDetail.description} />
+                          <SanitizedHtml html={cardDetail!.description} />
                         </div>
                       ) : (
                         <Textarea
@@ -280,9 +287,9 @@ export default function CardDetailDialog({ children, isOpen, cardDetail, boardSl
 
                 {hasSubtasks ? (
                   <SubtaskSection
-                    subtasks={cardDetail.subtasks}
+                    subtasks={cardDetail!.subtasks}
                     boardSlug={boardSlug}
-                    cardSlug={cardDetail.slug}
+                    cardSlug={cardDetail!.slug}
                     openParentId={openParentId}
                     setOpenParentId={setOpenParentId}
                   />

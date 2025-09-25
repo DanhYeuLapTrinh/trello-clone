@@ -5,6 +5,7 @@ import { slugify } from '@/lib/utils'
 import prisma from '@/prisma/prisma'
 import { ListWithCards } from '@/types/common'
 import { NotFoundError } from '@/types/error'
+import { Label } from '@prisma/client'
 import { flattenValidationErrors } from 'next-safe-action'
 import { createBoardSchema } from './validations'
 
@@ -74,12 +75,17 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
               },
               include: {
                 cardLabels: {
+                  where: {
+                    label: {
+                      isDeleted: false
+                    }
+                  },
                   include: {
                     label: true
                   },
                   orderBy: {
                     label: {
-                      color: 'asc'
+                      updatedAt: 'asc'
                     }
                   }
                 },
@@ -122,6 +128,25 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
     }
 
     return board.lists
+  } catch (error) {
+    throw error
+  }
+}
+
+// Get board labels
+export const getBoardLabels = async (slug: string): Promise<Label[]> => {
+  try {
+    const labels = await prisma.label.findMany({
+      where: {
+        board: { slug },
+        isDeleted: false
+      },
+      orderBy: {
+        updatedAt: 'asc'
+      }
+    })
+
+    return labels
   } catch (error) {
     throw error
   }

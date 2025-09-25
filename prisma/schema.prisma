@@ -230,6 +230,9 @@ model CardLabel {
   cardId  String
   labelId String
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
   label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
 
@@ -244,6 +247,7 @@ model Attachment {
   fileType  String?
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   cardId String
   card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)

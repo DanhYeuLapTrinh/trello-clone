@@ -1,5 +1,5 @@
 import { CardLabelColor } from '@/types/ui'
-import { BoardBackground, BoardVisibility } from '@prisma/client'
+import { BoardBackground, BoardVisibility, CardReminderType } from '@prisma/client'
 import { Globe, LockKeyhole, LucideIcon, Users } from 'lucide-react'
 
 export const boardBackgroundClasses: Record<BoardBackground, string> = {
@@ -35,7 +35,7 @@ export const boardVisibility: Record<BoardVisibility, { title: string; descripti
   }
 }
 
-export const cardReminderTypes: Record<string, string> = {
+export const cardReminderTypes: Record<CardReminderType, string> = {
   NONE: 'Không có',
   EXPIRED_DATE: 'Vào thời điểm ngày hết hạn',
   FIVE_MINUTES_BEFORE: '5 phút trước',

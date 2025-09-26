@@ -4,9 +4,10 @@ import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { CardPreview } from '@/types/common'
-import { LucideIcon, MessageSquare, Paperclip, SquareCheckBig, SquarePen, TextAlignStart } from 'lucide-react'
+import { Clock, LucideIcon, MessageSquare, Paperclip, SquareCheckBig, SquarePen, TextAlignStart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { createElement } from 'react'
+import { formatCardDateRange, getSubtaskStats, getVisibleCardLabels, shouldDisplayCardIcons } from '../utils'
 
 interface CardItemProps {
   card: CardPreview
@@ -16,14 +17,9 @@ interface CardItemProps {
 export default function CardItem({ card, slug }: CardItemProps) {
   const router = useRouter()
 
-  const isDisplayIcon =
-    card._count.comments > 0 || card._count.attachments > 0 || card.description || card.subtasks.length > 0
-
-  const doneSubtasks = card.subtasks.reduce(
-    (acc, subtask) => acc + subtask.children.filter((child) => child.isDone).length,
-    0
-  )
-  const totalSubtasks = card.subtasks.reduce((acc, subtask) => acc + subtask.children.length, 0)
+  const isDisplayIcon = shouldDisplayCardIcons(card)
+  const { doneSubtasks, totalSubtasks } = getSubtaskStats(card.subtasks)
+  const visibleCardLabels = getVisibleCardLabels(card.cardLabels)
 
   const handleCardClick = () => {
     if (slug) {
@@ -38,13 +34,11 @@ export default function CardItem({ card, slug }: CardItemProps) {
     >
       <SquarePen className='size-3.5 absolute right-2 top-2 hidden group-hover:block' />
 
-      {card.cardLabels && Array.isArray(card.cardLabels) && card.cardLabels.filter((l) => l.label.color).length > 0 && (
+      {visibleCardLabels.length > 0 && (
         <div className='flex items-start gap-1 flex-wrap'>
-          {card.cardLabels
-            .filter((l) => l.label.color)
-            .map((cardLabel) => (
-              <div className={cn('w-10 h-2 rounded-full', cardLabel.label.color)} key={cardLabel.id} />
-            ))}
+          {visibleCardLabels.map((cardLabel) => (
+            <div className={cn('w-10 h-2 rounded-full', cardLabel.label.color)} key={cardLabel.id} />
+          ))}
         </div>
       )}
 
@@ -55,12 +49,12 @@ export default function CardItem({ card, slug }: CardItemProps) {
 
       {isDisplayIcon ? (
         <div className='flex items-center gap-4 flex-wrap'>
+          {card.startDate || card.endDate ? (
+            <PreviewIcon icon={Clock} label={formatCardDateRange(card.startDate, card.endDate)} />
+          ) : null}
           {card.description ? <PreviewIcon icon={TextAlignStart} /> : null}
-
           {card._count.comments > 0 ? <PreviewIcon icon={MessageSquare} count={card._count.comments} /> : null}
-
           {card._count.attachments > 0 ? <PreviewIcon icon={Paperclip} count={card._count.attachments} /> : null}
-
           {card.subtasks.flatMap((subtask) => subtask.children).length > 0 ? (
             <PreviewIcon icon={SquareCheckBig} label={`${doneSubtasks}/${totalSubtasks}`} />
           ) : null}

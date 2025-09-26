@@ -13,6 +13,18 @@ enum Role {
   Member
 }
 
+enum CardReminderType {
+  NONE
+  EXPIRED_DATE
+  FIVE_MINUTES_BEFORE
+  TEN_MINUTES_BEFORE
+  FIFTEEN_MINUTES_BEFORE
+  ONE_HOUR_BEFORE
+  TWO_HOURS_BEFORE
+  ONE_DAY_BEFORE
+  TWO_DAYS_BEFORE
+}
+
 enum BoardBackground {
   OCEAN
   SUNSET
@@ -48,6 +60,7 @@ model User {
   memberships          BoardMember[]
   cardAssignees        CardAssignee[]
   comments             Comment[]
+  watchedCards         CardWatcher[]
 
   @@map("users")
 }
@@ -137,17 +150,17 @@ model List {
 }
 
 model Card {
-  id          String    @id @default(uuid())
-  title       String
-  slug        String    @unique
-  description String?
-  position    Int
-  startDate   DateTime?
-  endDate     DateTime?
-  dueDate     DateTime?
-  isDeleted   Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String           @id @default(uuid())
+  title        String
+  slug         String           @unique
+  description  String?
+  position     Int
+  startDate    DateTime?
+  endDate      DateTime?
+  reminderType CardReminderType @default(NONE)
+  isDeleted    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
   listId   String
   list     List      @relation(fields: [listId], references: [id], onDelete: Cascade)
@@ -157,8 +170,26 @@ model Card {
   comments    Comment[]
   attachments Attachment[]
   cardLabels  CardLabel[]
+  watchers    CardWatcher[]
 
   @@map("cards")
+}
+
+model CardWatcher {
+  id           String           @id @default(uuid())
+  reminderType CardReminderType @default(NONE)
+
+  cardId String
+  userId String
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cardId, userId])
+  @@map("card_watchers")
 }
 
 model Subtask {

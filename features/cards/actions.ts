@@ -6,10 +6,18 @@ import prisma from '@/prisma/prisma'
 import { CardDetail } from '@/types/common'
 import { ConflictError, NotFoundError } from '@/types/error'
 import { Prisma } from '@prisma/client/edge'
+import { parse } from 'date-fns'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
 import { permanentRedirect, RedirectType } from 'next/navigation'
-import { createCardSchema, moveCardBetweenListsSchema, moveCardWithinListSchema, updateCardSchema } from './validations'
+import {
+  createCardSchema,
+  deleteCardDateSchema,
+  moveCardBetweenListsSchema,
+  moveCardWithinListSchema,
+  updateCardDateSchema,
+  updateCardSchema
+} from './validations'
 
 // Create new card
 export const createCard = protectedActionClient
@@ -322,6 +330,88 @@ export const updateCard = protectedActionClient
       }
 
       return updatedCard
+    } catch (error) {
+      throw error
+    }
+  })
+
+// Update card date
+export const updateCardDate = protectedActionClient
+  .inputSchema(updateCardDateSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput }) => {
+    try {
+      const board = await prisma.board.findUnique({
+        where: { slug: parsedInput.boardSlug }
+      })
+
+      if (!board) {
+        throw new NotFoundError('Board')
+      }
+
+      const card = await prisma.card.findUnique({
+        where: { slug: parsedInput.cardSlug }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      await prisma.card.update({
+        where: { id: card.id },
+        data: {
+          startDate: parsedInput.startDate ? parse(parsedInput.startDate, 'MM/dd/yyyy', new Date()) : null,
+          endDate: parsedInput.endDate
+            ? parse(`${parsedInput.endDate} ${parsedInput.endTime}`, 'MM/dd/yyyy H:mm', new Date())
+            : null,
+          reminderType: parsedInput.reminderType
+        }
+      })
+
+      revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
+
+      return { message: 'Nhắc nhở đã được cập nhật thành công.' }
+    } catch (error) {
+      throw error
+    }
+  })
+
+// Delete card date
+export const deleteCardDate = protectedActionClient
+  .inputSchema(deleteCardDateSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput }) => {
+    try {
+      const board = await prisma.board.findUnique({
+        where: { slug: parsedInput.boardSlug }
+      })
+
+      if (!board) {
+        throw new NotFoundError('Board')
+      }
+
+      const card = await prisma.card.findUnique({
+        where: { slug: parsedInput.cardSlug }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      await prisma.card.update({
+        where: { id: card.id },
+        data: {
+          startDate: null,
+          endDate: null,
+          reminderType: 'NONE'
+        }
+      })
+
+      revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
+
+      return { message: 'Nhắc nhở đã được gỡ bỏ thành công.' }
     } catch (error) {
       throw error
     }

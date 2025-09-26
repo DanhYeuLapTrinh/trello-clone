@@ -15,12 +15,31 @@ import SubtaskPopover from '@/features/subtasks/components/subtask-popover'
 import SubtaskSection from '@/features/subtasks/components/subtask-section'
 import { cn, getColorTextClass } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
-import { ImageIcon, MessageSquareText, MoreHorizontal, Paperclip, Plus, Tag, TextAlignStart, X } from 'lucide-react'
+import {
+  ChevronDown,
+  Clock,
+  ImageIcon,
+  MessageSquareText,
+  MoreHorizontal,
+  Paperclip,
+  Plus,
+  Tag,
+  TextAlignStart,
+  X
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import { getCard } from '../actions'
 import { useUpdateCard } from '../hooks/use-update-card'
+import {
+  formatCardDate,
+  formatCardDateTime,
+  getCardDateLabel,
+  hasCardDates,
+  hasCardLabels,
+  hasSubtasks
+} from '../utils'
 import { UpdateCardSchema } from '../validations'
 import AsigneePopover from './popover/asignee-popover'
 import DatePopover from './popover/date-popover'
@@ -50,9 +69,11 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
   const formTitle = methods.watch('title')
   const formDescription = methods.watch('description')
 
-  const hasSubtasks = cardDetail!.subtasks && Array.isArray(cardDetail!.subtasks) && cardDetail!.subtasks.length > 0
-  const hadCardLabels =
-    cardDetail!.cardLabels && Array.isArray(cardDetail!.cardLabels) && cardDetail!.cardLabels.length > 0
+  const cardHasSubtasks = hasSubtasks(cardDetail!.subtasks)
+  const hadCardLabels = hasCardLabels(cardDetail!.cardLabels)
+  const hadCardDates = hasCardDates(cardDetail!.startDate, cardDetail!.endDate)
+
+  const isDisplayRow = hadCardDates || hadCardLabels
 
   const handleClose = () => {
     setInternalOpen(false)
@@ -193,7 +214,20 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                         </LabelPopover>
                       ) : null}
 
-                      <DatePopover />
+                      {!hadCardDates ? (
+                        <DatePopover
+                          boardSlug={boardSlug}
+                          cardSlug={cardDetail!.slug}
+                          reminderType={cardDetail!.reminderType}
+                          cardStartDate={cardDetail!.startDate}
+                          cardEndDate={cardDetail!.endDate}
+                        >
+                          <Button variant='outline' size='sm'>
+                            <Clock className='size-3.5' />
+                            <p className='text-xs'>Ngày</p>
+                          </Button>
+                        </DatePopover>
+                      ) : null}
 
                       <SubtaskPopover boardSlug={boardSlug} cardSlug={cardDetail!.slug} />
 
@@ -205,41 +239,67 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                       </Button>
                     </div>
 
-                    {hadCardLabels ? (
-                      <div className='space-y-1 mt-8'>
-                        <p className='text-xs font-semibold text-muted-foreground'>Nhãn</p>
-                        <div className='flex items-center gap-1 flex-wrap'>
-                          {cardDetail!.cardLabels?.map((cardLabel) => (
-                            <div
-                              className={cn(
-                                'min-w-14 px-3 h-8 rounded-md flex justify-center items-center',
-                                cardLabel.label.color || 'bg-muted-foreground/5'
-                              )}
-                              key={cardLabel.id}
-                            >
-                              {cardLabel.label.title ? (
-                                <p
+                    {isDisplayRow ? (
+                      <div className='flex items-center gap-8 flex-wrap mt-8'>
+                        {hadCardLabels ? (
+                          <div className='space-y-1'>
+                            <p className='text-xs font-semibold text-muted-foreground'>Nhãn</p>
+                            <div className='flex items-center gap-1 flex-wrap'>
+                              {cardDetail!.cardLabels?.map((cardLabel) => (
+                                <div
                                   className={cn(
-                                    'text-sm font-semibold',
-                                    getColorTextClass(cardLabel.label.color ?? '')
+                                    'min-w-14 px-3 h-8 rounded-md flex justify-center items-center',
+                                    cardLabel.label.color || 'bg-muted-foreground/5'
                                   )}
+                                  key={cardLabel.id}
                                 >
-                                  {cardLabel.label.title}
-                                </p>
-                              ) : null}
-                            </div>
-                          ))}
+                                  {cardLabel.label.title ? (
+                                    <p
+                                      className={cn(
+                                        'text-sm font-semibold',
+                                        getColorTextClass(cardLabel.label.color ?? '')
+                                      )}
+                                    >
+                                      {cardLabel.label.title}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ))}
 
-                          <LabelPopover
-                            boardSlug={boardSlug}
-                            cardSlug={cardDetail!.slug}
-                            cardLabels={cardDetail!.cardLabels || []}
-                          >
-                            <Button variant='secondary' size='icon' className='size-8'>
-                              <Plus />
-                            </Button>
-                          </LabelPopover>
-                        </div>
+                              <LabelPopover
+                                boardSlug={boardSlug}
+                                cardSlug={cardDetail!.slug}
+                                cardLabels={cardDetail!.cardLabels || []}
+                              >
+                                <Button variant='secondary' size='icon' className='size-8'>
+                                  <Plus />
+                                </Button>
+                              </LabelPopover>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {hadCardDates ? (
+                          <div className='space-y-1'>
+                            <p className='text-xs font-semibold text-muted-foreground'>
+                              {getCardDateLabel(cardDetail?.startDate, cardDetail?.endDate)}
+                            </p>
+                            <DatePopover
+                              boardSlug={boardSlug}
+                              cardSlug={cardDetail!.slug}
+                              reminderType={cardDetail!.reminderType}
+                              cardStartDate={cardDetail!.startDate}
+                              cardEndDate={cardDetail!.endDate}
+                            >
+                              <Button variant='secondary' className='h-8 min-w-14 flex items-center gap-1 px-3'>
+                                <p className='text-sm font-semibold'>{formatCardDate(cardDetail!.startDate)}</p>
+                                {cardDetail!.startDate && cardDetail!.endDate ? '-' : null}
+                                <p className='text-sm font-semibold'>{formatCardDateTime(cardDetail!.endDate)}</p>
+                                <ChevronDown className='size-4 ml-1' />
+                              </Button>
+                            </DatePopover>
+                          </div>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
@@ -286,7 +346,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                   </div>
                 </div>
 
-                {hasSubtasks ? (
+                {cardHasSubtasks ? (
                   <SubtaskSection
                     subtasks={cardDetail!.subtasks}
                     boardSlug={boardSlug}

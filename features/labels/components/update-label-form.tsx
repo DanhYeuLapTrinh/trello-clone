@@ -11,7 +11,7 @@ import { SubmitHandler } from 'react-hook-form'
 import { useCreateLabel } from '../hooks/use-create-label'
 import { useDeleteLabel } from '../hooks/use-delete-label'
 import { useUpdateLabel } from '../hooks/use-update-label'
-import { createLabelWithAssignment, deleteLabelFromQueries, updateLabelInQueries } from '../utils'
+import { createLabelWithAssignmentQueries, deleteLabelFromQueries, updateLabelInQueries } from '../utils'
 import { UpdateLabelSchema } from '../validations'
 
 interface UpdateLabelFormProps {
@@ -74,7 +74,7 @@ export default function UpdateLabelForm({
     setLabelAction(null)
 
     const { color, title } = data
-    createLabelWithAssignment(queryClient, boardSlug, cardSlug, title || '', color || '')
+    createLabelWithAssignmentQueries(queryClient, boardSlug, cardSlug, title || '', color || '')
 
     createLabelAction.execute(data)
   }

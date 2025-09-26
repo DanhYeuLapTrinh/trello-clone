@@ -3,6 +3,7 @@ import { useAction } from 'next-safe-action/hooks'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { updateLabel } from '../actions'
+import { invalidateLabelQueries } from '../utils'
 import { UpdateLabelSchema } from '../validations'
 
 export const useUpdateLabel = (defaultValues: UpdateLabelSchema) => {
@@ -15,9 +16,7 @@ export const useUpdateLabel = (defaultValues: UpdateLabelSchema) => {
     onSuccess: () => {
       methods.reset()
 
-      queryClient.invalidateQueries({ queryKey: ['card', defaultValues.boardSlug, defaultValues.cardSlug] })
-      queryClient.invalidateQueries({ queryKey: ['board', 'lists', defaultValues.boardSlug] })
-      queryClient.invalidateQueries({ queryKey: ['board', 'labels', defaultValues.boardSlug] })
+      invalidateLabelQueries(queryClient, defaultValues.boardSlug, defaultValues.cardSlug)
     },
     onError: (err) => {
       toast.error(err.error?.serverError || 'Lỗi khi cập nhật label.')

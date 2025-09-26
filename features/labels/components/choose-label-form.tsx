@@ -13,11 +13,11 @@ import { useAssignLabel } from '../hooks/use-assign-label'
 import { useCreateLabel } from '../hooks/use-create-label'
 import { useUnassignLabel } from '../hooks/use-unassign-label'
 import {
-  addLabelToCard,
-  createLabelWithAssignment,
+  addLabelToCardQueries,
+  createLabelWithAssignmentQueries,
   createTempLabel,
   getDisplayLabels,
-  removeLabelFromCard
+  removeLabelFromCardQueries
 } from '../utils'
 import { AssignLabelSchema, UnassignLabelSchema } from '../validations'
 
@@ -54,12 +54,12 @@ export default function ChooseLabelForm({
   const handleLabelToggle = (label: Label, isCurrentlyAssigned: boolean) => {
     if (isCurrentlyAssigned) {
       // Remove label from card
-      removeLabelFromCard(queryClient, boardSlug, cardSlug, label.id)
+      removeLabelFromCardQueries(queryClient, boardSlug, cardSlug, label.id)
       unassignLabelMethods.setValue('labelId', label.id)
       unassignLabelMethods.handleSubmit(onSubmitUnassign)()
     } else {
       // Add label to card
-      addLabelToCard(queryClient, boardSlug, cardSlug, label)
+      addLabelToCardQueries(queryClient, boardSlug, cardSlug, label)
       assignLabelMethods.setValue('labelId', label.id)
       assignLabelMethods.handleSubmit(onSubmitAssign)()
     }
@@ -67,7 +67,7 @@ export default function ChooseLabelForm({
 
   const handleLabelCreate = (color: string, isCurrentlyAssigned: boolean) => {
     if (!isCurrentlyAssigned) {
-      createLabelWithAssignment(queryClient, boardSlug, cardSlug, '', color)
+      createLabelWithAssignmentQueries(queryClient, boardSlug, cardSlug, '', color)
 
       createLabelAction.execute({
         boardSlug,

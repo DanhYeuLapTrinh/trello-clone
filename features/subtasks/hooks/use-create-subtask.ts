@@ -4,6 +4,7 @@ import { useAction } from 'next-safe-action/hooks'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { createSubtask } from '../actions'
+import { invalidateSubtaskQueries } from '../utils'
 import { createSubtaskSchema, CreateSubtaskSchema } from '../validations'
 
 interface UseCreateSubtaskProps {
@@ -22,8 +23,7 @@ export const useCreateSubtask = ({ boardSlug, cardSlug, defaultValues }: UseCrea
 
   const createSubtaskAction = useAction(createSubtask, {
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
-      queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
+      invalidateSubtaskQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {
       toast.error(err.error?.serverError || 'Lỗi khi tạo label.')

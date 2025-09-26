@@ -1,9 +1,10 @@
-import { CardDetail, ListWithCards } from '@/types/common'
+import { updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
+import { CardDetail, CardPreview, ListWithCards } from '@/types/common'
 import { UpdateCardFn } from '@/types/ui'
 import { QueryClient } from '@tanstack/react-query'
-import { format, isPast } from 'date-fns'
+import { format, isPast, parse } from 'date-fns'
+import { UpdateCardDateSchema } from './validations'
 
-// Date utilities
 export const getCardDateLabel = (startDate?: Date | string | null, endDate?: Date | string | null) => {
   const start = startDate ? new Date(startDate) : null
   const end = endDate ? new Date(endDate) : null
@@ -44,7 +45,6 @@ export const formatCardDateRange = (startDate?: Date | string | null, endDate?: 
   return start || end || ''
 }
 
-// Display condition utilities
 export const hasCardLabels = (cardLabels?: Array<{ label: { color?: string | null } }> | null) => {
   return cardLabels && Array.isArray(cardLabels) && cardLabels.length > 0
 }
@@ -73,7 +73,6 @@ export const shouldDisplayCardIcons = (card: {
   )
 }
 
-// Subtask utilities
 export const getSubtaskStats = (subtasks: Array<{ children: Array<{ isDone: boolean }> }>) => {
   const doneSubtasks = subtasks.reduce(
     (acc, subtask) => acc + subtask.children.filter((child) => child.isDone).length,
@@ -84,7 +83,6 @@ export const getSubtaskStats = (subtasks: Array<{ children: Array<{ isDone: bool
   return { doneSubtasks, totalSubtasks }
 }
 
-// Card label utilities
 export const getVisibleCardLabels = <T extends { id: string; label: { color?: string | null } }>(
   cardLabels?: T[] | null
 ) => {
@@ -92,7 +90,6 @@ export const getVisibleCardLabels = <T extends { id: string; label: { color?: st
   return cardLabels.filter((cardLabel) => cardLabel.label.color)
 }
 
-// Query update utilities (following labels utils pattern)
 export const updateCardInLists = (lists: ListWithCards[], cardSlug: string, updater: UpdateCardFn): ListWithCards[] => {
   // Find the list index
   const listIndex = lists.findIndex((list) => list.cards.some((card) => card.slug === cardSlug))
@@ -118,30 +115,90 @@ export const updateCardInLists = (lists: ListWithCards[], cardSlug: string, upda
   return [...lists.slice(0, listIndex), updatedList, ...lists.slice(listIndex + 1)]
 }
 
-export const updateCardDetailQuery = (
-  queryClient: QueryClient,
-  boardSlug: string,
-  cardSlug: string,
-  updater: (prev: CardDetail) => CardDetail
-) => {
-  queryClient.setQueryData(['card', boardSlug, cardSlug], (prev: CardDetail) => {
-    if (!prev) return prev
-    return updater(prev)
+// Queries (multiple setQueryData)
+export const updateCardDateQueries = ({
+  queryClient,
+  boardSlug,
+  cardSlug,
+  data,
+  dateFormat
+}: {
+  queryClient: QueryClient
+  boardSlug: string
+  cardSlug: string
+  data: UpdateCardDateSchema
+  dateFormat: string
+}) => {
+  updateCardDetailQuery(queryClient, boardSlug, cardSlug, (prev) => {
+    const newCard: CardDetail = {
+      ...prev,
+      startDate: data.startDate ? parse(data.startDate, dateFormat, new Date()) : null,
+      endDate: data.endDate ? parse(`${data.endDate} ${data.endTime}`, 'MM/dd/yyyy H:mm', new Date()) : null,
+      reminderType: data.reminderType
+    }
+
+    return newCard
+  })
+
+  updateBoardListsQuery(queryClient, boardSlug, (prev) => {
+    return prev.map((list) => {
+      if (list.cards.some((card) => card.slug === cardSlug)) {
+        const cardIndex = list.cards.findIndex((card) => card.slug === cardSlug)
+
+        const newCard: CardPreview = {
+          ...list.cards[cardIndex],
+          startDate: data.startDate ? parse(data.startDate, dateFormat, new Date()) : null,
+          endDate: data.endDate ? parse(`${data.endDate} ${data.endTime}`, 'MM/dd/yyyy H:mm', new Date()) : null,
+          reminderType: data.reminderType
+        }
+
+        return { ...list, cards: list.cards.map((card, index) => (index === cardIndex ? newCard : card)) }
+      }
+      return list
+    })
   })
 }
 
-export const updateBoardListsQuery = (
-  queryClient: QueryClient,
-  boardSlug: string,
-  updater: (prev: ListWithCards[]) => ListWithCards[]
-) => {
-  queryClient.setQueryData(['board', 'lists', boardSlug], (prev: ListWithCards[]) => {
-    if (!prev) return prev
-    return updater(prev)
+export const deleteCardDateQueries = ({
+  queryClient,
+  boardSlug,
+  cardSlug
+}: {
+  queryClient: QueryClient
+  boardSlug: string
+  cardSlug: string
+}) => {
+  updateCardDetailQuery(queryClient, boardSlug, cardSlug, (prev) => {
+    const newCard: CardDetail = {
+      ...prev,
+      startDate: null,
+      endDate: null,
+      reminderType: 'NONE'
+    }
+
+    return newCard
+  })
+
+  updateBoardListsQuery(queryClient, boardSlug, (prev) => {
+    return prev.map((list) => {
+      if (list.cards.some((card) => card.slug === cardSlug)) {
+        const cardIndex = list.cards.findIndex((card) => card.slug === cardSlug)
+
+        const newCard: CardPreview = {
+          ...list.cards[cardIndex],
+          startDate: null,
+          endDate: null,
+          reminderType: 'NONE'
+        }
+
+        return { ...list, cards: list.cards.map((card, index) => (index === cardIndex ? newCard : card)) }
+      }
+      return list
+    })
   })
 }
 
-// Common card operations
+// Invalidates
 export const invalidateCardQueries = (queryClient: QueryClient, boardSlug: string, cardSlug: string) => {
   queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
   queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })

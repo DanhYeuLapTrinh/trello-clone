@@ -10,7 +10,7 @@ import { Loader2, X } from 'lucide-react'
 import { useEffect } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import { useCreateLabel } from '../hooks/use-create-label'
-import { createLabelWithAssignment } from '../utils'
+import { createLabelWithAssignmentQueries } from '../utils'
 import { CreateLabelSchema } from '../validations'
 
 interface CreateLabelProps {
@@ -33,7 +33,7 @@ export default function CreateLabelForm({ boardSlug, cardSlug, labelAction, setL
     setLabelAction(null)
 
     const { color, title } = data
-    createLabelWithAssignment(queryClient, boardSlug, cardSlug, title || '', color || '')
+    createLabelWithAssignmentQueries(queryClient, boardSlug, cardSlug, title || '', color || '')
 
     createLabelAction.execute(data)
   }

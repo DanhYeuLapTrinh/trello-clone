@@ -10,7 +10,7 @@ import { SquareCheckBig } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useDeleteSubtask } from '../hooks/use-delete-subtask'
 import { useUpdateSubtask } from '../hooks/use-update-subtask'
-import { removeSubtaskFromCard, toggleSubtaskStatus } from '../utils'
+import { removeSubtaskFromCardQueries, toggleSubtaskStatusQueries } from '../utils'
 import CreateSubtaskButton from './create-subtask-button'
 import SubtaskActions from './subtask-actions'
 
@@ -55,7 +55,7 @@ export default function SubtaskSection({
   }
 
   const handleDeleteSubtask = (subtaskId: string) => {
-    removeSubtaskFromCard(queryClient, boardSlug, cardSlug, subtaskId)
+    removeSubtaskFromCardQueries(queryClient, boardSlug, cardSlug, subtaskId)
     deleteSubtaskAction.execute({
       boardSlug,
       cardSlug,
@@ -65,7 +65,7 @@ export default function SubtaskSection({
 
   const handleToggleSubtask = (childrenId: string, checked: boolean) => {
     // Perform optimistic updates to the query cache for immediate UI feedback
-    toggleSubtaskStatus(queryClient, boardSlug, cardSlug, childrenId, checked)
+    toggleSubtaskStatusQueries(queryClient, boardSlug, cardSlug, childrenId, checked)
     // Then send the update to the server with debounce
     updateTaskStatusDebounced(childrenId, checked)
   }

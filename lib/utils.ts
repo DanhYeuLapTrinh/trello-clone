@@ -1,3 +1,5 @@
+import { CardDetail, ListWithCards } from '@/types/common'
+import { QueryClient } from '@tanstack/react-query'
 import { clsx, type ClassValue } from 'clsx'
 import { isBefore } from 'date-fns'
 import { twMerge } from 'tailwind-merge'
@@ -29,4 +31,27 @@ export function getColorTextClass(color: string) {
 
 export function getTempId(prefix: string) {
   return `${prefix}-${Date.now().toString()}`
+}
+
+export const updateCardDetailQuery = (
+  queryClient: QueryClient,
+  boardSlug: string,
+  cardSlug: string,
+  updater: (prev: CardDetail) => CardDetail
+) => {
+  queryClient.setQueryData(['card', boardSlug, cardSlug], (prev: CardDetail) => {
+    if (!prev) return prev
+    return updater(prev)
+  })
+}
+
+export const updateBoardListsQuery = (
+  queryClient: QueryClient,
+  boardSlug: string,
+  updater: (prev: ListWithCards[]) => ListWithCards[]
+) => {
+  queryClient.setQueryData(['board', 'lists', boardSlug], (prev: ListWithCards[]) => {
+    if (!prev) return prev
+    return updater(prev)
+  })
 }

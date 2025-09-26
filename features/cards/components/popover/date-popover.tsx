@@ -9,7 +9,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cardReminderTypes } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-import { CardDetail, CardPreview, ListWithCards } from '@/types/common'
 import { CardReminderType } from '@prisma/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { addDays, format, parse } from 'date-fns'
@@ -18,6 +17,7 @@ import { useMemo, useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import { useDeleteCardDate } from '../../hooks/use-delete-card-date'
 import { useUpdateCardDate } from '../../hooks/use-update-card-date'
+import { deleteCardDateQueries, updateCardDateQueries } from '../../utils'
 import { UpdateCardDateSchema } from '../../validations'
 
 interface DatePopoverProps {
@@ -91,76 +91,14 @@ export default function DatePopover({
   }
 
   const onSubmit: SubmitHandler<UpdateCardDateSchema> = (data) => {
-    queryClient.setQueryData(['card', boardSlug, cardSlug], (prev: CardDetail) => {
-      if (!prev) return prev
-
-      const newCard: CardDetail = {
-        ...prev,
-        startDate: data.startDate ? parse(data.startDate, dateFormat, new Date()) : null,
-        endDate: data.endDate ? parse(`${data.endDate} ${data.endTime}`, 'MM/dd/yyyy H:mm', new Date()) : null,
-        reminderType: data.reminderType
-      }
-
-      return newCard
-    })
-
-    queryClient.setQueryData(['board', 'lists', boardSlug], (prev: ListWithCards[]) => {
-      if (!prev) return prev
-
-      return prev.map((list) => {
-        if (list.cards.some((card) => card.slug === cardSlug)) {
-          const cardIndex = list.cards.findIndex((card) => card.slug === cardSlug)
-
-          const newCard: CardPreview = {
-            ...list.cards[cardIndex],
-            startDate: data.startDate ? parse(data.startDate, dateFormat, new Date()) : null,
-            endDate: data.endDate ? parse(`${data.endDate} ${data.endTime}`, 'MM/dd/yyyy H:mm', new Date()) : null,
-            reminderType: data.reminderType
-          }
-
-          return { ...list, cards: list.cards.map((card, index) => (index === cardIndex ? newCard : card)) }
-        }
-        return list
-      })
-    })
+    updateCardDateQueries({ queryClient, boardSlug, cardSlug, data, dateFormat })
 
     setOpen(false)
     updateCardAction.execute(data)
   }
 
   const handleDelete = () => {
-    queryClient.setQueryData(['card', boardSlug, cardSlug], (prev: CardDetail) => {
-      if (!prev) return prev
-
-      const newCard: CardDetail = {
-        ...prev,
-        startDate: null,
-        endDate: null,
-        reminderType: 'NONE'
-      }
-
-      return newCard
-    })
-
-    queryClient.setQueryData(['board', 'lists', boardSlug], (prev: ListWithCards[]) => {
-      if (!prev) return prev
-
-      return prev.map((list) => {
-        if (list.cards.some((card) => card.slug === cardSlug)) {
-          const cardIndex = list.cards.findIndex((card) => card.slug === cardSlug)
-
-          const newCard: CardPreview = {
-            ...list.cards[cardIndex],
-            startDate: null,
-            endDate: null,
-            reminderType: 'NONE'
-          }
-
-          return { ...list, cards: list.cards.map((card, index) => (index === cardIndex ? newCard : card)) }
-        }
-        return list
-      })
-    })
+    deleteCardDateQueries({ queryClient, boardSlug, cardSlug })
 
     setOpen(false)
     deleteCardDateAction.execute({

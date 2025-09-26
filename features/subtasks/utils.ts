@@ -1,5 +1,4 @@
-import { getTempId } from '@/lib/utils'
-import { CardDetail, ListWithCards } from '@/types/common'
+import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
 import { QueryClient } from '@tanstack/react-query'
 
 export const createTempSubtask = (title: string, cardId: string, parentId: string | null = null) => {
@@ -16,29 +15,6 @@ export const createTempSubtask = (title: string, cardId: string, parentId: strin
     parentId,
     children: []
   }
-}
-
-export const updateCardDetailQuery = (
-  queryClient: QueryClient,
-  boardSlug: string,
-  cardSlug: string,
-  updater: (prev: CardDetail) => CardDetail
-) => {
-  queryClient.setQueryData(['card', boardSlug, cardSlug], (prev: CardDetail) => {
-    if (!prev) return prev
-    return updater(prev)
-  })
-}
-
-export const updateBoardListsQuery = (
-  queryClient: QueryClient,
-  boardSlug: string,
-  updater: (prev: ListWithCards[]) => ListWithCards[]
-) => {
-  queryClient.setQueryData(['board', 'lists', boardSlug], (prev: ListWithCards[]) => {
-    if (!prev) return prev
-    return updater(prev)
-  })
 }
 
 export const addSubtaskToCard = (
@@ -75,7 +51,8 @@ export const addSubtaskToCard = (
   }
 }
 
-export const removeSubtaskFromCard = (
+// Queries (multiple setQueryData)
+export const removeSubtaskFromCardQueries = (
   queryClient: QueryClient,
   boardSlug: string,
   cardSlug: string,
@@ -104,7 +81,7 @@ export const removeSubtaskFromCard = (
   })
 }
 
-export const removeChildSubtaskFromCard = (
+export const removeChildSubtaskFromCardQueries = (
   queryClient: QueryClient,
   boardSlug: string,
   cardSlug: string,
@@ -139,7 +116,7 @@ export const removeChildSubtaskFromCard = (
   })
 }
 
-export const toggleSubtaskStatus = (
+export const toggleSubtaskStatusQueries = (
   queryClient: QueryClient,
   boardSlug: string,
   cardSlug: string,
@@ -179,4 +156,10 @@ export const toggleSubtaskStatus = (
       }
     })
   })
+}
+
+// Invalidates
+export const invalidateSubtaskQueries = (queryClient: QueryClient, boardSlug: string, cardSlug: string) => {
+  queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
+  queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
 }

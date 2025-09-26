@@ -3,7 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { PanelTopOpen, X } from 'lucide-react'
 import { useDeleteSubtask } from '../hooks/use-delete-subtask'
-import { removeChildSubtaskFromCard } from '../utils'
+import { removeChildSubtaskFromCardQueries } from '../utils'
 
 interface SubtaskActionsProps {
   boardSlug: string
@@ -16,7 +16,7 @@ export default function SubtaskActions({ boardSlug, cardSlug, subtaskId }: Subta
   const { deleteSubtaskAction } = useDeleteSubtask(boardSlug, cardSlug)
 
   const handleDeleteSubtask = () => {
-    removeChildSubtaskFromCard(queryClient, boardSlug, cardSlug, subtaskId)
+    removeChildSubtaskFromCardQueries(queryClient, boardSlug, cardSlug, subtaskId)
     deleteSubtaskAction.execute({ boardSlug, cardSlug, subtaskId })
   }
 

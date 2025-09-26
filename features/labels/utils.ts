@@ -1,5 +1,5 @@
-import { getTempId } from '@/lib/utils'
-import { CardDetail, LabelDetail, ListWithCards } from '@/types/common'
+import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
+import { LabelDetail, ListWithCards } from '@/types/common'
 import { UpdateCardFn } from '@/types/ui'
 import { Label } from '@prisma/client'
 import { QueryClient } from '@tanstack/react-query'
@@ -87,30 +87,6 @@ export const createTempLabel = (title: string, color: string) => {
   }
 }
 
-// Query update utilities
-export const updateCardDetailQuery = (
-  queryClient: QueryClient,
-  boardSlug: string,
-  cardSlug: string,
-  updater: (prev: CardDetail) => CardDetail
-) => {
-  queryClient.setQueryData(['card', boardSlug, cardSlug], (prev: CardDetail) => {
-    if (!prev) return prev
-    return updater(prev)
-  })
-}
-
-export const updateBoardListsQuery = (
-  queryClient: QueryClient,
-  boardSlug: string,
-  updater: (prev: ListWithCards[]) => ListWithCards[]
-) => {
-  queryClient.setQueryData(['board', 'lists', boardSlug], (prev: ListWithCards[]) => {
-    if (!prev) return prev
-    return updater(prev)
-  })
-}
-
 export const updateBoardLabelsQuery = (
   queryClient: QueryClient,
   boardSlug: string,
@@ -122,8 +98,8 @@ export const updateBoardLabelsQuery = (
   })
 }
 
-// Common label operations
-export const addLabelToCard = (queryClient: QueryClient, boardSlug: string, cardSlug: string, label: Label) => {
+// Queries (multiple setQueryData)
+export const addLabelToCardQueries = (queryClient: QueryClient, boardSlug: string, cardSlug: string, label: Label) => {
   // Update card detail query
   updateCardDetailQuery(queryClient, boardSlug, cardSlug, (prev) => {
     const newCardLabel = createTempCardLabel(label.id, prev.id, label)
@@ -145,7 +121,12 @@ export const addLabelToCard = (queryClient: QueryClient, boardSlug: string, card
   })
 }
 
-export const removeLabelFromCard = (queryClient: QueryClient, boardSlug: string, cardSlug: string, labelId: string) => {
+export const removeLabelFromCardQueries = (
+  queryClient: QueryClient,
+  boardSlug: string,
+  cardSlug: string,
+  labelId: string
+) => {
   // Update card detail query
   updateCardDetailQuery(queryClient, boardSlug, cardSlug, (prev) => ({
     ...prev,
@@ -161,7 +142,7 @@ export const removeLabelFromCard = (queryClient: QueryClient, boardSlug: string,
   })
 }
 
-export const createLabelWithAssignment = (
+export const createLabelWithAssignmentQueries = (
   queryClient: QueryClient,
   boardSlug: string,
   cardSlug: string,
@@ -305,4 +286,11 @@ export const deleteLabelFromQueries = (
   updateBoardLabelsQuery(queryClient, boardSlug, (prev) => {
     return prev.filter((label) => label.id !== labelId)
   })
+}
+
+// Invalidates
+export const invalidateLabelQueries = (queryClient: QueryClient, boardSlug: string, cardSlug: string) => {
+  queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
+  queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
+  queryClient.invalidateQueries({ queryKey: ['board', 'labels', boardSlug] })
 }

@@ -6,14 +6,14 @@ import { useCallback } from 'react'
 import { toast } from 'sonner'
 import { useDebouncedCallback } from 'use-debounce'
 import { updateSingleTask } from '../actions'
+import { invalidateSubtaskQueries } from '../utils'
 
 export function useUpdateSubtask(boardSlug: string, cardSlug: string) {
   const queryClient = useQueryClient()
 
   const updateTaskAction = useAction(updateSingleTask, {
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
-      queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
+      invalidateSubtaskQueries(queryClient, boardSlug, cardSlug)
     },
     onError: ({ error }) => {
       toast.error(error.serverError || 'Có lỗi xảy ra khi cập nhật trạng thái việc cần làm')

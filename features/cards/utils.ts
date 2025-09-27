@@ -2,7 +2,7 @@ import { updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
 import { CardDetail, CardPreview, ListWithCards } from '@/types/common'
 import { UpdateCardFn } from '@/types/ui'
 import { QueryClient } from '@tanstack/react-query'
-import { format, isPast, parse } from 'date-fns'
+import { differenceInHours, differenceInMinutes, format, isPast, parse } from 'date-fns'
 import { UpdateCardDateSchema } from './validations'
 
 export const getCardDateLabel = (startDate?: Date | string | null, endDate?: Date | string | null) => {
@@ -202,4 +202,25 @@ export const deleteCardDateQueries = ({
 export const invalidateCardQueries = (queryClient: QueryClient, boardSlug: string, cardSlug: string) => {
   queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
   queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
+}
+
+export function formatDateRelativeVN(date: Date) {
+  const now = new Date()
+
+  const diffMinutes = differenceInMinutes(now, date)
+  const diffHours = differenceInHours(now, date)
+
+  if (diffMinutes < 1) {
+    return 'vừa xong'
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} phút trước`
+  }
+
+  if (diffHours < 24) {
+    return `${diffHours} tiếng trước`
+  }
+
+  return format(date, "HH:mm d 'thg' M, yyyy")
 }

@@ -1,4 +1,4 @@
-import { getCard } from '@/features/cards/actions'
+import { getCard, getCardActivitiesAndComments } from '@/features/cards/actions'
 import CardDetailDialog from '@/features/cards/components/card-detail-dialog'
 import { CardDetail } from '@/types/common'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
@@ -18,6 +18,11 @@ export default async function InterceptedCardDetailPage({ params }: { params: { 
   if (!card) {
     notFound()
   }
+
+  await queryClient.prefetchQuery({
+    queryKey: ['card', 'activities', 'comments', slug, cardSlug],
+    queryFn: () => getCardActivitiesAndComments(cardSlug)
+  })
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

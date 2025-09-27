@@ -30,7 +30,7 @@ import {
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
-import { getCard } from '../actions'
+import { getCard, getCardActivitiesAndComments } from '../actions'
 import { useUpdateCard } from '../hooks/use-update-card'
 import {
   formatCardDate,
@@ -43,6 +43,7 @@ import {
 import { UpdateCardSchema } from '../validations'
 import AsigneePopover from './popover/asignee-popover'
 import DatePopover from './popover/date-popover'
+import Timeline from './timeline'
 
 interface CardDetailDialogProps {
   children?: React.ReactNode
@@ -57,6 +58,11 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
   const { data: cardDetail } = useQuery({
     queryKey: ['card', boardSlug, cardSlug],
     queryFn: () => getCard(cardSlug)
+  })
+
+  const { data: timelines } = useQuery({
+    queryKey: ['card', 'activities', 'comments', boardSlug, cardSlug],
+    queryFn: () => getCardActivitiesAndComments(cardSlug)
   })
 
   const [internalOpen, setInternalOpen] = useState(isOpen)
@@ -364,6 +370,12 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                 </div>
 
                 <Input placeholder='Viết bình luận...' className='font-semibold bg-background' />
+
+                <div className='space-y-4 mt-4'>
+                  {timelines?.sortedList.map((timeline) => {
+                    return <Timeline key={timeline.id} timeline={timeline} />
+                  })}
+                </div>
               </div>
             </div>
           </div>

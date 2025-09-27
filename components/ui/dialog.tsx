@@ -59,7 +59,7 @@ const dialogVariants = cva(
         md: 'max-w-lg',
         lg: 'max-w-xl',
         xl: 'max-w-2xl',
-        xxl: 'max-w-5xl',
+        xxl: 'max-w-6xl',
         halfscreen: 'w-1/2',
         threequarterscreen: 'w-3/4',
         fullscreen: 'w-screen h-screen'

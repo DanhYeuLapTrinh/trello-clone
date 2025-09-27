@@ -44,6 +44,19 @@ enum BoardVisibility {
   PRIVATE
 }
 
+enum ActivityModel {
+  CARD
+}
+
+enum ActivityAction {
+  CREATE
+  UPDATE
+  DELETE
+  MOVE
+  ASSIGN_MEMBER
+  UNASSIGN_MEMBER
+}
+
 model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique
@@ -61,8 +74,28 @@ model User {
   cardAssignees        CardAssignee[]
   comments             Comment[]
   watchedCards         CardWatcher[]
+  activities           Activity[]        @relation("UserActivities")
 
   @@map("users")
+}
+
+model Activity {
+  id        String         @id @default(uuid())
+  model     ActivityModel
+  action    ActivityAction
+  details   Json?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  userId String
+  user   User   @relation("UserActivities", fields: [userId], references: [id], onDelete: Cascade)
+
+  cardId String
+  card   Card   @relation("CardActivities", fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([userId])
+  @@map("activities")
 }
 
 model Workspace {
@@ -171,6 +204,7 @@ model Card {
   attachments Attachment[]
   cardLabels  CardLabel[]
   watchers    CardWatcher[]
+  activities  Activity[]     @relation("CardActivities")
 
   @@map("cards")
 }

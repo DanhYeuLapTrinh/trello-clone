@@ -1,4 +1,4 @@
-import { Attachment, Card, CardLabel, Comment, Label, List, Subtask, User } from '@prisma/client'
+import { Activity, Attachment, Card, CardLabel, Comment, Label, List, Subtask, User } from '@prisma/client'
 
 export interface AppResponse<T> {
   data: T
@@ -31,4 +31,47 @@ export type CardDetail = Card & {
 
 export type ListWithCards = List & {
   cards: CardPreview[]
+}
+
+export enum TimelineItemType {
+  Activity = 'activity',
+  Comment = 'comment'
+}
+
+export type TimelineItem =
+  | (Activity & { user: User } & { __type: TimelineItemType.Activity })
+  | (Comment & { user: User } & { __type: TimelineItemType.Comment })
+
+export interface CardTimeline {
+  activities: (Activity & { user: User })[]
+  comments: (Comment & { user: User })[]
+  sortedList: TimelineItem[]
+}
+
+// Activity details
+export interface CreateDetails {
+  nameSnapshot: string
+  initialValues?: Record<string, unknown>
+}
+
+export interface UpdateDetails {
+  field: string
+  oldValue: string
+  newValue: string
+}
+
+export interface MoveDetails {
+  fromListId: string
+  fromListName: string
+  toListId: string
+  toListName: string
+  position?: number
+}
+
+export interface AssignMemberDetails {
+  userId: string
+}
+
+export interface UnassignMemberDetails {
+  userId: string
 }

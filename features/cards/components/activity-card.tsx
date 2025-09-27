@@ -31,7 +31,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
           {activity.user.lastName?.[0] ?? ''}
         </AvatarFallback>
       </Avatar>
-      <div className='flex flex-col'>
+      <div className='space-y-1'>
         <p className='text-sm font-bold'>
           {activity.user.firstName} {activity.user.lastName}{' '}
           <span className='text-sm font-normal'>{getActivityLabel(activity)}</span>

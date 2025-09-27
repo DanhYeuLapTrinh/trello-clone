@@ -1,6 +1,6 @@
+import CommentCard from '@/features/comments/components/comment-card'
 import { TimelineItem, TimelineItemType } from '@/types/common'
 import ActivityCard from './activity-card'
-import CommentCard from './comment-card'
 
 interface TimelineProps {
   timeline: TimelineItem

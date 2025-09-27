@@ -48,7 +48,7 @@ export default function CardItem({ card, slug }: CardItemProps) {
       </div>
 
       {isDisplayIcon ? (
-        <div className='flex items-center gap-4 flex-wrap'>
+        <div className='flex items-center gap-x-3 gap-y-2 flex-wrap'>
           {card.startDate || card.endDate ? (
             <PreviewIcon icon={Clock} label={formatCardDateRange(card.startDate, card.endDate)} />
           ) : null}
@@ -67,8 +67,8 @@ export default function CardItem({ card, slug }: CardItemProps) {
 const PreviewIcon = ({ icon, count, label }: { icon: LucideIcon; count?: number; label?: string }) => {
   return (
     <div className='flex items-center gap-1'>
-      {createElement(icon, { className: 'size-3.5 stroke-[2.5]' })}
-      {count ? <span className='text-sm'>{count}</span> : null}
+      {createElement(icon, { className: 'size-3.5 stroke-[2.5] text-foreground/65' })}
+      {count ? <span className='text-xs font-medium text-muted-foreground'>{count}</span> : null}
       {label ? <span className='text-xs font-medium text-muted-foreground'>{label}</span> : null}
     </div>
   )

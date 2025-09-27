@@ -10,11 +10,14 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import { useCreateComment } from '@/features/comments/hooks/use-create-comment'
+import { createCommentQueries } from '@/features/comments/utils'
 import LabelPopover from '@/features/labels/components/label-popover'
 import SubtaskPopover from '@/features/subtasks/components/subtask-popover'
 import SubtaskSection from '@/features/subtasks/components/subtask-section'
 import { cn, getColorTextClass } from '@/lib/utils'
-import { useQuery } from '@tanstack/react-query'
+import { useUser } from '@clerk/nextjs'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronDown,
   Clock,
@@ -54,6 +57,9 @@ interface CardDetailDialogProps {
 
 export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug }: CardDetailDialogProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
+
+  const { user } = useUser()
 
   const { data: cardDetail } = useQuery({
     queryKey: ['card', boardSlug, cardSlug],
@@ -69,8 +75,10 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
   const [isEditDescription, setIsEditDescription] = useState(false)
   const [isEditTitle, setIsEditTitle] = useState(false)
   const [openParentId, setOpenParentId] = useState<string | null>(null)
+  const [comment, setComment] = useState('')
 
   const { methods, updateCardAction } = useUpdateCard()
+  const { createCommentAction } = useCreateComment(boardSlug, cardSlug)
 
   const formTitle = methods.watch('title')
   const formDescription = methods.watch('description')
@@ -137,6 +145,26 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
     setIsEditDescription(false)
     setIsEditTitle(false)
     methods.reset()
+  }
+
+  const handleCreateCommment = () => {
+    createCommentQueries({
+      queryClient,
+      boardSlug,
+      cardSlug,
+      content: comment,
+      firstName: user?.firstName ?? '',
+      lastName: user?.lastName ?? '',
+      imageUrl: user?.imageUrl ?? ''
+    })
+
+    createCommentAction.execute({
+      boardSlug,
+      cardSlug,
+      content: comment
+    })
+
+    setComment('')
   }
 
   return (
@@ -363,13 +391,23 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                 ) : null}
               </div>
 
-              <div className='col-span-5 p-6 bg-muted rounded-br-md'>
+              <div className='col-span-5 p-6 bg-muted rounded-br-md pb-12 overflow-auto max-h-[calc(100vh-7rem)]'>
                 <div className='flex items-center gap-2 mb-4'>
                   <MessageSquareText className='size-4' />
                   <p className='text-sm font-bold'>Nhận xét và hoạt động</p>
                 </div>
 
-                <Input placeholder='Viết bình luận...' className='font-semibold bg-background' />
+                <Input
+                  placeholder='Viết bình luận...'
+                  className='font-semibold bg-background'
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCreateCommment()
+                    }
+                  }}
+                />
 
                 <div className='space-y-4 mt-4'>
                   {timelines?.sortedList.map((timeline) => {

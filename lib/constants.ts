@@ -131,3 +131,25 @@ const cardLabelColors: CardLabelColor[] = [
 ]
 
 export const sortedCardLabelColors = cardLabelColors.sort((a, b) => a.baseColor.localeCompare(b.baseColor))
+
+export const DEFAULT_ALLOWED_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/pdf',
+  'text/plain',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+]
+
+export const FILE_TYPE_GROUPS = {
+  IMAGES: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+  DOCUMENTS: [
+    'application/pdf',
+    'text/plain',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ],
+  ALL: [...DEFAULT_ALLOWED_TYPES]
+}

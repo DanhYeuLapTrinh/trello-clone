@@ -4,11 +4,13 @@ import '@/components/tiptap-node/blockquote-node/blockquote-node.scss'
 import '@/components/tiptap-node/code-block-node/code-block-node.scss'
 import '@/components/tiptap-node/heading-node/heading-node.scss'
 import '@/components/tiptap-node/horizontal-rule-node/horizontal-rule-node.scss'
+import '@/components/tiptap-node/image-node/image-node.scss'
 import '@/components/tiptap-node/image-upload-node/image-upload-node.scss'
 import '@/components/tiptap-node/list-node/list-node.scss'
 import '@/components/tiptap-node/paragraph-node/paragraph-node.scss'
 
 import { BlockquoteButton } from '@/components/tiptap-ui/blockquote-button'
+import { useUploadFiles } from '@/hooks/use-upload-files'
 import { MAX_FILE_SIZE } from '@/lib/tiptap-utils'
 import { Image } from '@tiptap/extension-image'
 import { Placeholder } from '@tiptap/extensions'
@@ -34,6 +36,8 @@ interface EditorProps {
 }
 
 export default function Editor({ content, isSaving, isDisplay, onChange, onSave, onCancel }: EditorProps) {
+  const { uploadFilesAction } = useUploadFiles({})
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -42,7 +46,11 @@ export default function Editor({ content, isSaving, isDisplay, onChange, onSave,
         accept: 'image/*',
         maxSize: MAX_FILE_SIZE,
         limit: 1,
-        upload: () => Promise.resolve(''),
+        upload: async (file) => {
+          const uploadedFiles = await uploadFilesAction.executeAsync({ files: [file], folder: 'tiptap' })
+          debugger
+          return uploadedFiles.data?.[0]?.url || ''
+        },
         onError: (error) => console.error('Upload failed:', error)
       }),
       Placeholder.configure({
@@ -57,7 +65,6 @@ export default function Editor({ content, isSaving, isDisplay, onChange, onSave,
     ],
     editorProps: {
       attributes: {
-        // FIXME: overflow if content is too long
         class: 'prose prose-sm sm:prose-base lg:prose-lg xl:prose-2xl p-4 min-h-48'
       }
     },

@@ -35,7 +35,13 @@ export default function CardItem({ card, slug }: CardItemProps) {
     >
       {card.imageUrl ? (
         <div className='relative w-full h-36'>
-          <Image src={card.imageUrl} alt={card.title} fill className='rounded-t-md object-cover' />
+          <Image
+            src={card.imageUrl}
+            alt={card.title}
+            fill
+            sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+            className='rounded-t-md object-cover'
+          />
         </div>
       ) : null}
 

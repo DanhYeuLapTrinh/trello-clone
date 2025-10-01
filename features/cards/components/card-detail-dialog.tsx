@@ -203,7 +203,13 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                 </Badge>
               </div>
 
-              <Image src={cardDetail!.imageUrl} alt={cardDetail!.title} fill className='object-contain' />
+              <Image
+                src={cardDetail!.imageUrl}
+                alt={cardDetail!.title}
+                fill
+                sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
+                className='object-contain'
+              />
 
               <div className='absolute top-4 right-4 z-20 flex items-center gap-2'>
                 <UploadFilesWrapper

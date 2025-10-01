@@ -1,4 +1,5 @@
 import { initFirebaseAdmin } from '@/lib/firebase-admin'
+import { FileInfo } from '@/types/common'
 import { BadRequestError, NotFoundError } from '@/types/error'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -17,10 +18,20 @@ class FirebaseService {
     return this.storage.bucket()
   }
 
-  public async uploadFile(file: File, folder: string = 'uploads', customFileName?: string) {
+  public async uploadFiles(files: File[], folder: string = 'uploads'): Promise<FileInfo[]> {
+    try {
+      const uploadedFiles = await Promise.all(files.map((file) => this.uploadFile(file, folder)))
+
+      return uploadedFiles
+    } catch (error) {
+      throw error
+    }
+  }
+
+  public async uploadFile(file: File, folder: string = 'uploads'): Promise<FileInfo> {
     try {
       const fileExtension = file.name.split('.').pop()
-      const fileName = customFileName ? `${customFileName}.${fileExtension}` : `${uuidv4()}.${fileExtension}`
+      const fileName = `${uuidv4()}.${fileExtension}`
 
       const filePath = `${folder}/${fileName}`
 

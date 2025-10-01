@@ -10,12 +10,15 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
+import UploadFilesWrapper from '@/components/upload-files-wrapper'
 import { useCreateComment } from '@/features/comments/hooks/use-create-comment'
-import { createCommentQueries } from '@/features/comments/utils'
+import { createCommentQueries, updateCardBackgroundQueries } from '@/features/comments/utils'
 import LabelPopover from '@/features/labels/components/label-popover'
 import SubtaskPopover from '@/features/subtasks/components/subtask-popover'
 import SubtaskSection from '@/features/subtasks/components/subtask-section'
+import { FILE_TYPE_GROUPS } from '@/lib/constants'
 import { cn, getColorTextClass } from '@/lib/utils'
+import { FileInfo } from '@/types/common'
 import { useUser } from '@clerk/nextjs'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -30,11 +33,13 @@ import {
   TextAlignStart,
   X
 } from 'lucide-react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import { getCard, getCardActivitiesAndComments } from '../actions'
 import { useUpdateCard } from '../hooks/use-update-card'
+import { useUpdateCardBackground } from '../hooks/use-update-card-background'
 import {
   formatCardDate,
   formatCardDateTime,
@@ -79,6 +84,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
 
   const { methods, updateCardAction } = useUpdateCard()
   const { createCommentAction } = useCreateComment(boardSlug, cardSlug)
+  const { updateCardBackgroundAction } = useUpdateCardBackground(boardSlug, cardSlug)
 
   const formTitle = methods.watch('title')
   const formDescription = methods.watch('description')
@@ -167,6 +173,16 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
     setComment('')
   }
 
+  const onSuccessUploadBackground = (files: FileInfo[]) => {
+    updateCardBackgroundQueries(queryClient, boardSlug, cardSlug, files[0].url)
+
+    updateCardBackgroundAction.execute({
+      cardSlug,
+      boardSlug,
+      imageUrl: files[0].url
+    })
+  }
+
   return (
     <Dialog open={internalOpen} onOpenChange={handleClose}>
       {children && <DialogTrigger className='w-full text-left'>{children}</DialogTrigger>}
@@ -179,22 +195,60 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
         aria-describedby='card-detail-dialog'
       >
         <Form {...methods}>
-          <div className='p-6 py-3 flex items-center justify-between gap-2'>
-            <Badge variant='secondary' className='inline-flex px-3 py-0.5'>
-              <p className='text-sm'>{cardDetail!.list.name}</p>
-            </Badge>
-            <div className='flex items-center gap-2'>
-              <Button className='rounded-full' variant='ghost' size='icon'>
-                <ImageIcon className='size-4.5' />
-              </Button>
-              <Button className='rounded-full' variant='ghost' size='icon'>
-                <MoreHorizontal className='size-4.5' />
-              </Button>
-              <Button className='rounded-full' variant='ghost' size='icon' onClick={handleClose}>
-                <X className='size-5' />
-              </Button>
+          {cardDetail!.imageUrl ? (
+            <div className='relative h-[160px] w-full'>
+              <div className='absolute top-4 left-4 z-20'>
+                <Badge variant='secondary' className='inline-flex px-3 py-0.5'>
+                  <p className='text-sm'>{cardDetail!.list.name}</p>
+                </Badge>
+              </div>
+
+              <Image src={cardDetail!.imageUrl} alt={cardDetail!.title} fill className='object-contain' />
+
+              <div className='absolute top-4 right-4 z-20 flex items-center gap-2'>
+                <UploadFilesWrapper
+                  onSuccess={onSuccessUploadBackground}
+                  disabled={updateCardBackgroundAction.isPending}
+                  allowedTypes={FILE_TYPE_GROUPS.IMAGES}
+                  className='rounded-full'
+                  variant='secondary'
+                  size='icon'
+                >
+                  <ImageIcon className='size-4.5' />
+                </UploadFilesWrapper>
+                <Button className='rounded-full' variant='secondary' size='icon'>
+                  <MoreHorizontal className='size-4.5' />
+                </Button>
+                <Button className='rounded-full' variant='secondary' size='icon' onClick={handleClose}>
+                  <X className='size-5' />
+                </Button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className='px-3 py-2 flex items-center justify-between gap-2'>
+              <Badge variant='secondary' className='inline-flex px-3 py-0.5'>
+                <p className='text-sm'>{cardDetail!.list.name}</p>
+              </Badge>
+              <div className='flex items-center gap-2'>
+                <UploadFilesWrapper
+                  onSuccess={onSuccessUploadBackground}
+                  disabled={updateCardBackgroundAction.isPending}
+                  allowedTypes={FILE_TYPE_GROUPS.IMAGES}
+                  className='rounded-full'
+                  variant='ghost'
+                  size='icon'
+                >
+                  <ImageIcon className='size-4.5' />
+                </UploadFilesWrapper>
+                <Button className='rounded-full' variant='ghost' size='icon'>
+                  <MoreHorizontal className='size-4.5' />
+                </Button>
+                <Button className='rounded-full' variant='ghost' size='icon' onClick={handleClose}>
+                  <X className='size-5' />
+                </Button>
+              </div>
+            </div>
+          )}
 
           <Separator />
 

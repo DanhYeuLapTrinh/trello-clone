@@ -1,4 +1,4 @@
-import QueryProvider from '@/lib/react-query/query-client'
+import QueryProvider from '@/lib/query-client'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Toaster } from './ui/sonner'
 

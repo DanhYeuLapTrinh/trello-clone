@@ -7,7 +7,16 @@ const nextConfig: NextConfig = {
     '*.ngrok.io',
     'localhost',
     '127.0.0.1'
-  ]
+  ],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'storage.googleapis.com',
+        pathname: '/**'
+      }
+    ]
+  }
 }
 
 export default nextConfig

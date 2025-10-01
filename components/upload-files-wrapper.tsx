@@ -1,32 +1,31 @@
-import { useUploadFile } from '@/hooks/use-upload-file'
+import { useUploadFiles } from '@/hooks/use-upload-files'
 import { DEFAULT_ALLOWED_TYPES } from '@/lib/constants'
+import { FileInfo } from '@/types/common'
 import { VariantProps } from 'class-variance-authority'
 import { useRef } from 'react'
 import { Button, buttonVariants } from './ui/button'
 
-interface UploadFileWrapperProps extends React.ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
+interface UploadFilesWrapperProps extends React.ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
   children: React.ReactNode
   allowedTypes?: string[]
-  onSuccess?: () => void
+  onSuccess?: (files: FileInfo[]) => void
   onError?: () => void
   folder?: string
   multiple?: boolean
-  customFileName?: string
   disabled?: boolean
 }
 
-export default function UploadFileWrapper({
+export default function UploadFilesWrapper({
   children,
   allowedTypes = [...DEFAULT_ALLOWED_TYPES],
   onSuccess,
   onError,
   folder = 'uploads',
   multiple = false,
-  customFileName,
   disabled = false,
   ...props
-}: UploadFileWrapperProps) {
-  const { uploadFileAction } = useUploadFile({ onSuccess, onError })
+}: UploadFilesWrapperProps) {
+  const { uploadFilesAction } = useUploadFiles({ onSuccess, onError })
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleUploadFile = () => {
@@ -43,33 +42,19 @@ export default function UploadFileWrapper({
 
     if (validFiles.length === 0) return
 
-    try {
-      if (multiple) {
-        const uploadPromises = validFiles.map((file) =>
-          uploadFileAction.execute({
-            file,
-            folder,
-            customFileName
-          })
-        )
-        await Promise.all(uploadPromises)
-      } else {
-        uploadFileAction.execute({
-          file: validFiles[0],
-          folder,
-          customFileName
-        })
-      }
-    } finally {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+    uploadFilesAction.execute({
+      files,
+      folder
+    })
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }
 
   return (
     <>
-      <Button onClick={handleUploadFile} disabled={disabled || uploadFileAction.isPending} type='button' {...props}>
+      <Button onClick={handleUploadFile} disabled={disabled || uploadFilesAction.isPending} type='button' {...props}>
         {children}
       </Button>
       <input

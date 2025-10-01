@@ -15,6 +15,7 @@ import {
   deleteCardDateSchema,
   moveCardBetweenListsSchema,
   moveCardWithinListSchema,
+  updateCardBackgroundSchema,
   updateCardDateSchema,
   updateCardSchema
 } from './validations'
@@ -196,10 +197,7 @@ export const moveCardWithinList = protectedActionClient
     }
   })
 
-/**
- * Moves a card from one list to another with position management
- * Handles all position updates for affected cards in both source and target lists
- */
+// Move card between lists
 export const moveCardBetweenLists = protectedActionClient
   .inputSchema(moveCardBetweenListsSchema, {
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
@@ -503,3 +501,40 @@ export const getCardActivitiesAndComments = async (cardSlug: string): Promise<Ca
     throw error
   }
 }
+
+export const updateCardBackground = protectedActionClient
+  .inputSchema(updateCardBackgroundSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput }) => {
+    try {
+      const board = await prisma.board.findUnique({
+        where: { slug: parsedInput.boardSlug }
+      })
+
+      if (!board) {
+        throw new NotFoundError('Board')
+      }
+
+      const card = await prisma.card.findUnique({
+        where: { slug: parsedInput.cardSlug }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      await prisma.card.update({
+        where: { id: card.id },
+        data: {
+          imageUrl: parsedInput.imageUrl
+        }
+      })
+
+      revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
+
+      return { message: 'Nền thẻ đã được cập nhật thành công.' }
+    } catch (error) {
+      throw error
+    }
+  })

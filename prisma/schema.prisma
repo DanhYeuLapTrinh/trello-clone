@@ -188,6 +188,7 @@ model Card {
   slug         String           @unique
   description  String?
   position     Int
+  imageUrl     String?
   startDate    DateTime?
   endDate      DateTime?
   reminderType CardReminderType @default(NONE)

@@ -6,6 +6,14 @@ export interface AppResponse<T> {
   status: 'success' | 'error'
 }
 
+export interface FileInfo {
+  url: string
+  path: string
+  name: string
+  size: number
+  type: string
+}
+
 export type LabelDetail = CardLabel & { label: Label }
 
 export type SubtaskDetail = Subtask & { children: Subtask[] }

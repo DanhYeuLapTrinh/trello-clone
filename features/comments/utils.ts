@@ -1,4 +1,4 @@
-import { getTempId, updateBoardListsQuery } from '@/lib/utils'
+import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
 import { CardTimeline, TimelineItemType } from '@/types/common'
 import { Comment, User } from '@prisma/client'
 import { QueryClient } from '@tanstack/react-query'
@@ -82,6 +82,36 @@ export const createCommentQueries = ({
               ...card._count,
               comments: card._count.comments + 1
             }
+          }
+        }
+
+        return card
+      })
+    }))
+  })
+}
+
+export const updateCardBackgroundQueries = (
+  queryClient: QueryClient,
+  boardSlug: string,
+  cardSlug: string,
+  imageUrl: string
+) => {
+  updateCardDetailQuery(queryClient, boardSlug, cardSlug, (prev) => {
+    return {
+      ...prev,
+      imageUrl
+    }
+  })
+
+  updateBoardListsQuery(queryClient, boardSlug, (prev) => {
+    return prev.map((list) => ({
+      ...list,
+      cards: list.cards.map((card) => {
+        if (card.slug === cardSlug) {
+          return {
+            ...card,
+            imageUrl
           }
         }
 

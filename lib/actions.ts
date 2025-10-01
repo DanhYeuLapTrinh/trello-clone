@@ -1,20 +1,15 @@
 'use server'
 
 import { publicActionClient } from '@/lib/safe-action'
-import { deleteFileSchema, uploadFileSchema } from '@/lib/validations'
+import { deleteFileSchema, uploadFilesSchema } from '@/lib/validations'
 import firebaseService from '@/services/firebase.service'
-import { revalidatePath } from 'next/cache'
 
-// Upload file
-export const uploadFile = publicActionClient.inputSchema(uploadFileSchema).action(async ({ parsedInput }) => {
+// Upload files
+export const uploadFiles = publicActionClient.inputSchema(uploadFilesSchema).action(async ({ parsedInput }) => {
   try {
-    const { file, folder, customFileName } = parsedInput
+    const uploadedFiles = await firebaseService.uploadFiles(parsedInput.files, parsedInput.folder)
 
-    await firebaseService.uploadFile(file, folder, customFileName)
-
-    revalidatePath('/')
-
-    return { message: 'Tải tệp lên thành công.' }
+    return uploadedFiles
   } catch (error) {
     throw error
   }

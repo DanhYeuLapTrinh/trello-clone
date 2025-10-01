@@ -191,9 +191,16 @@ export const deleteCardDateSchema = z.object({
   boardSlug: z.string()
 })
 
+export const updateCardBackgroundSchema = z.object({
+  cardSlug: z.string(),
+  boardSlug: z.string(),
+  imageUrl: z.url()
+})
+
 export type CreateCardSchema = z.infer<typeof createCardSchema>
 export type MoveCardWithinListSchema = z.infer<typeof moveCardWithinListSchema>
 export type MoveCardBetweenListsSchema = z.infer<typeof moveCardBetweenListsSchema>
 export type UpdateCardSchema = z.infer<typeof updateCardSchema>
 export type UpdateCardDateSchema = z.infer<typeof updateCardDateSchema>
 export type DeleteCardDateSchema = z.infer<typeof deleteCardDateSchema>
+export type UpdateCardBackgroundSchema = z.infer<typeof updateCardBackgroundSchema>

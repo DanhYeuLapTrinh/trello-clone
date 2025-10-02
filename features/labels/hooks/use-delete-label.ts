@@ -8,7 +8,7 @@ export const useDeleteLabel = (boardSlug: string, cardSlug: string) => {
   const queryClient = useQueryClient()
 
   const deleteLabelAction = useAction(deleteLabel, {
-    onSuccess: () => {
+    onSettled: () => {
       invalidateLabelQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {

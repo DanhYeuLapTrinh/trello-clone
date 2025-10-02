@@ -8,7 +8,7 @@ export const useUpdateCardBackground = (boardSlug: string, cardSlug: string) => 
   const queryClient = useQueryClient()
 
   const updateCardBackgroundAction = useAction(updateCardBackground, {
-    onSuccess: () => {
+    onSettled: () => {
       invalidateCardQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {

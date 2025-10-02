@@ -22,7 +22,7 @@ export const useCreateSubtask = ({ boardSlug, cardSlug, defaultValues }: UseCrea
   })
 
   const createSubtaskAction = useAction(createSubtask, {
-    onSuccess: () => {
+    onSettled: () => {
       invalidateSubtaskQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {

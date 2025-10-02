@@ -15,11 +15,12 @@ export const useUpdateLabel = (defaultValues: UpdateLabelSchema) => {
   const updateLabelAction = useAction(updateLabel, {
     onSuccess: () => {
       methods.reset()
-
-      invalidateLabelQueries(queryClient, defaultValues.boardSlug, defaultValues.cardSlug)
     },
     onError: (err) => {
       toast.error(err.error?.serverError || 'Lỗi khi cập nhật label.')
+    },
+    onSettled: () => {
+      invalidateLabelQueries(queryClient, defaultValues.boardSlug, defaultValues.cardSlug)
     }
   })
 

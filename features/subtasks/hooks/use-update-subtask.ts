@@ -12,7 +12,7 @@ export function useUpdateSubtask(boardSlug: string, cardSlug: string) {
   const queryClient = useQueryClient()
 
   const updateTaskAction = useAction(updateSingleTask, {
-    onSuccess: () => {
+    onSettled: () => {
       invalidateSubtaskQueries(queryClient, boardSlug, cardSlug)
     },
     onError: ({ error }) => {

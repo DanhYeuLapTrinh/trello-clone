@@ -33,7 +33,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
   const [originalActiveCard, setOriginalActiveCard] = useState<Card | null>(null)
 
   const { execute: moveCardWithinListAction } = useAction(moveCardWithinList, {
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
     },
     onError: (err) => {
@@ -42,7 +42,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
   })
 
   const { execute: moveCardBetweenListsAction } = useAction(moveCardBetweenLists, {
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
     },
     onError: (err) => {
@@ -51,7 +51,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
   })
 
   const { execute: moveListAction } = useAction(moveList, {
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
     },
     onError: (err) => {

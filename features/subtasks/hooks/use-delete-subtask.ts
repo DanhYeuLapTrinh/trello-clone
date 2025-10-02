@@ -8,7 +8,7 @@ export const useDeleteSubtask = (boardSlug: string, cardSlug: string) => {
   const queryClient = useQueryClient()
 
   const deleteSubtaskAction = useAction(deleteSubtask, {
-    onSuccess: () => {
+    onSettled: () => {
       invalidateSubtaskQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {

@@ -8,7 +8,7 @@ export const useDeleteCardDate = (boardSlug: string, cardSlug: string) => {
   const queryClient = useQueryClient()
 
   const deleteCardDateAction = useAction(deleteCardDate, {
-    onSuccess: () => {
+    onSettled: () => {
       invalidateCardQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {

@@ -8,7 +8,7 @@ export const useDeleteAttachment = (boardSlug: string, cardSlug: string) => {
   const queryClient = useQueryClient()
 
   const deleteAttachmentAction = useAction(deleteAttachment, {
-    onSuccess: () => {
+    onSettled: () => {
       invalidateAttachmentQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {

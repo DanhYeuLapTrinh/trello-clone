@@ -22,7 +22,7 @@ export const useUpdateCardDate = ({ boardSlug, cardSlug, defaultValues }: UseUpd
   })
 
   const updateCardAction = useAction(updateCardDate, {
-    onSuccess: () => {
+    onSettled: () => {
       invalidateCardQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {

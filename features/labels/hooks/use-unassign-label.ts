@@ -21,11 +21,12 @@ export const useUnassignLabel = (boardSlug: string, cardSlug: string) => {
   const unassignLabelAction = useAction(unassignLabel, {
     onSuccess: () => {
       methods.reset()
-
-      invalidateLabelQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {
       toast.error(err.error?.serverError || 'Lỗi khi gỡ bỏ label.')
+    },
+    onSettled: () => {
+      invalidateLabelQueries(queryClient, boardSlug, cardSlug)
     }
   })
 

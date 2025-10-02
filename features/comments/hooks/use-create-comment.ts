@@ -8,7 +8,7 @@ export const useCreateComment = (boardSlug: string, cardSlug: string) => {
   const queryClient = useQueryClient()
 
   const createCommentAction = useAction(createComment, {
-    onSuccess: () => {
+    onSettled: () => {
       invalidateCommentQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {

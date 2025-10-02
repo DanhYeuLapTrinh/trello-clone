@@ -21,11 +21,12 @@ export const useCreateLabel = (boardSlug: string, cardSlug: string) => {
   const createLabelAction = useAction(createLabel, {
     onSuccess: () => {
       methods.reset()
-
-      invalidateLabelQueries(queryClient, boardSlug, cardSlug)
     },
     onError: (err) => {
       toast.error(err.error?.serverError || 'Lỗi khi tạo label.')
+    },
+    onSettled: () => {
+      invalidateLabelQueries(queryClient, boardSlug, cardSlug)
     }
   })
 

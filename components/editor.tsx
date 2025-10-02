@@ -11,6 +11,7 @@ import '@/components/tiptap-node/paragraph-node/paragraph-node.scss'
 
 import { BlockquoteButton } from '@/components/tiptap-ui/blockquote-button'
 import { useUploadFiles } from '@/hooks/use-upload-files'
+import { FILE_FOLDER } from '@/lib/constants'
 import { MAX_FILE_SIZE } from '@/lib/tiptap-utils'
 import { Image } from '@tiptap/extension-image'
 import { Placeholder } from '@tiptap/extensions'
@@ -47,7 +48,7 @@ export default function Editor({ content, isSaving, isDisplay, onChange, onSave,
         maxSize: MAX_FILE_SIZE,
         limit: 1,
         upload: async (file) => {
-          const uploadedFiles = await uploadFilesAction.executeAsync({ files: [file], folder: 'tiptap' })
+          const uploadedFiles = await uploadFilesAction.executeAsync({ files: [file], folder: FILE_FOLDER.TIPTAP })
           debugger
           return uploadedFiles.data?.[0]?.url || ''
         },

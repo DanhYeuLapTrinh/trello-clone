@@ -140,7 +140,9 @@ export const DEFAULT_ALLOWED_TYPES = [
   'application/pdf',
   'text/plain',
   'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'video/mp4',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 ]
 
 export const FILE_TYPE_GROUPS = {
@@ -149,7 +151,29 @@ export const FILE_TYPE_GROUPS = {
     'application/pdf',
     'text/plain',
     'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   ],
+  VIDEOS: ['video/mp4'],
   ALL: [...DEFAULT_ALLOWED_TYPES]
+}
+
+export const FILE_TYPE_LABEL: Record<string, string> = {
+  'image/jpeg': 'JPEG',
+  'image/png': 'PNG',
+  'image/gif': 'GIF',
+  'image/webp': 'WEBP',
+  'application/pdf': 'PDF',
+  'text/plain': 'TXT',
+  'application/msword': 'DOC',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+  'video/mp4': 'MP4',
+  unknown: '?'
+}
+
+export const FILE_FOLDER = {
+  ATTACHMENTS: 'attachments',
+  CARDS: 'cards',
+  TIPTAP: 'tiptap'
 }

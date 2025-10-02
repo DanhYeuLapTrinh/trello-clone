@@ -104,14 +104,27 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
                   }
                 },
                 assignees: {
+                  where: {
+                    user: {
+                      isDeleted: false
+                    }
+                  },
                   include: {
                     user: true
                   }
                 },
                 _count: {
                   select: {
-                    attachments: true,
-                    comments: true
+                    attachments: {
+                      where: {
+                        isDeleted: false
+                      }
+                    },
+                    comments: {
+                      where: {
+                        isDeleted: false
+                      }
+                    }
                   }
                 }
               }

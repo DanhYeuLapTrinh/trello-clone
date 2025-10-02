@@ -57,6 +57,10 @@ export const hasSubtasks = (subtasks?: Array<{ children: unknown[] }> | null) =>
   return subtasks && Array.isArray(subtasks) && subtasks.length > 0
 }
 
+export const hasCardAttachments = (attachments?: Array<{ url: string }> | null) => {
+  return attachments && Array.isArray(attachments) && attachments.length > 0
+}
+
 export const shouldDisplayCardIcons = (card: {
   _count?: { comments: number; attachments: number }
   description?: string | null

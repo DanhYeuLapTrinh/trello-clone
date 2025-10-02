@@ -20,10 +20,14 @@ export const uploadFilesSchema = z.object({
   folder: z.string().optional().default('uploads')
 })
 
-export const deleteFileSchema = z.object({
-  filePath: z.string().min(1, 'File path is required'),
-  url: z.url('Valid URL is required').optional()
-})
+export const deleteFileSchema = z
+  .object({
+    filePath: z.string().optional(),
+    url: z.url('Valid URL is required').optional()
+  })
+  .refine((data) => data.filePath || data.url, {
+    message: 'Either filePath or url is required'
+  })
 
 export type UploadFilesSchema = z.infer<typeof uploadFilesSchema>
 export type DeleteFileSchema = z.infer<typeof deleteFileSchema>

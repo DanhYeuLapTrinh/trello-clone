@@ -62,7 +62,7 @@ export default function CardItem({ card, slug }: CardItemProps) {
         </div>
 
         {isDisplayIcon ? (
-          <div className='flex items-center gap-x-3 gap-y-2 flex-wrap'>
+          <div className='flex items-center gap-x-4 gap-y-2 flex-wrap'>
             {card.startDate || card.endDate ? (
               <PreviewIcon icon={Clock} label={formatCardDateRange(card.startDate, card.endDate)} />
             ) : null}

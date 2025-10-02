@@ -131,7 +131,14 @@ export const getCard = async (cardSlug: string): Promise<CardDetail> => {
             user: true
           }
         },
-        attachments: true,
+        attachments: {
+          where: {
+            isDeleted: false
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        },
         comments: true
       }
     })

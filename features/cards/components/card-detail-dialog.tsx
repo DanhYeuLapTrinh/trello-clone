@@ -11,12 +11,13 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import UploadFilesWrapper from '@/components/upload-files-wrapper'
+import AttachmentSection from '@/features/attachments/components/attachment-section'
 import { useCreateComment } from '@/features/comments/hooks/use-create-comment'
 import { createCommentQueries, updateCardBackgroundQueries } from '@/features/comments/utils'
 import LabelPopover from '@/features/labels/components/label-popover'
 import SubtaskPopover from '@/features/subtasks/components/subtask-popover'
 import SubtaskSection from '@/features/subtasks/components/subtask-section'
-import { FILE_TYPE_GROUPS } from '@/lib/constants'
+import { FILE_FOLDER, FILE_TYPE_GROUPS } from '@/lib/constants'
 import { cn, getColorTextClass } from '@/lib/utils'
 import { FileInfo } from '@/types/common'
 import { useUser } from '@clerk/nextjs'
@@ -37,6 +38,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
+import AttachmentPopover from '../../attachments/components/attachment-popover'
 import { getCard, getCardActivitiesAndComments } from '../actions'
 import { useUpdateCard } from '../hooks/use-update-card'
 import { useUpdateCardBackground } from '../hooks/use-update-card-background'
@@ -44,6 +46,7 @@ import {
   formatCardDate,
   formatCardDateTime,
   getCardDateLabel,
+  hasCardAttachments,
   hasCardDates,
   hasCardLabels,
   hasSubtasks
@@ -89,9 +92,10 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
   const formTitle = methods.watch('title')
   const formDescription = methods.watch('description')
 
-  const cardHasSubtasks = hasSubtasks(cardDetail!.subtasks)
+  const hadCardSubtasks = hasSubtasks(cardDetail!.subtasks)
   const hadCardLabels = hasCardLabels(cardDetail!.cardLabels)
   const hadCardDates = hasCardDates(cardDetail!.startDate, cardDetail!.endDate)
+  const hadCardAttachments = hasCardAttachments(cardDetail!.attachments)
 
   const isDisplayRow = hadCardDates || hadCardLabels
 
@@ -216,6 +220,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                   onSuccess={onSuccessUploadBackground}
                   disabled={updateCardBackgroundAction.isPending}
                   allowedTypes={FILE_TYPE_GROUPS.IMAGES}
+                  folder={FILE_FOLDER.CARDS}
                   className='rounded-full'
                   variant='secondary'
                   size='icon'
@@ -240,6 +245,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                   onSuccess={onSuccessUploadBackground}
                   disabled={updateCardBackgroundAction.isPending}
                   allowedTypes={FILE_TYPE_GROUPS.IMAGES}
+                  folder={FILE_FOLDER.CARDS}
                   className='rounded-full'
                   variant='ghost'
                   size='icon'
@@ -260,7 +266,12 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
 
           <div className='flex-1'>
             <div className='grid grid-cols-12'>
-              <div className='col-span-7 p-6 border-r border-border overflow-auto max-h-[calc(100vh-7rem)]'>
+              <div
+                className={cn(
+                  'col-span-7 p-6 border-r border-border overflow-auto',
+                  cardDetail!.imageUrl ? 'max-h-[calc(100vh-13.5rem)]' : 'max-h-[calc(100vh-6.5rem)]'
+                )}
+              >
                 <div className='flex items-start gap-3'>
                   <Checkbox className='rounded-full border-foreground mt-2' />
                   <div className='space-y-6'>
@@ -327,10 +338,12 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
 
                       <AsigneePopover />
 
-                      <Button variant='outline' size='sm'>
-                        <Paperclip className='size-3.5' />
-                        <p className='text-xs'>Đính kèm</p>
-                      </Button>
+                      <AttachmentPopover cardSlug={cardDetail!.slug} boardSlug={boardSlug}>
+                        <Button variant='outline' size='sm'>
+                          <Paperclip className='size-3.5' />
+                          <p className='text-xs'>Đính kèm</p>
+                        </Button>
+                      </AttachmentPopover>
                     </div>
 
                     {isDisplayRow ? (
@@ -399,7 +412,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                   </div>
                 </div>
 
-                <div className='flex items-start gap-3 mt-8 mb-6'>
+                <div className='flex items-start gap-3 mt-12 mb-6'>
                   <TextAlignStart className='size-5 stroke-[2.5]' />
                   <div className='space-y-2 w-full'>
                     <p className='text-sm font-bold'>Mô tả</p>
@@ -440,7 +453,15 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                   </div>
                 </div>
 
-                {cardHasSubtasks ? (
+                {hadCardAttachments ? (
+                  <AttachmentSection
+                    attachments={cardDetail!.attachments}
+                    cardSlug={cardDetail!.slug}
+                    boardSlug={boardSlug}
+                  />
+                ) : null}
+
+                {hadCardSubtasks ? (
                   <SubtaskSection
                     subtasks={cardDetail!.subtasks}
                     boardSlug={boardSlug}
@@ -451,7 +472,12 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                 ) : null}
               </div>
 
-              <div className='col-span-5 p-6 bg-muted rounded-br-md pb-12 overflow-auto max-h-[calc(100vh-7rem)]'>
+              <div
+                className={cn(
+                  'col-span-5 p-6 bg-muted rounded-br-md pb-12 overflow-auto',
+                  cardDetail!.imageUrl ? 'max-h-[calc(100vh-13.5rem)]' : 'max-h-[calc(100vh-6.5rem)]'
+                )}
+              >
                 <div className='flex items-center gap-2 mb-4'>
                   <MessageSquareText className='size-4' />
                   <p className='text-sm font-bold'>Nhận xét và hoạt động</p>

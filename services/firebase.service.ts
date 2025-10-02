@@ -1,7 +1,7 @@
 import { initFirebaseAdmin } from '@/lib/firebase-admin'
+import { slugify } from '@/lib/utils'
 import { FileInfo } from '@/types/common'
 import { BadRequestError, NotFoundError } from '@/types/error'
-import { v4 as uuidv4 } from 'uuid'
 
 class FirebaseService {
   private admin: ReturnType<typeof import('@/lib/firebase-admin').initFirebaseAdmin>
@@ -31,7 +31,8 @@ class FirebaseService {
   public async uploadFile(file: File, folder: string = 'uploads'): Promise<FileInfo> {
     try {
       const fileExtension = file.name.split('.').pop()
-      const fileName = `${uuidv4()}.${fileExtension}`
+      const slug = slugify(file.name)
+      const fileName = `${slug}-${Date.now().toString()}.${fileExtension}`
 
       const filePath = `${folder}/${fileName}`
 

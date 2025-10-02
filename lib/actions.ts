@@ -3,6 +3,7 @@
 import { publicActionClient } from '@/lib/safe-action'
 import { deleteFileSchema, uploadFilesSchema } from '@/lib/validations'
 import firebaseService from '@/services/firebase.service'
+import z from 'zod'
 
 // Upload files
 export const uploadFiles = publicActionClient.inputSchema(uploadFilesSchema).action(async ({ parsedInput }) => {
@@ -21,9 +22,11 @@ export const deleteFile = publicActionClient.inputSchema(deleteFileSchema).actio
     const { filePath, url } = parsedInput
 
     // If URL is provided, extract file path from it
-    let pathToDelete = filePath
+    let pathToDelete = ''
 
-    if (url && !filePath) {
+    if (filePath) {
+      pathToDelete = filePath
+    } else if (url) {
       pathToDelete = firebaseService.extractFilePathFromUrl(url)
     }
 
@@ -37,7 +40,7 @@ export const deleteFile = publicActionClient.inputSchema(deleteFileSchema).actio
 
 // Get file metadata
 export const getFileMetadata = publicActionClient
-  .inputSchema(deleteFileSchema.pick({ filePath: true }))
+  .inputSchema(z.object({ filePath: z.string() }))
   .action(async ({ parsedInput }) => {
     try {
       const { filePath } = parsedInput

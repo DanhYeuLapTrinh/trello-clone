@@ -8,7 +8,13 @@ import { Clock, LucideIcon, MessageSquare, Paperclip, SquareCheckBig, SquarePen,
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createElement } from 'react'
-import { formatCardDateRange, getSubtaskStats, getVisibleCardLabels, shouldDisplayCardIcons } from '../utils'
+import {
+  formatCardDateRange,
+  getSubtaskStats,
+  getVisibleCardLabels,
+  isCardExpired,
+  shouldDisplayCardIcons
+} from '../utils'
 
 interface CardItemProps {
   card: CardPreview
@@ -62,9 +68,15 @@ export default function CardItem({ card, slug }: CardItemProps) {
         </div>
 
         {isDisplayIcon ? (
-          <div className='flex items-center gap-x-4 gap-y-2 flex-wrap'>
+          <div className='flex items-center gap-x-2 gap-y-1 flex-wrap'>
             {card.startDate || card.endDate ? (
-              <PreviewIcon icon={Clock} label={formatCardDateRange(card.startDate, card.endDate)} />
+              <PreviewIcon
+                icon={Clock}
+                label={formatCardDateRange(card.startDate, card.endDate)}
+                className={isCardExpired(card.endDate) ? 'text-rose-700' : ''}
+                containerClassName={isCardExpired(card.endDate) ? 'bg-rose-200 px-2' : ''}
+                iconClassName={isCardExpired(card.endDate) ? 'text-rose-700' : ''}
+              />
             ) : null}
             {card.description ? <PreviewIcon icon={TextAlignStart} /> : null}
             {card._count.comments > 0 ? <PreviewIcon icon={MessageSquare} count={card._count.comments} /> : null}
@@ -79,12 +91,26 @@ export default function CardItem({ card, slug }: CardItemProps) {
   )
 }
 
-const PreviewIcon = ({ icon, count, label }: { icon: LucideIcon; count?: number; label?: string }) => {
+const PreviewIcon = ({
+  icon,
+  count,
+  label,
+  className,
+  containerClassName,
+  iconClassName
+}: {
+  icon: LucideIcon
+  count?: number
+  label?: string
+  className?: string
+  containerClassName?: string
+  iconClassName?: string
+}) => {
   return (
-    <div className='flex items-center gap-1'>
-      {createElement(icon, { className: 'size-3.5 stroke-[2.5] text-foreground/65' })}
-      {count ? <span className='text-xs font-medium text-muted-foreground'>{count}</span> : null}
-      {label ? <span className='text-xs font-medium text-muted-foreground'>{label}</span> : null}
+    <div className={cn('flex items-center gap-1 p-1 rounded-sm', containerClassName)}>
+      {createElement(icon, { className: cn('size-3.5 stroke-[2.5] text-foreground/65', iconClassName) })}
+      {count ? <span className={cn('text-xs font-medium text-muted-foreground', className)}>{count}</span> : null}
+      {label ? <span className={cn('text-xs font-medium text-muted-foreground', className)}>{label}</span> : null}
     </div>
   )
 }

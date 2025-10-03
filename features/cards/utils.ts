@@ -9,10 +9,6 @@ export const getCardDateLabel = (startDate?: Date | string | null, endDate?: Dat
   const start = startDate ? new Date(startDate) : null
   const end = endDate ? new Date(endDate) : null
 
-  if (end && isPast(end)) {
-    return 'Thẻ đã hết hạn'
-  }
-
   if (start && end) {
     return 'Ngày'
   }
@@ -22,6 +18,11 @@ export const getCardDateLabel = (startDate?: Date | string | null, endDate?: Dat
   }
 
   return 'Ngày hết hạn'
+}
+
+export const isCardExpired = (endDate?: Date | null) => {
+  const end = endDate ? new Date(endDate) : null
+  return end && isPast(end)
 }
 
 export const formatCardDate = (date: Date | string | null | undefined) => {

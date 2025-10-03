@@ -49,7 +49,8 @@ import {
   hasCardAttachments,
   hasCardDates,
   hasCardLabels,
-  hasSubtasks
+  hasSubtasks,
+  isCardExpired
 } from '../utils'
 import { UpdateCardSchema } from '../validations'
 import AsigneePopover from './popover/asignee-popover'
@@ -402,6 +403,11 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                                 <p className='text-sm font-semibold'>{formatCardDate(cardDetail!.startDate)}</p>
                                 {cardDetail!.startDate && cardDetail!.endDate ? '-' : null}
                                 <p className='text-sm font-semibold'>{formatCardDateTime(cardDetail!.endDate)}</p>
+                                {isCardExpired(cardDetail!.endDate) ? (
+                                  <span className='text-red-700 rounded-sm px-1.5 py-0.5 block text-xs bg-rose-200 ml-1'>
+                                    Quá hạn
+                                  </span>
+                                ) : null}
                                 <ChevronDown className='size-4 ml-1' />
                               </Button>
                             </DatePopover>

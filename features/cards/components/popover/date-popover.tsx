@@ -130,6 +130,7 @@ export default function DatePopover({
               onSelect={(range) => {
                 setValue('startDate', range?.from ? format(range.from, dateFormat) : undefined)
                 setValue('endDate', range?.to ? format(range.to, dateFormat) : undefined)
+                setValue('endTime', format(new Date(), 'H:mm'))
               }}
               captionLayout='dropdown'
               className='w-full px-0'

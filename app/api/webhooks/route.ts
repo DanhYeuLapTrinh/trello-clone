@@ -1,5 +1,6 @@
 import prisma from '@/prisma/prisma'
 import { verifyWebhook } from '@clerk/nextjs/webhooks'
+import { revalidatePath } from 'next/cache'
 import { NextRequest } from 'next/server'
 
 export async function POST(req: NextRequest) {
@@ -49,6 +50,8 @@ export async function POST(req: NextRequest) {
 
           return createdUser
         })
+
+        revalidatePath('/')
 
         return new Response(JSON.stringify(newUser), { status: 201 })
       } catch (error) {

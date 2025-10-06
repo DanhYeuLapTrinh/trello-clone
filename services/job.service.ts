@@ -1,5 +1,5 @@
 import { DispatchOptions, JobHandler } from '@/types/job'
-import { Client, type PublishRequest } from '@upstash/qstash'
+import { Client, QstashError, type PublishRequest } from '@upstash/qstash'
 
 class JobService {
   private client: Client
@@ -18,6 +18,21 @@ class JobService {
       handler,
       run: (data: T) => handler(data),
       dispatch: (data: T, options?: DispatchOptions) => this.dispatch(key, data, options)
+    }
+  }
+
+  public getJob(messageId: string) {
+    return this.client.messages.get(messageId)
+  }
+
+  public async safeDeleteJob(messageId: string) {
+    try {
+      await this.client.messages.delete(messageId)
+    } catch (error) {
+      if ((error as QstashError)?.message?.includes('not found')) {
+        return
+      }
+      throw error
     }
   }
 
@@ -40,18 +55,10 @@ class JobService {
 
       const jobWithRetry = {
         ...job,
-        retries: options?.retries ?? 3,
-        delay: options?.delay ?? '30s'
+        retries: options?.retries ?? 3
       }
 
       const result = await this.client.publishJSON(jobWithRetry)
-
-      console.log(`[Job Service] Dispatched job: ${key}`, {
-        messageId: 'messageId' in result ? result.messageId : 'N/A',
-        payload: body,
-        retries: jobWithRetry.retries,
-        delay: jobWithRetry.delay
-      })
 
       return result
     } catch (error) {

@@ -1,12 +1,14 @@
 'use server'
 
+import { cardReminderJob } from '@/lib/jobs/handlers'
 import { protectedActionClient } from '@/lib/safe-action'
-import { slugify } from '@/lib/utils'
+import { getReminderDate, slugify, toUnixSeconds } from '@/lib/utils'
 import prisma from '@/prisma/prisma'
+import jobService from '@/services/job.service'
 import { CardDetail, CardTimeline, CreateDetails, MoveDetails, TimelineItemType } from '@/types/common'
 import { BadRequestError, ConflictError, NotFoundError } from '@/types/error'
 import { Prisma } from '@prisma/client/edge'
-import { parse } from 'date-fns'
+import { PublishToUrlResponse } from '@upstash/qstash'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
 import { permanentRedirect, RedirectType } from 'next/navigation'
@@ -394,30 +396,77 @@ export const updateCardDate = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
-      const board = await prisma.board.findUnique({
-        where: { slug: parsedInput.boardSlug }
-      })
+      const startDate = parsedInput.parsedStartDate || null
+      const endDate = parsedInput.parsedEndDateTime || null
 
-      if (!board) {
-        throw new NotFoundError('Board')
+      let reminderDate: Date | null = null
+      if (endDate && parsedInput.reminderType !== 'NONE') {
+        reminderDate = getReminderDate(endDate, parsedInput.reminderType)
       }
 
       const card = await prisma.card.findUnique({
-        where: { slug: parsedInput.cardSlug }
+        where: {
+          slug: parsedInput.cardSlug,
+          list: { board: { slug: parsedInput.boardSlug } }
+        },
+        include: {
+          list: { select: { board: { select: { id: true, slug: true } } } },
+          assignees: { select: { userId: true } },
+          watchers: { select: { userId: true } }
+        }
       })
 
       if (!card) {
         throw new NotFoundError('Card')
       }
 
+      const board = card.list.board
+
+      let newMessageId: string | null = null
+
+      if (card.messageId) {
+        await jobService.safeDeleteJob(card.messageId)
+      }
+
+      // Create new reminder job if needed
+      if (endDate && parsedInput.reminderType !== 'NONE' && reminderDate) {
+        try {
+          const recipientIds = Array.from(
+            new Set([
+              ...card.assignees.map((assignee) => assignee.userId),
+              ...card.watchers.map((watcher) => watcher.userId)
+            ])
+          )
+
+          if (recipientIds.length > 0) {
+            const jobResult = await cardReminderJob.dispatch(
+              {
+                boardId: board.id,
+                cardId: card.id,
+                endDate: endDate.toISOString(),
+                reminderType: parsedInput.reminderType,
+                reminderDate: reminderDate.toISOString(),
+                recipients: recipientIds
+              },
+              {
+                notBefore: toUnixSeconds(reminderDate)
+              }
+            )
+
+            newMessageId = (jobResult as PublishToUrlResponse).messageId
+          }
+        } catch {
+          throw new BadRequestError('Không thể tạo lịch nhắc nhở. Vui lòng thử lại.')
+        }
+      }
+
       await prisma.card.update({
         where: { id: card.id },
         data: {
-          startDate: parsedInput.startDate ? parse(parsedInput.startDate, 'MM/dd/yyyy', new Date()) : null,
-          endDate: parsedInput.endDate
-            ? parse(`${parsedInput.endDate} ${parsedInput.endTime}`, 'MM/dd/yyyy H:mm', new Date())
-            : null,
-          reminderType: parsedInput.reminderType
+          startDate,
+          endDate,
+          reminderType: parsedInput.reminderType,
+          messageId: newMessageId
         }
       })
 

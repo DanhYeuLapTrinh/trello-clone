@@ -184,6 +184,7 @@ model List {
 
 model Card {
   id           String           @id @default(uuid())
+  messageId    String?
   title        String
   slug         String           @unique
   description  String?
@@ -211,8 +212,7 @@ model Card {
 }
 
 model CardWatcher {
-  id           String           @id @default(uuid())
-  reminderType CardReminderType @default(NONE)
+  id String @id @default(uuid())
 
   cardId String
   userId String

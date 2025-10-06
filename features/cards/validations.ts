@@ -43,28 +43,34 @@ export const updateCardDateSchema = z
     const now = new Date()
     const today = startOfToday()
 
+    let parsedStartDate: Date | null = null
     if (data.startDate) {
-      const startDate = parse(data.startDate, 'MM/dd/yyyy', new Date())
+      parsedStartDate = parse(data.startDate, 'MM/dd/yyyy', new Date())
 
-      if (!isValid(startDate)) {
+      if (!isValid(parsedStartDate)) {
         ctx.addIssue({
           code: 'custom',
           message: 'Ngày bắt đầu không hợp lệ',
           path: ['startDate']
         })
+        return
       }
     }
 
+    let parsedEndDate: Date | null = null
     if (data.endDate) {
-      const endDate = parse(data.endDate, 'MM/dd/yyyy', new Date())
+      parsedEndDate = parse(data.endDate, 'MM/dd/yyyy', new Date())
 
-      if (!isValid(endDate)) {
+      if (!isValid(parsedEndDate)) {
         ctx.addIssue({
           code: 'custom',
           message: 'Ngày kết thúc không hợp lệ',
           path: ['endDate']
         })
-      } else if (isBefore(endDate, today) && !isSameDay(endDate, today)) {
+        return
+      }
+
+      if (isBefore(parsedEndDate, today) && !isSameDay(parsedEndDate, today)) {
         ctx.addIssue({
           code: 'custom',
           message: 'Ngày kết thúc không thể là ngày trong quá khứ',
@@ -72,51 +78,71 @@ export const updateCardDateSchema = z
         })
       }
 
+      // Validate endTime is required when endDate is provided
       if (!data.endTime) {
         ctx.addIssue({
           code: 'custom',
           message: 'Thời gian kết thúc không được để trống khi có ngày kết thúc',
           path: ['endTime']
         })
-      } else {
-        // Check if the combined endDate + endTime is not in the past
-        const timePattern = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/
-        const timeMatch = data.endTime.match(timePattern)
+        return
+      }
+    }
 
-        if (!timeMatch) {
+    let parsedEndDateTime: Date | null = null
+    if (data.endTime) {
+      if (!data.endDate) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Không thể có thời gian kết thúc mà không có ngày kết thúc',
+          path: ['endTime']
+        })
+        return
+      }
+
+      // Validate time format
+      const timePattern = /^([01]?[0-9]|2[0-3]):([0-5][0-9])$/
+      const timeMatch = data.endTime.match(timePattern)
+
+      if (!timeMatch) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Định dạng thời gian không hợp lệ (H:mm)',
+          path: ['endTime']
+        })
+        return
+      }
+
+      if (parsedEndDate) {
+        parsedEndDateTime = parse(`${data.endDate} ${data.endTime}`, 'MM/dd/yyyy H:mm', new Date())
+
+        if (!isValid(parsedEndDateTime)) {
           ctx.addIssue({
             code: 'custom',
-            message: 'Định dạng thời gian không hợp lệ (H:mm)',
+            message: 'Ngày và thời gian kết thúc không hợp lệ',
             path: ['endTime']
           })
-        } else {
-          const endDateTime = parse(`${data.endDate} ${data.endTime}`, 'MM/dd/yyyy H:mm', new Date())
+          return
+        }
 
-          if (isValid(endDateTime) && isBefore(endDateTime, now)) {
-            ctx.addIssue({
-              code: 'custom',
-              message: 'Thời gian kết thúc không thể là thời điểm trong quá khứ',
-              path: ['endTime']
-            })
-          }
+        if (isBefore(parsedEndDateTime, now)) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Thời gian kết thúc không thể là thời điểm trong quá khứ',
+            path: ['endTime']
+          })
         }
       }
     }
 
-    if (data.startDate && data.endDate) {
-      const startDate = parse(data.startDate, 'MM/dd/yyyy', new Date())
-      const endDate = parse(data.endDate, 'MM/dd/yyyy', new Date())
-
-      if (isValid(startDate) && isValid(endDate) && isAfter(startDate, endDate)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'Ngày bắt đầu phải trước ngày kết thúc',
-          path: ['startDate']
-        })
-      }
+    if (parsedStartDate && parsedEndDate && isAfter(parsedStartDate, parsedEndDate)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Ngày bắt đầu phải trước ngày kết thúc',
+        path: ['startDate']
+      })
     }
 
-    // Only validate reminder if it's not NONE and we have date/time data
     if (data.reminderType !== 'NONE') {
       if (!data.endDate) {
         ctx.addIssue({
@@ -124,66 +150,76 @@ export const updateCardDateSchema = z
           message: 'Nhắc nhở cần có ngày kết thúc',
           path: ['reminderType']
         })
-      } else if (!data.endTime) {
+        return
+      }
+
+      if (!data.endTime) {
         ctx.addIssue({
           code: 'custom',
           message: 'Nhắc nhở cần có thời gian kết thúc',
           path: ['reminderType']
         })
-      } else {
-        const endDateTime = parse(`${data.endDate} ${data.endTime}`, 'MM/dd/yyyy H:mm', new Date())
+        return
+      }
 
-        if (isValid(endDateTime)) {
-          let reminderDateTime = endDateTime
+      if (parsedEndDateTime && isValid(parsedEndDateTime)) {
+        let reminderDateTime = parsedEndDateTime
 
-          switch (data.reminderType) {
-            case 'FIVE_MINUTES_BEFORE':
-              reminderDateTime = subMinutes(endDateTime, 5)
-              break
-            case 'TEN_MINUTES_BEFORE':
-              reminderDateTime = subMinutes(endDateTime, 10)
-              break
-            case 'FIFTEEN_MINUTES_BEFORE':
-              reminderDateTime = subMinutes(endDateTime, 15)
-              break
-            case 'ONE_HOUR_BEFORE':
-              reminderDateTime = subHours(endDateTime, 1)
-              break
-            case 'TWO_HOURS_BEFORE':
-              reminderDateTime = subHours(endDateTime, 2)
-              break
-            case 'ONE_DAY_BEFORE':
-              reminderDateTime = subDays(endDateTime, 1)
-              break
-            case 'TWO_DAYS_BEFORE':
-              reminderDateTime = subDays(endDateTime, 2)
-              break
-            case 'EXPIRED_DATE':
-              // No adjustment needed for expired date reminder
-              reminderDateTime = endDateTime
-              break
-          }
+        // Calculate reminder time based on type
+        switch (data.reminderType) {
+          case 'FIVE_MINUTES_BEFORE':
+            reminderDateTime = subMinutes(parsedEndDateTime, 5)
+            break
+          case 'TEN_MINUTES_BEFORE':
+            reminderDateTime = subMinutes(parsedEndDateTime, 10)
+            break
+          case 'FIFTEEN_MINUTES_BEFORE':
+            reminderDateTime = subMinutes(parsedEndDateTime, 15)
+            break
+          case 'ONE_HOUR_BEFORE':
+            reminderDateTime = subHours(parsedEndDateTime, 1)
+            break
+          case 'TWO_HOURS_BEFORE':
+            reminderDateTime = subHours(parsedEndDateTime, 2)
+            break
+          case 'ONE_DAY_BEFORE':
+            reminderDateTime = subDays(parsedEndDateTime, 1)
+            break
+          case 'TWO_DAYS_BEFORE':
+            reminderDateTime = subDays(parsedEndDateTime, 2)
+            break
+          case 'EXPIRED_DATE':
+            reminderDateTime = parsedEndDateTime
+            break
+        }
 
-          // Check if reminder time is in the past (except for EXPIRED_DATE)
-          if (data.reminderType !== 'EXPIRED_DATE' && isBefore(reminderDateTime, now)) {
-            ctx.addIssue({
-              code: 'custom',
-              message: 'Thời gian nhắc nhở đã qua.',
-              path: ['reminderType']
-            })
-          }
+        // Validate reminder time is not in the past (except for EXPIRED_DATE)
+        if (data.reminderType !== 'EXPIRED_DATE' && isBefore(reminderDateTime, now)) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Thời gian nhắc nhở đã qua. Vui lòng chọn thời gian khác.',
+            path: ['reminderType']
+          })
         }
       }
     }
-
-    // Validate endTime is not provided without endDate
-    if (data.endTime && !data.endDate) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Không thể có thời gian kết thúc mà không có ngày kết thúc',
-        path: ['endTime']
-      })
+  })
+  .transform((data) => {
+    const result = {
+      ...data,
+      parsedStartDate: undefined as Date | undefined,
+      parsedEndDateTime: undefined as Date | undefined
     }
+
+    if (data.startDate) {
+      result.parsedStartDate = parse(data.startDate, 'MM/dd/yyyy', new Date())
+    }
+
+    if (data.endDate && data.endTime) {
+      result.parsedEndDateTime = parse(`${data.endDate} ${data.endTime}`, 'MM/dd/yyyy H:mm', new Date())
+    }
+
+    return result
   })
 
 export const deleteCardDateSchema = z.object({
@@ -201,6 +237,9 @@ export type CreateCardSchema = z.infer<typeof createCardSchema>
 export type MoveCardWithinListSchema = z.infer<typeof moveCardWithinListSchema>
 export type MoveCardBetweenListsSchema = z.infer<typeof moveCardBetweenListsSchema>
 export type UpdateCardSchema = z.infer<typeof updateCardSchema>
-export type UpdateCardDateSchema = z.infer<typeof updateCardDateSchema>
+export type UpdateCardDateSchema = z.infer<typeof updateCardDateSchema> & {
+  parsedStartDate?: Date
+  parsedEndDateTime?: Date
+}
 export type DeleteCardDateSchema = z.infer<typeof deleteCardDateSchema>
 export type UpdateCardBackgroundSchema = z.infer<typeof updateCardBackgroundSchema>

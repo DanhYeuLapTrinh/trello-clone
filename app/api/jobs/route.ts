@@ -1,5 +1,5 @@
-import { createHandler } from '@/lib/job-utils'
-import { myJob } from '@/lib/jobs'
+import { cardReminderJob } from '@/lib/jobs/handlers'
+import { createHandler } from '@/lib/jobs/utils'
 import { Receiver } from '@upstash/qstash'
 
 const currentSigningKey = process.env.QSTASH_CURRENT_SIGNING_KEY
@@ -18,5 +18,5 @@ const receiver = new Receiver({
 
 export const { POST } = createHandler({
   receiver,
-  jobs: [myJob]
+  jobs: [cardReminderJob]
 })

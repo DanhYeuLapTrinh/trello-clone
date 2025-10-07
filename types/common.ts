@@ -22,6 +22,7 @@ export type CardPreview = Card & {
   cardLabels: LabelDetail[]
   subtasks: SubtaskDetail[]
   assignees: { user: User }[]
+  watchers: { user: User }[]
   _count: {
     attachments: number
     comments: number
@@ -33,6 +34,7 @@ export type CardDetail = Card & {
   cardLabels: LabelDetail[]
   subtasks: SubtaskDetail[]
   assignees: { user: User }[]
+  watchers: { user: User }[]
   attachments: Attachment[]
   comments: Comment[]
 }

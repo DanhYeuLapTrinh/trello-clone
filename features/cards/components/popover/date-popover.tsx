@@ -18,7 +18,7 @@ import { SubmitHandler } from 'react-hook-form'
 import { useDeleteCardDate } from '../../hooks/use-delete-card-date'
 import { useUpdateCardDate } from '../../hooks/use-update-card-date'
 import { deleteCardDateQueries, updateCardDateQueries } from '../../utils'
-import { UpdateCardDateSchema } from '../../validations'
+import { UpdateCardDateInputSchema } from '../../validations'
 
 interface DatePopoverProps {
   reminderType: CardReminderType
@@ -90,7 +90,7 @@ export default function DatePopover({
     setValue('endTime', endTime ? undefined : cardEndDate ? format(cardEndDate, 'H:mm') : defaultEndTime)
   }
 
-  const onSubmit: SubmitHandler<UpdateCardDateSchema> = (data) => {
+  const onSubmit: SubmitHandler<UpdateCardDateInputSchema> = (data) => {
     updateCardDateQueries({ queryClient, boardSlug, cardSlug, data, dateFormat })
 
     setOpen(false)
@@ -121,7 +121,7 @@ export default function DatePopover({
           </div>
         </div>
 
-        <div className='min-h-96 max-h-[520px] p-2 overflow-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
+        <div className='min-h-96 max-h-[495px] p-2 overflow-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'>
           {isDateRange ? (
             <Calendar
               mode='range'

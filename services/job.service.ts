@@ -21,8 +21,16 @@ class JobService {
     }
   }
 
-  public getJob(messageId: string) {
-    return this.client.messages.get(messageId)
+  public async getJob(messageId: string) {
+    try {
+      const message = await this.client.messages.get(messageId)
+      return message
+    } catch (error) {
+      if ((error as QstashError)?.message?.includes('not found')) {
+        return null
+      }
+      throw error
+    }
   }
 
   public async safeDeleteJob(messageId: string) {

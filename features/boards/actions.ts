@@ -7,6 +7,7 @@ import { ListWithCards } from '@/types/common'
 import { NotFoundError } from '@/types/error'
 import { Label } from '@prisma/client'
 import { flattenValidationErrors } from 'next-safe-action'
+import { getMe } from '../users/actions'
 import { createBoardSchema } from './validations'
 
 export const createBoard = protectedActionClient
@@ -59,6 +60,8 @@ export const getBoardWithWorkspace = async (slug: string) => {
 
 export const getBoardListsWithCards = async (slug: string): Promise<ListWithCards[]> => {
   try {
+    const { id: userId } = await getMe()
+
     const board = await prisma.board.findUnique({
       where: {
         slug
@@ -107,6 +110,17 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
                   where: {
                     user: {
                       isDeleted: false
+                    }
+                  },
+                  include: {
+                    user: true
+                  }
+                },
+                watchers: {
+                  where: {
+                    user: {
+                      isDeleted: false,
+                      id: userId
                     }
                   },
                   include: {

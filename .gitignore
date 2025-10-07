@@ -48,3 +48,5 @@ prisma/migrations
 
 # Authentication tokens
 .npmrc
+
+.vscode/

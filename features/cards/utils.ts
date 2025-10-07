@@ -3,7 +3,7 @@ import { CardDetail, CardPreview, ListWithCards } from '@/types/common'
 import { UpdateCardFn } from '@/types/ui'
 import { QueryClient } from '@tanstack/react-query'
 import { differenceInHours, differenceInMinutes, format, isPast, parse } from 'date-fns'
-import { UpdateCardDateSchema } from './validations'
+import { UpdateCardDateInputSchema } from './validations'
 
 export const getCardDateLabel = (startDate?: Date | string | null, endDate?: Date | string | null) => {
   const start = startDate ? new Date(startDate) : null
@@ -62,19 +62,28 @@ export const hasCardAttachments = (attachments?: Array<{ url: string }> | null) 
   return attachments && Array.isArray(attachments) && attachments.length > 0
 }
 
-export const shouldDisplayCardIcons = (card: {
+export const shouldDisplayCardIcons = ({
+  _count,
+  description,
+  subtasks,
+  startDate,
+  endDate,
+  watchers
+}: {
   _count?: { comments: number; attachments: number }
   description?: string | null
   subtasks?: Array<{ children: unknown[] }>
   startDate?: Date | string | null
   endDate?: Date | string | null
+  watchers: { user: { id: string } }[]
 }) => {
   return (
-    (card._count?.comments ?? 0) > 0 ||
-    (card._count?.attachments ?? 0) > 0 ||
-    card.description ||
-    hasSubtasks(card.subtasks) ||
-    hasCardDates(card.startDate, card.endDate)
+    (_count?.comments ?? 0) > 0 ||
+    (_count?.attachments ?? 0) > 0 ||
+    description ||
+    hasSubtasks(subtasks) ||
+    hasCardDates(startDate, endDate) ||
+    watchers.length
   )
 }
 
@@ -131,7 +140,7 @@ export const updateCardDateQueries = ({
   queryClient: QueryClient
   boardSlug: string
   cardSlug: string
-  data: UpdateCardDateSchema
+  data: UpdateCardDateInputSchema
   dateFormat: string
 }) => {
   updateCardDetailQuery(queryClient, boardSlug, cardSlug, (prev) => {
@@ -197,6 +206,86 @@ export const deleteCardDateQueries = ({
         }
 
         return { ...list, cards: list.cards.map((card, index) => (index === cardIndex ? newCard : card)) }
+      }
+      return list
+    })
+  })
+}
+
+export const toggleWatchCardQueries = ({
+  queryClient,
+  boardSlug,
+  cardSlug,
+  isWatching,
+  userId
+}: {
+  queryClient: QueryClient
+  boardSlug: string
+  cardSlug: string
+  isWatching: boolean
+  userId: string
+}) => {
+  updateCardDetailQuery(queryClient, boardSlug, cardSlug, (prev) => {
+    if (isWatching) {
+      return {
+        ...prev,
+        watchers: prev.watchers.filter((watcher) => watcher.user.id !== userId)
+      }
+    } else {
+      return {
+        ...prev,
+        watchers: [
+          ...prev.watchers,
+          {
+            user: {
+              id: userId,
+              isDeleted: false,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              imageUrl: null,
+              clerkId: '',
+              email: '',
+              firstName: null,
+              lastName: null
+            },
+            cardId: prev.id
+          }
+        ]
+      }
+    }
+  })
+
+  updateBoardListsQuery(queryClient, boardSlug, (prev) => {
+    return prev.map((list) => {
+      if (list.cards.some((card) => card.slug === cardSlug)) {
+        return {
+          ...list,
+          cards: list.cards.map((card) =>
+            card.slug === cardSlug
+              ? {
+                  ...card,
+                  watchers: isWatching
+                    ? card.watchers.filter((watcher) => watcher.user.id !== userId)
+                    : [
+                        ...card.watchers,
+                        {
+                          user: {
+                            id: userId,
+                            isDeleted: false,
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                            imageUrl: null,
+                            clerkId: '',
+                            email: '',
+                            firstName: null,
+                            lastName: null
+                          }
+                        }
+                      ]
+                }
+              : card
+          )
+        }
       }
       return list
     })

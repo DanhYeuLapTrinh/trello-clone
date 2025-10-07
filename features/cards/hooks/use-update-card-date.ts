@@ -5,18 +5,18 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import { updateCardDate } from '../actions'
 import { invalidateCardQueries } from '../utils'
-import { updateCardDateSchema, UpdateCardDateSchema } from '../validations'
+import { UpdateCardDateInputSchema, updateCardDateSchema } from '../validations'
 
 interface UseUpdateCardDateProps {
   boardSlug: string
   cardSlug: string
-  defaultValues: UpdateCardDateSchema
+  defaultValues: UpdateCardDateInputSchema
 }
 
 export const useUpdateCardDate = ({ boardSlug, cardSlug, defaultValues }: UseUpdateCardDateProps) => {
   const queryClient = useQueryClient()
 
-  const methods = useForm<UpdateCardDateSchema>({
+  const methods = useForm<UpdateCardDateInputSchema>({
     defaultValues,
     resolver: zodResolver(updateCardDateSchema)
   })

@@ -4,7 +4,16 @@ import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { CardPreview } from '@/types/common'
-import { Clock, LucideIcon, MessageSquare, Paperclip, SquareCheckBig, SquarePen, TextAlignStart } from 'lucide-react'
+import {
+  Clock,
+  Eye,
+  LucideIcon,
+  MessageSquare,
+  Paperclip,
+  SquareCheckBig,
+  SquarePen,
+  TextAlignStart
+} from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { createElement } from 'react'
@@ -24,9 +33,18 @@ interface CardItemProps {
 export default function CardItem({ card, slug }: CardItemProps) {
   const router = useRouter()
 
-  const isDisplayIcon = shouldDisplayCardIcons(card)
+  const isDisplayIcon = shouldDisplayCardIcons({
+    _count: card._count,
+    description: card.description,
+    subtasks: card.subtasks,
+    startDate: card.startDate,
+    endDate: card.endDate,
+    watchers: card.watchers
+  })
+
   const { doneSubtasks, totalSubtasks } = getSubtaskStats(card.subtasks)
   const visibleCardLabels = getVisibleCardLabels(card.cardLabels)
+  const isWatching = card.watchers.length > 0
 
   const handleCardClick = () => {
     if (slug) {
@@ -69,6 +87,7 @@ export default function CardItem({ card, slug }: CardItemProps) {
 
         {isDisplayIcon ? (
           <div className='flex items-center gap-x-2 gap-y-1 flex-wrap'>
+            {isWatching ? <PreviewIcon icon={Eye} /> : null}
             {card.startDate || card.endDate ? (
               <PreviewIcon
                 icon={Clock}

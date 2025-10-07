@@ -17,14 +17,15 @@ import { createCommentQueries, updateCardBackgroundQueries } from '@/features/co
 import LabelPopover from '@/features/labels/components/label-popover'
 import SubtaskPopover from '@/features/subtasks/components/subtask-popover'
 import SubtaskSection from '@/features/subtasks/components/subtask-section'
+import { useMe } from '@/hooks/use-me'
 import { FILE_FOLDER, FILE_TYPE_GROUPS } from '@/lib/constants'
 import { cn, getColorTextClass } from '@/lib/utils'
 import { FileInfo } from '@/types/common'
-import { useUser } from '@clerk/nextjs'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronDown,
   Clock,
+  Eye,
   ImageIcon,
   MessageSquareText,
   MoreHorizontal,
@@ -40,6 +41,7 @@ import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import AttachmentPopover from '../../attachments/components/attachment-popover'
 import { getCard, getCardActivitiesAndComments } from '../actions'
+import { useToggleWatchCard } from '../hooks/use-toggle-watch-card'
 import { useUpdateCard } from '../hooks/use-update-card'
 import { useUpdateCardBackground } from '../hooks/use-update-card-background'
 import {
@@ -50,9 +52,11 @@ import {
   hasCardDates,
   hasCardLabels,
   hasSubtasks,
-  isCardExpired
+  isCardExpired,
+  toggleWatchCardQueries
 } from '../utils'
 import { UpdateCardSchema } from '../validations'
+import CardDetailMore from './card-detail-more'
 import AsigneePopover from './popover/asignee-popover'
 import DatePopover from './popover/date-popover'
 import Timeline from './timeline'
@@ -68,7 +72,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
   const router = useRouter()
   const queryClient = useQueryClient()
 
-  const { user } = useUser()
+  const { data: user } = useMe()
 
   const { data: cardDetail } = useQuery({
     queryKey: ['card', boardSlug, cardSlug],
@@ -89,6 +93,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
   const { methods, updateCardAction } = useUpdateCard()
   const { createCommentAction } = useCreateComment(boardSlug, cardSlug)
   const { updateCardBackgroundAction } = useUpdateCardBackground(boardSlug, cardSlug)
+  const { toggleWatchCardAction } = useToggleWatchCard(boardSlug, cardSlug)
 
   const formTitle = methods.watch('title')
   const formDescription = methods.watch('description')
@@ -97,6 +102,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
   const hadCardLabels = hasCardLabels(cardDetail!.cardLabels)
   const hadCardDates = hasCardDates(cardDetail!.startDate, cardDetail!.endDate)
   const hadCardAttachments = hasCardAttachments(cardDetail!.attachments)
+  const isWatching = cardDetail!.watchers.length > 0
 
   const isDisplayRow = hadCardDates || hadCardLabels
 
@@ -188,6 +194,12 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
     })
   }
 
+  const handleWatchCard = () => {
+    toggleWatchCardQueries({ queryClient, boardSlug, cardSlug, isWatching, userId: user?.id || '' })
+
+    toggleWatchCardAction.execute({ boardSlug, cardSlug })
+  }
+
   return (
     <Dialog open={internalOpen} onOpenChange={handleClose}>
       {children && <DialogTrigger className='w-full text-left'>{children}</DialogTrigger>}
@@ -228,9 +240,19 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                 >
                   <ImageIcon className='size-4.5' />
                 </UploadFilesWrapper>
-                <Button className='rounded-full' variant='secondary' size='icon'>
-                  <MoreHorizontal className='size-4.5' />
-                </Button>
+
+                {isWatching ? (
+                  <Button className='rounded-full' variant='secondary' size='icon' onClick={handleWatchCard}>
+                    <Eye className='size-4.5' />
+                  </Button>
+                ) : null}
+
+                <CardDetailMore isWatching={isWatching} boardSlug={boardSlug} cardSlug={cardSlug}>
+                  <Button className='rounded-full' variant='secondary' size='icon'>
+                    <MoreHorizontal className='size-4.5' />
+                  </Button>
+                </CardDetailMore>
+
                 <Button className='rounded-full' variant='secondary' size='icon' onClick={handleClose}>
                   <X className='size-5' />
                 </Button>
@@ -253,9 +275,19 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                 >
                   <ImageIcon className='size-4.5' />
                 </UploadFilesWrapper>
-                <Button className='rounded-full' variant='ghost' size='icon'>
-                  <MoreHorizontal className='size-4.5' />
-                </Button>
+
+                {isWatching ? (
+                  <Button className='rounded-full' variant='ghost' size='icon' onClick={handleWatchCard}>
+                    <Eye className='size-4.5' />
+                  </Button>
+                ) : null}
+
+                <CardDetailMore isWatching={isWatching} boardSlug={boardSlug} cardSlug={cardSlug}>
+                  <Button className='rounded-full' variant='ghost' size='icon'>
+                    <MoreHorizontal className='size-4.5' />
+                  </Button>
+                </CardDetailMore>
+
                 <Button className='rounded-full' variant='ghost' size='icon' onClick={handleClose}>
                   <X className='size-5' />
                 </Button>

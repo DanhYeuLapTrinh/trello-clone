@@ -1,13 +1,20 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { getBoardLabels, getBoardListsWithCards, getBoardWithWorkspace } from '@/features/boards/actions'
+import {
+  getBoardLabels,
+  getBoardListsWithCards,
+  getBoardMembers,
+  getBoardOwner,
+  getBoardWithWorkspace
+} from '@/features/boards/actions'
 import BoardContent from '@/features/boards/components/board-content'
 import BoardNameInput from '@/features/boards/components/board-name-input'
 import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
+import ShareBoardDialog from '@/features/boards/components/share-board-dialog'
 import { boardBackgroundClasses } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
-import { Trello } from 'lucide-react'
+import { Trello, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -25,6 +32,16 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
   await queryClient.prefetchQuery({
     queryKey: ['board', 'labels', slug],
     queryFn: () => getBoardLabels(slug)
+  })
+
+  await queryClient.prefetchQuery({
+    queryKey: ['board', 'members', slug],
+    queryFn: () => getBoardMembers(slug)
+  })
+
+  await queryClient.prefetchQuery({
+    queryKey: ['board', 'owner', slug],
+    queryFn: () => getBoardOwner(slug)
   })
 
   if (!board || !workspace) {
@@ -47,8 +64,14 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
           </div>
         </div>
 
-        <div className='bg-black/20 backdrop-blur-md px-4 py-3 shadow-lg flex-shrink-0'>
+        <div className='bg-black/20 backdrop-blur-md px-4 py-3 shadow-lg flex items-center justify-between'>
           <BoardNameInput name={board.name} />
+          <ShareBoardDialog boardSlug={board.slug}>
+            <Button variant='secondary'>
+              <UserPlus />
+              Chia sẻ
+            </Button>
+          </ShareBoardDialog>
         </div>
 
         <BoardContent boardId={board.id} slug={board.slug} />

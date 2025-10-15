@@ -1,13 +1,13 @@
 import { Body, Container, Head, Html, Preview, Section, Tailwind, Text } from '@react-email/components'
 
-interface CardExpiryEmailProps {
+interface CardReminderMailProps {
   boardName: string
   cardTitle: string
   endDate: string
   cardUrl: string
 }
 
-export default function CardExpiryEmail({ boardName, cardTitle, endDate, cardUrl }: CardExpiryEmailProps) {
+export default function CardReminderMail({ boardName, cardTitle, endDate, cardUrl }: CardReminderMailProps) {
   return (
     <Html>
       <Head />

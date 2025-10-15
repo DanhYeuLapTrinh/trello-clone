@@ -1,5 +1,5 @@
 import { CardLabelColor } from '@/types/ui'
-import { BoardBackground, BoardVisibility, CardReminderType } from '@prisma/client'
+import { BoardBackground, BoardVisibility, CardReminderType, Role } from '@prisma/client'
 import { Globe, LockKeyhole, LucideIcon, Users } from 'lucide-react'
 
 export const boardBackgroundClasses: Record<BoardBackground, string> = {
@@ -176,4 +176,10 @@ export const FILE_FOLDER = {
   ATTACHMENTS: 'attachments',
   CARDS: 'cards',
   TIPTAP: 'tiptap'
+}
+
+export const ROLE_LABEL: Record<Role, string> = {
+  Owner: 'Chủ',
+  Admin: 'Quản trị viên',
+  Member: 'Thành viên'
 }

@@ -45,6 +45,7 @@ next-env.d.ts
 
 # migrations
 prisma/migrations
+prisma/data
 
 # Authentication tokens
 .npmrc

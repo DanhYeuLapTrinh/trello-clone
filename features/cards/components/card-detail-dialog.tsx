@@ -5,7 +5,14 @@ import SanitizedHtml from '@/components/sanitized-html'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -21,6 +28,7 @@ import { useMe } from '@/hooks/use-me'
 import { FILE_FOLDER, FILE_TYPE_GROUPS } from '@/lib/constants'
 import { cn, getColorTextClass } from '@/lib/utils'
 import { FileInfo } from '@/types/common'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronDown,
@@ -211,6 +219,12 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
         size='xxl'
         aria-describedby='card-detail-dialog'
       >
+        <VisuallyHidden>
+          <DialogHeader>
+            <DialogTitle>{cardDetail!.title}</DialogTitle>
+            <DialogDescription>{cardDetail!.description}</DialogDescription>
+          </DialogHeader>
+        </VisuallyHidden>
         <Form {...methods}>
           {cardDetail!.imageUrl ? (
             <div className='relative h-[160px] w-full'>

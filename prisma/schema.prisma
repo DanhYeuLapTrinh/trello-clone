@@ -63,18 +63,22 @@ model User {
   email     String   @unique
   firstName String?
   lastName  String?
+  fullName  String?
   imageUrl  String?
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  ownedWorkspaces      Workspace[]       @relation("WorkspaceOwner")
   workspaceMemberships WorkspaceMember[]
-  ownedBoards          Board[]           @relation("BoardOwner")
-  memberships          BoardMember[]
-  cardAssignees        CardAssignee[]
-  comments             Comment[]
-  watchedCards         CardWatcher[]
-  activities           Activity[]        @relation("UserActivities")
+
+  ownedBoards      Board[]       @relation("BoardOwner")
+  boardMemberships BoardMember[]
+
+  cardAssignees CardAssignee[]
+  comments      Comment[]
+  watchedCards  CardWatcher[]
+  activities    Activity[]     @relation("UserActivities")
 
   @@map("users")
 }
@@ -100,7 +104,7 @@ model Activity {
 
 model Workspace {
   id          String   @id @default(uuid())
-  name        String   @unique
+  name        String
   shortName   String   @unique
   websiteUrl  String?
   description String?
@@ -109,8 +113,11 @@ model Workspace {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  memberships WorkspaceMember[]
-  boards      Board[]
+  ownerId String
+  owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  workspaceMemberships WorkspaceMember[]
+  boards               Board[]
 
   @@map("workspaces")
 }
@@ -131,7 +138,7 @@ model WorkspaceMember {
 
 model Board {
   id          String          @id @default(uuid())
-  name        String          @unique
+  name        String
   description String?
   background  BoardBackground @default(OCEAN)
   visibility  BoardVisibility @default(WORKSPACE)
@@ -146,9 +153,9 @@ model Board {
   ownerId String
   owner   User   @relation("BoardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
-  memberships BoardMember[]
-  lists       List[]
-  labels      Label[]
+  boardMemberships BoardMember[]
+  lists            List[]
+  labels           Label[]
 
   @@map("boards")
 }
@@ -169,7 +176,7 @@ model BoardMember {
 
 model List {
   id        String   @id @default(uuid())
-  name      String   @unique
+  name      String
   position  Int
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())

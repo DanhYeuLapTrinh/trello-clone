@@ -1,4 +1,4 @@
-import { BoardBackground, BoardVisibility } from '@prisma/client'
+import { BoardBackground, BoardVisibility, Role } from '@prisma/client'
 import z from 'zod'
 
 export const createBoardSchema = z.object({
@@ -9,4 +9,18 @@ export const createBoardSchema = z.object({
   visibility: z.enum(BoardVisibility)
 })
 
+export const shareBoardSchema = z.object({
+  value: z.array(
+    z.object({
+      userId: z.uuid(),
+      email: z.email(),
+      fullName: z.string().trim()
+    })
+  ),
+  role: z.enum(Role),
+  description: z.string().trim().optional(),
+  boardSlug: z.string()
+})
+
 export type CreateBoardSchema = z.infer<typeof createBoardSchema>
+export type ShareBoardSchema = z.infer<typeof shareBoardSchema>

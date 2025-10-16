@@ -51,14 +51,14 @@ export default function CreateCardButton({ listId, slug }: { listId: string; slu
           />
 
           <Button
-            className='w-full'
+            className='w-fit'
             type='submit'
             disabled={createCardAction.isPending}
             // prevent dnd
             onMouseDown={(e) => e.stopPropagation()}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            {createCardAction.isPending ? <Loader2 className='w-4 h-4 animate-spin' /> : 'Thêm danh sách'}
+            {createCardAction.isPending ? <Loader2 className='w-4 h-4 animate-spin' /> : 'Thêm thẻ'}
           </Button>
         </form>
       </Form>

@@ -238,6 +238,12 @@ export const toggleWatchCardSchema = z.object({
   boardSlug: z.string()
 })
 
+export const toggleAssignCardSchema = z.object({
+  cardSlug: z.string(),
+  boardSlug: z.string(),
+  targetId: z.uuid()
+})
+
 export type CreateCardSchema = z.infer<typeof createCardSchema>
 export type MoveCardWithinListSchema = z.infer<typeof moveCardWithinListSchema>
 export type MoveCardBetweenListsSchema = z.infer<typeof moveCardBetweenListsSchema>
@@ -248,3 +254,5 @@ export type UpdateCardDateOutputSchema = z.output<typeof updateCardDateSchema>
 
 export type DeleteCardDateSchema = z.infer<typeof deleteCardDateSchema>
 export type UpdateCardBackgroundSchema = z.infer<typeof updateCardBackgroundSchema>
+export type ToggleWatchCardSchema = z.infer<typeof toggleWatchCardSchema>
+export type ToggleAssignCardSchema = z.infer<typeof toggleAssignCardSchema>

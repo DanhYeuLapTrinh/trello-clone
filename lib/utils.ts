@@ -1,4 +1,4 @@
-import { CardDetail, ListWithCards } from '@/types/common'
+import { CardDetail, CardTimeline, ListWithCards } from '@/types/common'
 import { CardReminderType } from '@prisma/client'
 import { QueryClient } from '@tanstack/react-query'
 import { clsx, type ClassValue } from 'clsx'
@@ -47,6 +47,19 @@ export const updateBoardListsQuery = (
 ) => {
   queryClient.setQueryData(['board', 'lists', boardSlug], (prev: ListWithCards[]) => {
     if (!prev) return prev
+    return updater(prev)
+  })
+}
+
+export const updateCardActivitiesQuery = (
+  queryClient: QueryClient,
+  boardSlug: string,
+  cardSlug: string,
+  updater: (prev: CardTimeline) => CardTimeline
+) => {
+  queryClient.setQueryData(['card', 'activities', 'comments', boardSlug, cardSlug], (prev: CardTimeline) => {
+    if (!prev) return prev
+
     return updater(prev)
   })
 }

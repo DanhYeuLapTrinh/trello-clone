@@ -1,4 +1,4 @@
-import { Activity, Attachment, Card, CardLabel, Comment, Label, List, Subtask, User } from '@prisma/client'
+import { Activity, Attachment, Card, CardLabel, Comment, Label, List, Role, Subtask, User } from '@prisma/client'
 
 export interface AppResponse<T> {
   data: T
@@ -14,6 +14,17 @@ export interface FileInfo {
   type: string
 }
 
+export interface Assignee {
+  id: string
+  fullName: string | null
+  email: string
+  imageUrl: string | null
+}
+
+export interface BoardUser extends Assignee {
+  role: Role
+}
+
 export type LabelDetail = CardLabel & { label: Label }
 
 export type SubtaskDetail = Subtask & { children: Subtask[] }
@@ -21,7 +32,9 @@ export type SubtaskDetail = Subtask & { children: Subtask[] }
 export type CardPreview = Card & {
   cardLabels: LabelDetail[]
   subtasks: SubtaskDetail[]
-  assignees: { user: User }[]
+  assignees: {
+    user: Assignee
+  }[]
   watchers: { user: User }[]
   _count: {
     attachments: number
@@ -33,7 +46,9 @@ export type CardDetail = Card & {
   list: List
   cardLabels: LabelDetail[]
   subtasks: SubtaskDetail[]
-  assignees: { user: User }[]
+  assignees: {
+    user: Assignee
+  }[]
   watchers: { user: User }[]
   attachments: Attachment[]
   comments: Comment[]
@@ -78,10 +93,10 @@ export interface MoveDetails {
   position?: number
 }
 
-export interface AssignMemberDetails {
-  userId: string
-}
-
-export interface UnassignMemberDetails {
-  userId: string
+export interface AssigneeDetails {
+  [key: string]: string
+  actorId: string
+  actorName: string
+  targetId: string
+  targetName: string
 }

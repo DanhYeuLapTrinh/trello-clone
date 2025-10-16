@@ -15,10 +15,10 @@ import { addDays, format, parse } from 'date-fns'
 import { X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
-import { useDeleteCardDate } from '../../hooks/use-delete-card-date'
-import { useUpdateCardDate } from '../../hooks/use-update-card-date'
-import { deleteCardDateQueries, updateCardDateQueries } from '../../utils'
-import { UpdateCardDateInputSchema } from '../../validations'
+import { useDeleteCardDate } from '../hooks/use-delete-card-date'
+import { useUpdateCardDate } from '../hooks/use-update-card-date'
+import { deleteCardDateQueries, updateCardDateQueries } from '../utils'
+import { UpdateCardDateInputSchema } from '../validations'
 
 interface DatePopoverProps {
   reminderType: CardReminderType

@@ -7,6 +7,7 @@ export const createTempComment = (
   content: string,
   firstName: string,
   lastName: string,
+  fullName: string,
   imageUrl: string
 ): Comment & { user: User } & { __type: TimelineItemType.Comment } => {
   const now = new Date()
@@ -26,6 +27,7 @@ export const createTempComment = (
       email: getTempId('email'),
       firstName,
       lastName,
+      fullName,
       imageUrl,
       isDeleted: false,
       createdAt: now,
@@ -53,6 +55,7 @@ export const createCommentQueries = ({
   content,
   firstName,
   lastName,
+  fullName,
   imageUrl
 }: {
   queryClient: QueryClient
@@ -61,13 +64,14 @@ export const createCommentQueries = ({
   content: string
   firstName: string
   lastName: string
+  fullName: string
   imageUrl: string
 }) => {
   updateCardTimelineQuery(queryClient, boardSlug, cardSlug, (prev) => {
     return {
       ...prev,
-      comments: [createTempComment(content, firstName, lastName, imageUrl), ...prev.comments],
-      sortedList: [createTempComment(content, firstName, lastName, imageUrl), ...prev.sortedList]
+      comments: [createTempComment(content, firstName, lastName, fullName, imageUrl), ...prev.comments],
+      sortedList: [createTempComment(content, firstName, lastName, fullName, imageUrl), ...prev.sortedList]
     }
   })
 

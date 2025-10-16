@@ -1,12 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  getBoardLabels,
-  getBoardListsWithCards,
-  getBoardMembers,
-  getBoardOwner,
-  getBoardWithWorkspace
-} from '@/features/boards/actions'
+import { getBoardLabels, getBoardListsWithCards, getBoardUsers, getBoardWithWorkspace } from '@/features/boards/actions'
 import BoardContent from '@/features/boards/components/board-content'
 import BoardNameInput from '@/features/boards/components/board-name-input'
 import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
@@ -35,13 +29,8 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
   })
 
   await queryClient.prefetchQuery({
-    queryKey: ['board', 'members', slug],
-    queryFn: () => getBoardMembers(slug)
-  })
-
-  await queryClient.prefetchQuery({
-    queryKey: ['board', 'owner', slug],
-    queryFn: () => getBoardOwner(slug)
+    queryKey: ['board', 'users', slug],
+    queryFn: () => getBoardUsers(slug)
   })
 
   if (!board || !workspace) {

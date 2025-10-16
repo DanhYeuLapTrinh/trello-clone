@@ -68,7 +68,7 @@ export default function AttachmentPopover({ children, cardSlug, boardSlug }: Att
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent side='bottom' align='start' className='p-0 w-80 flex flex-col gap-3'>
-        <div className='flex items-center w-full p-2'>
+        <div className='flex items-center w-full px-2 pt-2'>
           <div className='flex-1' />
 
           <p className='font-semibold text-sm text-center text-muted-foreground'>Đính kèm</p>

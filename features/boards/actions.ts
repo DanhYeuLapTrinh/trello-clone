@@ -5,9 +5,9 @@ import { protectedActionClient } from '@/lib/safe-action'
 import { slugify } from '@/lib/utils'
 import prisma from '@/prisma/prisma'
 import mailService from '@/services/mail.service'
-import { ListWithCards } from '@/types/common'
+import { BoardUser, ListWithCards } from '@/types/common'
 import { NotFoundError } from '@/types/error'
-import { Label } from '@prisma/client'
+import { Label, Role } from '@prisma/client'
 import { render } from '@react-email/render'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
@@ -116,8 +116,15 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
                       isDeleted: false
                     }
                   },
-                  include: {
-                    user: true
+                  select: {
+                    user: {
+                      select: {
+                        id: true,
+                        fullName: true,
+                        email: true,
+                        imageUrl: true
+                      }
+                    }
                   }
                 },
                 watchers: {
@@ -180,51 +187,56 @@ export const getBoardLabels = async (slug: string): Promise<Label[]> => {
   }
 }
 
-export const getBoardOwner = async (slug: string) => {
+export const getBoardUsers = async (slug: string): Promise<BoardUser[]> => {
   try {
-    const boardOwner = await prisma.board.findUnique({
+    const board = await prisma.board.findUnique({
       where: { slug },
       select: {
         owner: {
           select: {
             id: true,
             email: true,
-            firstName: true,
-            lastName: true,
+            fullName: true,
             imageUrl: true
+          }
+        },
+        boardMemberships: {
+          select: {
+            role: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                fullName: true,
+                imageUrl: true
+              }
+            }
           }
         }
       }
     })
 
-    if (!boardOwner) {
-      throw new NotFoundError('Owner')
+    if (!board) throw new NotFoundError('Board')
+
+    const owner: BoardUser = {
+      id: board.owner.id,
+      email: board.owner.email,
+      fullName: board.owner.fullName || '',
+      imageUrl: board.owner.imageUrl || '',
+      role: Role.Owner
     }
 
-    return boardOwner.owner
-  } catch (error) {
-    throw error
-  }
-}
+    const members: BoardUser[] = board.boardMemberships.map((m) => ({
+      id: m.user.id,
+      email: m.user.email,
+      fullName: m.user.fullName || '',
+      imageUrl: m.user.imageUrl || '',
+      role: m.role
+    }))
 
-export const getBoardMembers = async (slug: string) => {
-  try {
-    const members = await prisma.boardMember.findMany({
-      where: { board: { slug } },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            imageUrl: true
-          }
-        }
-      }
-    })
+    const users = [owner, ...members].filter((user, index, self) => index === self.findIndex((u) => u.id === user.id))
 
-    return members
+    return users
   } catch (error) {
     throw error
   }

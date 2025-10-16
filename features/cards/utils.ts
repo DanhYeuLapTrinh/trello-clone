@@ -1,9 +1,48 @@
-import { updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
-import { CardDetail, CardPreview, ListWithCards } from '@/types/common'
+import { getTempId, updateBoardListsQuery, updateCardActivitiesQuery, updateCardDetailQuery } from '@/lib/utils'
+import { Assignee, AssigneeDetails, CardDetail, CardPreview, ListWithCards, TimelineItemType } from '@/types/common'
 import { UpdateCardFn } from '@/types/ui'
+import { Activity, User } from '@prisma/client'
 import { QueryClient } from '@tanstack/react-query'
 import { differenceInHours, differenceInMinutes, format, isPast, parse } from 'date-fns'
 import { UpdateCardDateInputSchema } from './validations'
+
+export const createTempActivity = (
+  actorUser: Assignee,
+  targetUser: Assignee,
+  isAssigned: boolean
+): Activity & { user: User } => {
+  const now = new Date()
+
+  const details: AssigneeDetails = {
+    actorId: actorUser.id,
+    actorName: actorUser.fullName || actorUser.email.split('@')[0],
+    targetId: targetUser.id,
+    targetName: targetUser.fullName || targetUser.email.split('@')[0]
+  }
+
+  return {
+    id: getTempId('activity'),
+    model: 'CARD',
+    action: isAssigned ? 'UNASSIGN_MEMBER' : 'ASSIGN_MEMBER',
+    details,
+    createdAt: now,
+    updatedAt: now,
+    userId: actorUser.id,
+    cardId: getTempId('card'),
+    user: {
+      id: actorUser.id,
+      isDeleted: false,
+      createdAt: now,
+      updatedAt: now,
+      imageUrl: actorUser.imageUrl,
+      clerkId: actorUser.email,
+      email: actorUser.email,
+      firstName: null,
+      lastName: null,
+      fullName: actorUser.fullName
+    }
+  }
+}
 
 export const getCardDateLabel = (startDate?: Date | string | null, endDate?: Date | string | null) => {
   const start = startDate ? new Date(startDate) : null
@@ -60,6 +99,10 @@ export const hasSubtasks = (subtasks?: Array<{ children: unknown[] }> | null) =>
 
 export const hasCardAttachments = (attachments?: Array<{ url: string }> | null) => {
   return attachments && Array.isArray(attachments) && attachments.length > 0
+}
+
+export const hasCardAssignees = (assignees?: Array<{ user: Assignee }> | null) => {
+  return assignees && Array.isArray(assignees) && assignees.length > 0
 }
 
 export const shouldDisplayCardIcons = ({
@@ -246,7 +289,8 @@ export const toggleWatchCardQueries = ({
               clerkId: '',
               email: '',
               firstName: null,
-              lastName: null
+              lastName: null,
+              fullName: null
             },
             cardId: prev.id
           }
@@ -278,7 +322,8 @@ export const toggleWatchCardQueries = ({
                             clerkId: '',
                             email: '',
                             firstName: null,
-                            lastName: null
+                            lastName: null,
+                            fullName: null
                           }
                         }
                       ]
@@ -292,10 +337,82 @@ export const toggleWatchCardQueries = ({
   })
 }
 
+export const toggleAssignCardQueries = ({
+  queryClient,
+  boardSlug,
+  cardSlug,
+  targetUser,
+  actorUser,
+  isAssigned
+}: {
+  queryClient: QueryClient
+  boardSlug: string
+  cardSlug: string
+  actorUser: Assignee
+  targetUser: Assignee
+  isAssigned: boolean
+}) => {
+  updateCardDetailQuery(queryClient, boardSlug, cardSlug, (prev) => {
+    if (isAssigned) {
+      return {
+        ...prev,
+        assignees: prev.assignees.filter((assignee) => assignee.user.id !== targetUser.id)
+      }
+    } else {
+      return {
+        ...prev,
+        assignees: [...prev.assignees, { user: targetUser }]
+      }
+    }
+  })
+
+  updateBoardListsQuery(queryClient, boardSlug, (prev) => {
+    if (isAssigned) {
+      return prev.map((list) => {
+        if (list.cards.some((card) => card.slug === cardSlug)) {
+          return {
+            ...list,
+            cards: list.cards.map((card) =>
+              card.slug === cardSlug
+                ? { ...card, assignees: card.assignees.filter((assignee) => assignee.user.id !== targetUser.id) }
+                : card
+            )
+          }
+        }
+        return list
+      })
+    } else {
+      return prev.map((list) => {
+        if (list.cards.some((card) => card.slug === cardSlug)) {
+          return {
+            ...list,
+            cards: list.cards.map((card) =>
+              card.slug === cardSlug ? { ...card, assignees: [...card.assignees, { user: targetUser }] } : card
+            )
+          }
+        }
+        return list
+      })
+    }
+  })
+
+  updateCardActivitiesQuery(queryClient, boardSlug, cardSlug, (prev) => {
+    return {
+      ...prev,
+      activities: [createTempActivity(actorUser, targetUser, isAssigned), ...prev.activities],
+      sortedList: [
+        { ...createTempActivity(actorUser, targetUser, isAssigned), __type: TimelineItemType.Activity },
+        ...prev.sortedList
+      ]
+    }
+  })
+}
+
 // Invalidates
 export const invalidateCardQueries = (queryClient: QueryClient, boardSlug: string, cardSlug: string) => {
   queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
   queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
+  queryClient.invalidateQueries({ queryKey: ['card', 'activities', 'comments', boardSlug, cardSlug] })
 }
 
 export function formatDateRelativeVN(date: Date) {

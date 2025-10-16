@@ -2,6 +2,7 @@
 
 import Editor from '@/components/editor'
 import SanitizedHtml from '@/components/sanitized-html'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -41,6 +42,7 @@ import {
   Plus,
   Tag,
   TextAlignStart,
+  UserRoundPlus,
   X
 } from 'lucide-react'
 import Image from 'next/image'
@@ -56,6 +58,7 @@ import {
   formatCardDate,
   formatCardDateTime,
   getCardDateLabel,
+  hasCardAssignees,
   hasCardAttachments,
   hasCardDates,
   hasCardLabels,
@@ -64,9 +67,9 @@ import {
   toggleWatchCardQueries
 } from '../utils'
 import { UpdateCardSchema } from '../validations'
+import AssigneePopover from './assignee-popover'
 import CardDetailMore from './card-detail-more'
-import AsigneePopover from './popover/asignee-popover'
-import DatePopover from './popover/date-popover'
+import DatePopover from './date-popover'
 import Timeline from './timeline'
 
 interface CardDetailDialogProps {
@@ -110,9 +113,10 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
   const hadCardLabels = hasCardLabels(cardDetail!.cardLabels)
   const hadCardDates = hasCardDates(cardDetail!.startDate, cardDetail!.endDate)
   const hadCardAttachments = hasCardAttachments(cardDetail!.attachments)
-  const isWatching = cardDetail!.watchers.length > 0
+  const hadCardAssignees = hasCardAssignees(cardDetail!.assignees)
 
-  const isDisplayRow = hadCardDates || hadCardLabels
+  const isWatching = cardDetail!.watchers.length > 0
+  const isDisplayRow = hadCardDates || hadCardLabels || hadCardAssignees
 
   const handleClose = () => {
     setInternalOpen(false)
@@ -180,6 +184,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
       content: comment,
       firstName: user?.firstName ?? '',
       lastName: user?.lastName ?? '',
+      fullName: user?.fullName ?? '',
       imageUrl: user?.imageUrl ?? ''
     })
 
@@ -383,7 +388,18 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
 
                       <SubtaskPopover boardSlug={boardSlug} cardSlug={cardDetail!.slug} />
 
-                      <AsigneePopover />
+                      {!hadCardAssignees ? (
+                        <AssigneePopover
+                          boardSlug={boardSlug}
+                          cardSlug={cardDetail!.slug}
+                          assignees={cardDetail!.assignees.map((assignee) => assignee.user)}
+                        >
+                          <Button variant='outline' size='sm'>
+                            <UserRoundPlus className='size-3.5' />
+                            <p className='text-xs'>Thành viên</p>
+                          </Button>
+                        </AssigneePopover>
+                      ) : null}
 
                       <AttachmentPopover cardSlug={cardDetail!.slug} boardSlug={boardSlug}>
                         <Button variant='outline' size='sm'>
@@ -395,6 +411,29 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
 
                     {isDisplayRow ? (
                       <div className='flex items-center gap-8 flex-wrap mt-8'>
+                        {hadCardAssignees ? (
+                          <div className='space-y-1'>
+                            <p className='text-xs font-semibold text-muted-foreground'>Thành viên</p>
+                            <div className='flex items-center flex-wrap gap-2'>
+                              {cardDetail!.assignees.map((assignee) => (
+                                <Avatar className='size-8' key={assignee.user.id}>
+                                  <AvatarImage src={assignee.user.imageUrl || undefined} />
+                                  <AvatarFallback>{assignee.user.fullName?.[0] || ''}</AvatarFallback>
+                                </Avatar>
+                              ))}
+                              <AssigneePopover
+                                boardSlug={boardSlug}
+                                cardSlug={cardDetail!.slug}
+                                assignees={cardDetail!.assignees.map((assignee) => assignee.user)}
+                              >
+                                <Button variant='secondary' size='icon' className='rounded-full size-8'>
+                                  <Plus />
+                                </Button>
+                              </AssigneePopover>
+                            </div>
+                          </div>
+                        ) : null}
+
                         {hadCardLabels ? (
                           <div className='space-y-1'>
                             <p className='text-xs font-semibold text-muted-foreground'>Nhãn</p>

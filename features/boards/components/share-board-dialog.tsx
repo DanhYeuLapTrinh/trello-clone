@@ -24,7 +24,7 @@ import { Loader2, X } from 'lucide-react'
 import { useState } from 'react'
 import { SubmitHandler, useFieldArray } from 'react-hook-form'
 import { useDebounce } from 'use-debounce'
-import { getBoardMembers, getBoardOwner } from '../actions'
+import { getBoardUsers } from '../actions'
 import { useSearchUsers } from '../hooks/use-search-users'
 import { useShareBoard } from '../hooks/use-share-board'
 import { ShareBoardSchema } from '../validations'
@@ -49,20 +49,16 @@ export default function ShareBoardDialog({ boardSlug, children }: ShareBoardDial
     name: 'value'
   })
 
-  const { data: user } = useMe()
+  const { data: me } = useMe()
 
-  const { data: owner } = useQuery({
-    queryKey: ['board', 'owner', boardSlug],
-    queryFn: () => getBoardOwner(boardSlug)
+  const { data: users } = useQuery({
+    queryKey: ['board', 'users', boardSlug],
+    queryFn: () => getBoardUsers(boardSlug)
   })
 
-  const { data: members } = useQuery({
-    queryKey: ['board', 'members', boardSlug],
-    queryFn: () => getBoardMembers(boardSlug)
-  })
-
-  const isMeOwner = user?.id === owner?.id
-  const isMe = members?.some((member) => member.user.id === user?.id)
+  const isBoardAdmin = users?.some(
+    (user) => user.id === me?.id && (user.role === Role.Admin || user.role === Role.Owner)
+  )
 
   const handleSelect = ({ email, fullName, userId }: { email: string; fullName: string; userId: string }) => {
     if (fields.some((user) => user.email === email)) return
@@ -150,7 +146,7 @@ export default function ShareBoardDialog({ boardSlug, children }: ShareBoardDial
                     </FormControl>
                     <SelectContent>
                       <SelectItem value={Role.Member}>{ROLE_LABEL[Role.Member]}</SelectItem>
-                      {isMeOwner && <SelectItem value={Role.Admin}>{ROLE_LABEL[Role.Admin]}</SelectItem>}
+                      {isBoardAdmin && <SelectItem value={Role.Admin}>{ROLE_LABEL[Role.Admin]}</SelectItem>}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -200,36 +196,18 @@ export default function ShareBoardDialog({ boardSlug, children }: ShareBoardDial
         <div className='flex flex-col gap-2 mt-4'>
           <p className='text-sm font-semibold text-muted-foreground'>Thành viên của bảng thông tin</p>
           <div className='space-y-4'>
-            <div className='flex items-center gap-2 mt-2'>
-              <Avatar>
-                <AvatarImage src={owner?.imageUrl || ''} />
-                <AvatarFallback>{owner?.firstName?.charAt(0) || '' + owner?.lastName?.charAt(0) || ''}</AvatarFallback>
-              </Avatar>
-              <div className='flex-1'>
-                <p className='text-sm'>
-                  {owner?.firstName} {owner?.lastName} {isMeOwner ? '(bạn)' : null}
-                </p>
-                <p className='text-xs text-muted-foreground'>
-                  {owner?.email} · <span>{ROLE_LABEL[Role.Owner]} Bảng thông tin</span>
-                </p>
-              </div>
-            </div>
-
-            {members?.map((member) => (
-              <div key={member.id} className='flex items-center gap-2'>
+            {users?.map((user) => (
+              <div key={user.id} className='flex items-center gap-2'>
                 <Avatar>
-                  <AvatarImage src={member.user.imageUrl || ''} />
-                  <AvatarFallback>
-                    {member.user.firstName?.[0]}
-                    {member.user.lastName?.[0]}
-                  </AvatarFallback>
+                  <AvatarImage src={user.imageUrl || ''} />
+                  <AvatarFallback>{user.fullName?.[0]}</AvatarFallback>
                 </Avatar>
                 <div className='flex-1'>
                   <p className='text-sm'>
-                    {owner?.firstName} {owner?.lastName} {isMe ? '(bạn)' : null}
+                    {user.fullName} {user.id === me?.id ? '(bạn)' : null}
                   </p>
                   <p className='text-xs text-muted-foreground'>
-                    {owner?.email} · <span>{ROLE_LABEL[member.role]} Bảng thông tin</span>
+                    {user.email} · <span>{ROLE_LABEL[user.role]} Bảng thông tin</span>
                   </p>
                 </div>
               </div>

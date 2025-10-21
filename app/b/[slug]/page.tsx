@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getBoardLabels, getBoardListsWithCards, getBoardUsers, getBoardWithWorkspace } from '@/features/boards/actions'
 import BoardContent from '@/features/boards/components/board-content'
@@ -8,7 +8,7 @@ import ShareBoardDialog from '@/features/boards/components/share-board-dialog'
 import { boardBackgroundClasses } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
-import { Trello, UserPlus } from 'lucide-react'
+import { Trello, UserPlus, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -54,13 +54,22 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
         </div>
 
         <div className='bg-black/20 backdrop-blur-md px-4 py-3 shadow-lg flex items-center justify-between'>
-          <BoardNameInput name={board.name} />
-          <ShareBoardDialog boardSlug={board.slug}>
-            <Button variant='secondary'>
-              <UserPlus />
-              Chia sẻ
-            </Button>
-          </ShareBoardDialog>
+          <div className='flex-1'>
+            <BoardNameInput name={board.name} />
+          </div>
+
+          <div className='space-x-2'>
+            <ShareBoardDialog boardSlug={board.slug}>
+              <Button variant='secondary'>
+                <UserPlus />
+                Chia sẻ
+              </Button>
+            </ShareBoardDialog>
+
+            <Link href={`/b/${board.slug}/butler`} className={buttonVariants({ variant: 'secondary', size: 'icon' })}>
+              <Zap />
+            </Link>
+          </div>
         </div>
 
         <BoardContent boardId={board.id} slug={board.slug} />

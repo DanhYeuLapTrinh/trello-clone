@@ -6,26 +6,26 @@ import { useState } from 'react'
 
 // TODO: create action to update board name
 export default function BoardNameInput({ name }: { name: string }) {
-  const [isEditing, setIsEditing] = useState(false)
+  const [isEditName, setIsEditName] = useState(false)
   const [newName, setNewName] = useState(name)
 
-  const toggleEditing = () => {
-    setIsEditing((prev) => !prev)
+  const toggleEditName = () => {
+    setIsEditName((prev) => !prev)
   }
 
-  if (isEditing) {
+  if (isEditName) {
     return (
       <Input
         value={newName}
         onChange={(e) => setNewName(e.target.value)}
-        onBlur={toggleEditing}
+        onBlur={toggleEditName}
         autoFocus
         className='text-white font-bold w-auto'
       />
     )
   } else {
     return (
-      <Button variant='ghost' className='hover:bg-muted/20' onClick={toggleEditing}>
+      <Button variant='ghost' className='hover:bg-muted/20' onClick={toggleEditName}>
         <p className='font-bold text-background'>{name}</p>
       </Button>
     )

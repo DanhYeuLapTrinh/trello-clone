@@ -78,7 +78,7 @@ export default function CreateBoardForm() {
               <SelectContent>
                 {boardVisibilityValues.map((visibility) => (
                   <SelectItem key={visibility} value={visibility}>
-                    <div className='flex flex-row items-center gap-2.5'>
+                    <div className='flex items-center gap-2.5'>
                       {createElement(boardVisibility[visibility as keyof typeof boardVisibility].icon, {
                         className: 'size-4'
                       })}

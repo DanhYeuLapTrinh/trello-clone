@@ -1,7 +1,7 @@
 'use server'
 
-import prisma from '@/prisma/prisma'
-import { NotFoundError, UnauthorizedError } from '@/types/error'
+import clerkService from '@/services/clerk.service'
+import { UnauthorizedError } from '@/types/error'
 import { auth } from '@clerk/nextjs/server'
 
 export const getMe = async () => {
@@ -12,15 +12,7 @@ export const getMe = async () => {
       throw new UnauthorizedError('No user ID found')
     }
 
-    const user = await prisma.user.findUnique({
-      where: {
-        clerkId: userId
-      }
-    })
-
-    if (!user) {
-      throw new NotFoundError('User')
-    }
+    const user = await clerkService.ensureUserExists(userId)
 
     return user
   } catch (error) {

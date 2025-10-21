@@ -21,14 +21,14 @@ export default async function WorkspaceDetailPage({ params }: { params: { shortN
     <div className='max-w-4xl mx-auto'>
       <div className='px-12 py-10'>
         <div className='flex flex-col gap-2'>
-          <div className='flex flex-row items-center gap-3'>
+          <div className='flex items-center gap-3'>
             <Avatar className='size-16 rounded-lg'>
               <AvatarImage src={workspace?.imageUrl || undefined} />
               <AvatarFallback className='font-bold text-4xl rounded-lg'>{workspace?.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div>
               <p className='font-semibold text-lg'>{workspace?.name}</p>
-              <div className='flex flex-row items-center gap-1 px-1'>
+              <div className='flex items-center gap-1 px-1'>
                 <LockKeyhole className='size-3' />
                 <p className='text-xs'>Riêng tư</p>
               </div>
@@ -41,7 +41,7 @@ export default async function WorkspaceDetailPage({ params }: { params: { shortN
       <Separator />
 
       <div className='px-4 py-6'>
-        <div className='flex flex-row items-center gap-2 mb-4'>
+        <div className='flex items-center gap-2 mb-4'>
           <Trello className='size-6' />
           <p className='font-bold'>Các bảng của bạn</p>
         </div>
@@ -59,7 +59,7 @@ export default async function WorkspaceDetailPage({ params }: { params: { shortN
             </Link>
           ))}
           <CreateBoardDialog workspaceId={workspace.id}>
-            <div className='h-28 border border-border rounded-md border-dashed flex flex-row items-center gap-2 justify-center bg-muted/20 cursor-pointer'>
+            <div className='h-28 border border-border rounded-md border-dashed flex items-center gap-2 justify-center bg-muted/20 cursor-pointer'>
               <Plus className='size-4' />
               <p className='text-sm font-medium'>Tạo bảng mới</p>
             </div>

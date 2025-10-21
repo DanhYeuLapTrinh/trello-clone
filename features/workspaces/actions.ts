@@ -18,9 +18,16 @@ export const getMeWorkspaces = async () => {
 export const getWorkspacesByUserId = async (userId: string) => {
   const workspaces = await prisma.workspace.findMany({
     where: {
-      memberships: {
-        some: { userId }
-      }
+      OR: [
+        {
+          workspaceMemberships: {
+            some: { userId }
+          }
+        },
+        {
+          ownerId: userId
+        }
+      ]
     }
   })
 
@@ -49,14 +56,7 @@ export const createWorkspaceInternal = async (workspaceData: CreateWorkspaceSche
         shortName: workspaceData.shortName,
         websiteUrl: workspaceData.websiteUrl || null,
         description: workspaceData.description || null,
-        memberships: {
-          create: {
-            user: {
-              connect: { id: userId }
-            },
-            role: 'Owner'
-          }
-        }
+        ownerId: userId
       }
     })
 

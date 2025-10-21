@@ -13,6 +13,18 @@ enum Role {
   Member
 }
 
+enum CardReminderType {
+  NONE
+  EXPIRED_DATE
+  FIVE_MINUTES_BEFORE
+  TEN_MINUTES_BEFORE
+  FIFTEEN_MINUTES_BEFORE
+  ONE_HOUR_BEFORE
+  TWO_HOURS_BEFORE
+  ONE_DAY_BEFORE
+  TWO_DAYS_BEFORE
+}
+
 enum BoardBackground {
   OCEAN
   SUNSET
@@ -32,42 +44,80 @@ enum BoardVisibility {
   PRIVATE
 }
 
+enum ActivityModel {
+  CARD
+}
+
+enum ActivityAction {
+  CREATE
+  UPDATE
+  DELETE
+  MOVE
+  ASSIGN_MEMBER
+  UNASSIGN_MEMBER
+}
+
 model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique
   email     String   @unique
   firstName String?
   lastName  String?
+  fullName  String?
   imageUrl  String?
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Workspaces
+  ownedWorkspaces      Workspace[]       @relation("WorkspaceOwner")
   workspaceMemberships WorkspaceMember[]
 
-  // Boards
-  ownedBoards Board[]       @relation("BoardOwner")
-  memberships BoardMember[]
+  ownedBoards      Board[]       @relation("BoardOwner")
+  boardMemberships BoardMember[]
 
-  // Cards, Comments
   cardAssignees CardAssignee[]
   comments      Comment[]
+  watchedCards  CardWatcher[]
+  activities    Activity[]     @relation("UserActivities")
 
   @@map("users")
 }
 
+model Activity {
+  id        String         @id @default(uuid())
+  model     ActivityModel
+  action    ActivityAction
+  details   Json?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  userId String
+  user   User   @relation("UserActivities", fields: [userId], references: [id], onDelete: Cascade)
+
+  cardId String
+  card   Card   @relation("CardActivities", fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([userId])
+  @@map("activities")
+}
+
 model Workspace {
   id          String   @id @default(uuid())
-  name        String   @unique
+  name        String
   shortName   String   @unique
   websiteUrl  String?
   description String?
   imageUrl    String?
+  isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  memberships WorkspaceMember[]
-  boards      Board[]
+  ownerId String
+  owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  workspaceMemberships WorkspaceMember[]
+  boards               Board[]
 
   @@map("workspaces")
 }
@@ -88,25 +138,24 @@ model WorkspaceMember {
 
 model Board {
   id          String          @id @default(uuid())
-  name        String          @unique
+  name        String
   description String?
   background  BoardBackground @default(OCEAN)
   visibility  BoardVisibility @default(WORKSPACE)
   slug        String          @unique
+  isDeleted   Boolean         @default(false)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  // Workspace link
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  // Owner
   ownerId String
   owner   User   @relation("BoardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 
-  memberships BoardMember[]
-  lists       List[]
-  labels      Label[]
+  boardMemberships BoardMember[]
+  lists            List[]
+  labels           Label[]
 
   @@map("boards")
 }
@@ -127,8 +176,9 @@ model BoardMember {
 
 model List {
   id        String   @id @default(uuid())
-  name      String   @unique
+  name      String
   position  Int
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -140,30 +190,66 @@ model List {
 }
 
 model Card {
-  id          String    @id @default(uuid())
-  title       String    @unique
-  description String?
-  position    Int
-  startDate   DateTime?
-  endDate     DateTime?
-  dueDate     DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id           String           @id @default(uuid())
+  messageId    String?
+  title        String
+  slug         String           @unique
+  description  String?
+  position     Int
+  imageUrl     String?
+  startDate    DateTime?
+  endDate      DateTime?
+  reminderType CardReminderType @default(NONE)
+  isDeleted    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 
-  listId String
-  list   List   @relation(fields: [listId], references: [id], onDelete: Cascade)
-
-  // Subtasks (self-relation)
-  parentCardId String?
-  parentCard   Card?   @relation("Subtasks", fields: [parentCardId], references: [id], onDelete: Cascade)
-  subtasks     Card[]  @relation("Subtasks")
+  listId   String
+  list     List      @relation(fields: [listId], references: [id], onDelete: Cascade)
+  subtasks Subtask[]
 
   assignees   CardAssignee[]
   comments    Comment[]
   attachments Attachment[]
   cardLabels  CardLabel[]
+  watchers    CardWatcher[]
+  activities  Activity[]     @relation("CardActivities")
 
   @@map("cards")
+}
+
+model CardWatcher {
+  id String @id @default(uuid())
+
+  cardId String
+  userId String
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cardId, userId])
+  @@map("card_watchers")
+}
+
+model Subtask {
+  id     String  @id @default(uuid())
+  title  String
+  isDone Boolean @default(false)
+
+  cardId   String
+  card     Card      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  parentId String?
+  parent   Subtask?  @relation("Subtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  children Subtask[] @relation("Subtasks")
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subtasks")
 }
 
 model CardAssignee {
@@ -182,6 +268,7 @@ model CardAssignee {
 model Comment {
   id        String   @id @default(uuid())
   content   String
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -196,9 +283,9 @@ model Comment {
 
 model Label {
   id        String   @id @default(uuid())
-  name      String   @unique
-  color     String
-  isSystem  Boolean  @default(false)
+  title     String?
+  color     String?
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -216,6 +303,9 @@ model CardLabel {
   cardId  String
   labelId String
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
   label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
 
@@ -225,10 +315,12 @@ model CardLabel {
 
 model Attachment {
   id        String   @id @default(uuid())
-  url       String   @unique
-  fileName  String?  @unique
-  fileType  String?
+  url       String
+  fileName  String?
+  fileType  String
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   cardId String
   card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)

@@ -1,5 +1,6 @@
-import prisma from '@/prisma/prisma'
+import clerkService from '@/services/clerk.service'
 import { verifyWebhook } from '@clerk/nextjs/webhooks'
+import { revalidatePath } from 'next/cache'
 import { NextRequest } from 'next/server'
 
 export async function POST(req: NextRequest) {
@@ -7,53 +8,17 @@ export async function POST(req: NextRequest) {
     const evt = await verifyWebhook(req)
 
     if (evt.type === 'user.created') {
-      const { id, email_addresses, first_name, last_name, image_url } = evt.data
+      const { id } = evt.data
 
       try {
-        const newUser = await prisma.$transaction(async (tx) => {
-          const createdUser = await tx.user.create({
-            data: {
-              clerkId: id,
-              email: email_addresses[0]?.email_address,
-              firstName: first_name,
-              lastName: last_name,
-              imageUrl: image_url
-            }
-          })
+        const user = await clerkService.syncUserFromClerk(id)
 
-          const createdWorkspace = await tx.workspace.create({
-            data: {
-              name: `${first_name ?? ''} ${last_name ?? ''}`.trim()
-                ? `${first_name ?? ''} ${last_name ?? ''}`.trim() + "'s Workspace"
-                : 'My Workspace',
-              shortName: Date.now().toString(),
-              websiteUrl: null,
-              description: null,
-              memberships: {
-                create: {
-                  user: { connect: { id: createdUser.id } },
-                  role: 'Owner'
-                }
-              }
-            }
-          })
+        revalidatePath('/(dashboard)', 'layout')
 
-          await tx.board.create({
-            data: {
-              name: 'My Board',
-              slug: Date.now().toString(),
-              workspaceId: createdWorkspace.id,
-              ownerId: createdUser.id
-            }
-          })
-
-          return createdUser
-        })
-
-        return new Response(JSON.stringify(newUser), { status: 201 })
+        return new Response(JSON.stringify(user), { status: 201 })
       } catch (error) {
-        console.error('Error creating user:', error)
-        return new Response('Error creating user', { status: 400 })
+        console.error('Error syncing user from Clerk:', error)
+        return new Response('Error syncing user', { status: 400 })
       }
     }
     return new Response('OK', { status: 200 })

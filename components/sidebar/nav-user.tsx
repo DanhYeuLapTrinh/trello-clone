@@ -13,21 +13,14 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar'
-import { getMe } from '@/features/users/actions'
-import { useQuery } from '@tanstack/react-query'
-import { Skeleton } from '../ui/skeleton'
+import { useMe } from '@/hooks/use-me'
+import { useClerk } from '@clerk/nextjs'
 
 export function NavUser() {
   const { isMobile } = useSidebar()
+  const { signOut } = useClerk()
 
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['me'],
-    queryFn: getMe
-  })
-
-  if (isLoading) {
-    return <Skeleton className='h-12 w-full' />
-  }
+  const { data: user } = useMe()
 
   return (
     <SidebarMenu>
@@ -94,7 +87,7 @@ export function NavUser() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut({ redirectUrl: '/auth/sign-in' })}>
               <LogOut />
               Log out
             </DropdownMenuItem>

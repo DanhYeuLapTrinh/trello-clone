@@ -66,3 +66,14 @@ export class ConflictError extends AppError {
     })
   }
 }
+
+export class BadRequestError extends AppError {
+  constructor(message: string, details?: unknown) {
+    super({
+      name: 'BadRequestError',
+      message,
+      statusCode: 400,
+      details
+    })
+  }
+}

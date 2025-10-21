@@ -1,5 +1,5 @@
-import prisma from '@/prisma/prisma'
-import { AppError, NotFoundError, UnauthorizedError } from '@/types/error'
+import clerkService from '@/services/clerk.service'
+import { AppError, UnauthorizedError } from '@/types/error'
 import { auth } from '@clerk/nextjs/server'
 import { createSafeActionClient } from 'next-safe-action'
 
@@ -28,13 +28,7 @@ const protectedActionClient = createSafeActionClient({
     throw new UnauthorizedError('No user ID found')
   }
 
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId }
-  })
-
-  if (!user) {
-    throw new NotFoundError('User')
-  }
+  const user = await clerkService.ensureUserExists(userId)
 
   return next({
     ctx: {

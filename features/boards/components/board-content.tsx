@@ -46,7 +46,7 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
           </SortableContext>
 
           <DragOverlay dropAnimation={defaultDropAnimation}>
-            {activeCard ? <CardItem card={activeCard} /> : null}
+            {activeCard ? <CardItem card={activeCard} slug={slug} /> : null}
             {activeList ? <ListItem list={activeList} slug={slug} /> : null}
           </DragOverlay>
 

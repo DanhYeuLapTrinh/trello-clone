@@ -2,7 +2,7 @@
 
 import { moveCardBetweenLists, moveCardWithinList } from '@/features/cards/actions'
 import { moveList } from '@/features/lists/actions'
-import { ListWithCards } from '@/types/common'
+import { CardPreview, ListWithCards } from '@/types/common'
 import {
   Active,
   DragEndEvent,
@@ -28,12 +28,12 @@ interface UseDragAndDropProps {
 
 export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
   const queryClient = useQueryClient()
-  const [activeCard, setActiveCard] = useState<Card | null>(null)
+  const [activeCard, setActiveCard] = useState<CardPreview | null>(null)
   const [activeList, setActiveList] = useState<ListWithCards | null>(null)
   const [originalActiveCard, setOriginalActiveCard] = useState<Card | null>(null)
 
   const { execute: moveCardWithinListAction } = useAction(moveCardWithinList, {
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
     },
     onError: (err) => {
@@ -42,7 +42,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
   })
 
   const { execute: moveCardBetweenListsAction } = useAction(moveCardBetweenLists, {
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
     },
     onError: (err) => {
@@ -51,7 +51,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
   })
 
   const { execute: moveListAction } = useAction(moveList, {
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
     },
     onError: (err) => {
@@ -61,7 +61,11 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
 
   // Sensors
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8
+      }
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates
     })
@@ -93,7 +97,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
     activeListIndex: number,
     overListIndex: number,
     newPosition: number,
-    movedCard: Card
+    movedCard: CardPreview
   ) => {
     queryClient.setQueryData(['board', 'lists', slug], (oldLists: ListWithCards[]) => {
       if (!oldLists) return oldLists

@@ -140,5 +140,5 @@ export const updateAttachmentQueries = ({
 // Invalidates
 export const invalidateAttachmentQueries = (queryClient: QueryClient, boardSlug: string, cardSlug: string) => {
   queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
-  queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
+  queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', boardSlug] })
 }

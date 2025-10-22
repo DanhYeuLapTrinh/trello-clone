@@ -45,7 +45,7 @@ export const updateBoardListsQuery = (
   boardSlug: string,
   updater: (prev: ListWithCards[]) => ListWithCards[]
 ) => {
-  queryClient.setQueryData(['board', 'lists', boardSlug], (prev: ListWithCards[]) => {
+  queryClient.setQueryData(['board', 'lists', 'cards', boardSlug], (prev: ListWithCards[]) => {
     if (!prev) return prev
     return updater(prev)
   })

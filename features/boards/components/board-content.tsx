@@ -16,7 +16,7 @@ interface BoardContentProps {
 
 export default function BoardContent({ boardId, slug }: BoardContentProps) {
   const { data: lists } = useQuery({
-    queryKey: ['board', 'lists', slug],
+    queryKey: ['board', 'lists', 'cards', slug],
     queryFn: () => getBoardListsWithCards(slug)
   })
 

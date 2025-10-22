@@ -291,6 +291,6 @@ export const deleteLabelFromQueries = (
 // Invalidates
 export const invalidateLabelQueries = (queryClient: QueryClient, boardSlug: string, cardSlug: string) => {
   queryClient.invalidateQueries({ queryKey: ['card', boardSlug, cardSlug] })
-  queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
+  queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', boardSlug] })
   queryClient.invalidateQueries({ queryKey: ['board', 'labels', boardSlug] })
 }

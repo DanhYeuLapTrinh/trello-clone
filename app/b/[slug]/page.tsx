@@ -19,7 +19,7 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
   const { workspace, board } = await getBoardWithWorkspace(slug)
 
   await queryClient.prefetchQuery({
-    queryKey: ['board', 'lists', slug],
+    queryKey: ['board', 'lists', 'cards', slug],
     queryFn: () => getBoardListsWithCards(slug)
   })
 

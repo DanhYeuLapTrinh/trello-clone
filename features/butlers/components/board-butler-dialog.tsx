@@ -2,24 +2,34 @@
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
-import { Bot, CalendarDays, Settings2 } from 'lucide-react'
+import { Bot, CalendarDays, Settings2, X } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { AutomationCategory } from '../types'
 import RulesTab from './rules-tab'
 
 interface BoardButlerDialogProps {
   isOpen: boolean
+  boardSlug: string
 }
 
-export default function BoardButlerDialog({ isOpen }: BoardButlerDialogProps) {
+export default function BoardButlerDialog({ isOpen, boardSlug }: BoardButlerDialogProps) {
+  const router = useRouter()
+
   const [open, setOpen] = useState(isOpen)
   const [tabValue, setTabValue] = useState<AutomationCategory>('rule')
 
+  const handleOpenChange = (open: boolean) => {
+    setOpen(open)
+    if (!open) {
+      router.back()
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
         className='p-0 gap-0 overflow-auto'
@@ -34,8 +44,8 @@ export default function BoardButlerDialog({ isOpen }: BoardButlerDialogProps) {
           </DialogHeader>
         </VisuallyHidden>
 
-        <div className='grid grid-cols-12'>
-          <div className='col-span-2 xl:col-span-1 bg-muted px-2 py-4'>
+        <div className='grid grid-cols-12 h-[calc(100vh-3rem)] overflow-auto'>
+          <div className='col-span-2 bg-muted px-2 py-4'>
             <div className='flex items-center gap-2 mb-12'>
               <Bot className='size-7 text-primary' />
               <p className='text-xl font-semibold text-primary'>Automation</p>
@@ -68,11 +78,10 @@ export default function BoardButlerDialog({ isOpen }: BoardButlerDialogProps) {
             </div>
           </div>
 
-          <div className='col-span-10 xl:col-span-11 p-8'>
-            <p className='text-2xl font-semibold'>{tabValue === 'rule' ? 'Rules' : 'Scheduled automations'}</p>
-            <Separator className='mt-4 mb-2' />
+          <div className='col-span-10 xl:w-5xl xl:mx-auto p-10 relative'>
+            {tabValue === 'rule' && <RulesTab boardSlug={boardSlug} />}
 
-            {tabValue === 'rule' && <RulesTab />}
+            <X className='absolute top-2 right-2 cursor-pointer' onClick={() => handleOpenChange(false)} />
           </div>
         </div>
       </DialogContent>

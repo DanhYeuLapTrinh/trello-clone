@@ -1,4 +1,4 @@
-import { Label } from '@prisma/client'
+import { Label, List } from '@prisma/client'
 import { CardPreview } from './common'
 
 export interface CardLabelColor {
@@ -12,3 +12,6 @@ export interface LabelAction {
 }
 
 export type UpdateCardFn = (card: CardPreview) => CardPreview
+
+// DB
+export type UIList = Omit<List, 'isDeleted'>

@@ -1,3 +1,4 @@
+import { ButlerCategory } from '@prisma/client'
 import { Option } from './types'
 import {
   createBySelector,
@@ -68,7 +69,7 @@ export const cardCreationTypeOptions: Option[] = [
 export const ruleTriggerTemplates = [
   {
     id: 't-card-created' as const,
-    category: 'rule' as const,
+    category: ButlerCategory.RULE,
     handlerKey: 'WHEN_CARD_CREATED' as const,
     parts: [
       createTextDisplay('t-card-created-text-display', 'when a card is created in the board'),
@@ -77,7 +78,7 @@ export const ruleTriggerTemplates = [
   },
   {
     id: 't-card-added-to-list' as const,
-    category: 'rule' as const,
+    category: ButlerCategory.RULE,
     handlerKey: 'WHEN_CARD_ADDED_TO_LIST' as const,
     parts: [
       createTextDisplay('t-card-added-to-list-text-display', 'when a card is added to list'),
@@ -87,7 +88,7 @@ export const ruleTriggerTemplates = [
   },
   {
     id: 't-list-created' as const,
-    category: 'rule' as const,
+    category: ButlerCategory.RULE,
     handlerKey: 'WHEN_LIST_CREATED' as const,
     parts: [
       createTextDisplay('t-list-created-text-display', 'when list is created by'),
@@ -96,7 +97,7 @@ export const ruleTriggerTemplates = [
   },
   {
     id: 't-card-marked-complete' as const,
-    category: 'rule' as const,
+    category: ButlerCategory.RULE,
     handlerKey: 'WHEN_CARD_MARKED_COMPLETE' as const,
     parts: [
       createTextDisplay('t-card-marked-complete-text-display', 'when the card is marked as'),
@@ -114,7 +115,7 @@ export const ruleTriggerTemplates = [
 export const scheduledTriggerTemplates = [
   {
     id: 't-sched-every-day' as const,
-    category: 'scheduled' as const,
+    category: ButlerCategory.SCHEDULED,
     handlerKey: 'WHEN_SCHEDULED_DAILY' as const,
     parts: [
       createTextDisplay('t-sched-every-day-text-display', 'every'),
@@ -127,7 +128,7 @@ export const scheduledTriggerTemplates = [
   },
   {
     id: 't-sched-every-week-on' as const,
-    category: 'scheduled' as const,
+    category: ButlerCategory.SCHEDULED,
     handlerKey: 'WHEN_SCHEDULED_WEEKLY' as const,
     parts: [
       createTextDisplay('t-sched-every-week-on-text-display', 'every'),
@@ -136,7 +137,7 @@ export const scheduledTriggerTemplates = [
   },
   {
     id: 't-sched-every-x-weeks' as const,
-    category: 'scheduled' as const,
+    category: ButlerCategory.SCHEDULED,
     handlerKey: 'WHEN_SCHEDULED_X_WEEKS' as const,
     parts: [
       createTextDisplay('t-sched-every-x-weeks-text-display-1', 'every'),
@@ -155,7 +156,7 @@ export const scheduledTriggerTemplates = [
 export const ruleActionTemplates = [
   {
     id: 'a-move-copy-card-to-list' as const,
-    category: 'rule' as const,
+    category: ButlerCategory.RULE,
     handlerKey: 'MOVE_COPY_CARD_TO_LIST' as const,
     parts: [
       createMoveCopySelector('a-move-copy-card-to-list-action'),
@@ -166,7 +167,7 @@ export const ruleActionTemplates = [
   },
   {
     id: 'a-move-card' as const,
-    category: 'rule' as const,
+    category: ButlerCategory.RULE,
     handlerKey: 'MOVE_CARD' as const,
     parts: [
       createTextDisplay('a-move-card-text-display', 'move the card'),
@@ -175,7 +176,7 @@ export const ruleActionTemplates = [
   },
   {
     id: 'a-mark-card-status' as const,
-    category: 'rule' as const,
+    category: ButlerCategory.RULE,
     handlerKey: 'MARK_CARD_STATUS' as const,
     parts: [
       createTextDisplay('a-mark-card-status-text-display', 'mark the card as'),
@@ -189,7 +190,7 @@ export const ruleActionTemplates = [
   },
   {
     id: 'a-add-member' as const,
-    category: 'rule' as const,
+    category: ButlerCategory.RULE,
     handlerKey: 'ADD_MEMBER' as const,
     parts: [
       createTextDisplay('a-add-member-text-display', 'add member'),
@@ -202,7 +203,7 @@ export const ruleActionTemplates = [
 export const scheduledActionTemplates = [
   {
     id: 'a-create-card' as const,
-    category: 'scheduled' as const,
+    category: ButlerCategory.SCHEDULED,
     handlerKey: 'CREATE_CARD' as const,
     parts: [
       createTextDisplay('a-create-card-text-display', 'create'),
@@ -220,14 +221,14 @@ export const scheduledActionTemplates = [
   },
   {
     id: 'a-move-copy-all-cards' as const,
-    category: 'scheduled' as const,
+    category: ButlerCategory.SCHEDULED,
     handlerKey: 'MOVE_COPY_ALL_CARDS' as const,
     parts: [
       createMoveCopySelector('a-move-copy-all-cards-action'),
       createTextDisplay('a-move-copy-all-cards-text-display', 'all the cards in list'),
-      createListCombobox('a-move-copy-all-cards-from-listId'),
+      createListCombobox('a-move-copy-all-cards-fromListId'),
       createTextDisplay('a-move-copy-all-cards-text-display-2', 'to list'),
-      createListCombobox('a-move-copy-all-cards-to-listId')
+      createListCombobox('a-move-copy-all-cards-toListId')
     ]
   }
 ] as const
@@ -236,10 +237,10 @@ export const triggerTemplates = [...ruleTriggerTemplates, ...scheduledTriggerTem
 export const actionTemplates = [...ruleActionTemplates, ...scheduledActionTemplates] as const
 
 // Auto-infer types from templates
-export type TriggerTemplateId = (typeof triggerTemplates)[number]['id']
-export type TriggerHandlerKey = (typeof triggerTemplates)[number]['handlerKey']
-export type ActionTemplateId = (typeof actionTemplates)[number]['id']
-export type ActionHandlerKey = (typeof actionTemplates)[number]['handlerKey']
+export type TemplateId = (typeof triggerTemplates)[number]['id'] | (typeof actionTemplates)[number]['id']
+export type HandlerKey =
+  | (typeof triggerTemplates)[number]['handlerKey']
+  | (typeof actionTemplates)[number]['handlerKey']
 export type PartId =
   | (typeof triggerTemplates)[number]['parts'][number]['id']
   | (typeof actionTemplates)[number]['parts'][number]['id']

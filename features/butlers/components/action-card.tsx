@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { UIList } from '@/types/ui'
-import { ArrowUp, Trash } from 'lucide-react'
+import { ArrowUp, Trash2 } from 'lucide-react'
 import { actionTemplates } from '../constants'
 import { getFieldFromAction } from '../utils'
-import { AutomationActionSchema } from '../validations'
+import { AutomationActionSchema } from '../validations/client'
 
 const renderActionDisplay = (action: AutomationActionSchema, lists: UIList[]) => {
   const template = actionTemplates.find((t) => t.id === action.templateId)
@@ -57,7 +57,7 @@ export default function ActionCard({
         {renderActionDisplay(action, lists)}
       </Card>
       <Button variant='secondary' size='icon-lg' onClick={onDelete} disabled={isDisabled}>
-        <Trash className='stroke-2' />
+        <Trash2 className='stroke-2' />
       </Button>
       {position > 0 && (
         <Button variant='secondary' size='icon-lg' onClick={onSwap}>

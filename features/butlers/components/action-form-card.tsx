@@ -12,7 +12,7 @@ import { useState } from 'react'
 import { ZodError } from 'zod'
 import { AutomationTemplate, Part, PartId } from '../types'
 import { getInitialState } from '../utils'
-import { automationActionSchema, AutomationActionSchema } from '../validations'
+import { automationActionSchema, AutomationActionSchema } from '../validations/client'
 
 export default function ActionFormCard({
   action,

@@ -5,15 +5,24 @@ import { Separator } from '@/components/ui/separator'
 import { getBoardLists } from '@/features/boards/actions'
 import { cn } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useQuery } from '@tanstack/react-query'
+import { ButlerCategory } from '@prisma/client'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bot, ChevronRight, Plus } from 'lucide-react'
 import { Fragment, useState } from 'react'
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
+import { getBoardButlers } from '../actions'
 import { ruleActionTemplates, ruleTriggerTemplates } from '../constants'
-import { transformRuleForBackend } from '../utils'
-import { AutomationActionSchema, AutomationTriggerSchema, createRuleSchema, CreateRuleSchema } from '../validations'
+import { useCreateButler } from '../hooks/use-create-butler'
+import { createButlerQueries, transformRuleForBackend } from '../utils'
+import {
+  AutomationActionSchema,
+  AutomationTriggerSchema,
+  createRuleSchema,
+  CreateRuleSchema
+} from '../validations/client'
 import ActionCard from './action-card'
 import ActionFormCard from './action-form-card'
+import ButlerCard from './butler-card'
 import TriggerCard from './trigger-card'
 import TriggerFormCard from './trigger-form-card'
 
@@ -33,12 +42,19 @@ const steps = [
 ]
 
 export default function RulesTab({ boardSlug }: { boardSlug: string }) {
+  const queryClient = useQueryClient()
+
   const [step, setStep] = useState(0)
   const [addMoreAction, setAddMoreAction] = useState(false)
 
   const { data: lists = [] } = useQuery({
     queryKey: ['board', 'lists', boardSlug],
     queryFn: () => getBoardLists(boardSlug)
+  })
+
+  const { data: rules = [] } = useQuery({
+    queryKey: ['board', 'butlers', ButlerCategory.RULE, boardSlug],
+    queryFn: () => getBoardButlers(boardSlug, ButlerCategory.RULE)
   })
 
   const methods = useForm<CreateRuleSchema>({
@@ -65,6 +81,12 @@ export default function RulesTab({ boardSlug }: { boardSlug: string }) {
   }
 
   const handleAddAction = (data: AutomationActionSchema) => {
+    const isFirstAction = fields.length === 0
+
+    if (isFirstAction) {
+      setStep(3)
+    }
+
     append(data)
     setAddMoreAction(false)
   }
@@ -82,13 +104,33 @@ export default function RulesTab({ boardSlug }: { boardSlug: string }) {
     setStep(0)
   }
 
+  const { createButlerAction } = useCreateButler(boardSlug, ButlerCategory.RULE)
+
   const onSubmit: SubmitHandler<CreateRuleSchema> = (data) => {
-    console.log(transformRuleForBackend(data))
+    const transformedData = transformRuleForBackend(data)
+
+    createButlerQueries({
+      queryClient,
+      boardSlug,
+      category: ButlerCategory.RULE,
+      details: transformedData
+    })
+
+    createButlerAction.execute({
+      boardSlug,
+      category: ButlerCategory.RULE,
+      trigger: transformedData.trigger,
+      actions: transformedData.actions
+    })
+
+    setStep(0)
+    methods.reset()
   }
 
   const render = () => {
     switch (step) {
       case 2:
+      case 3:
         return (
           <div className='flex flex-col gap-4 mt-2'>
             <p className='text-xl font-semibold'>Trigger</p>
@@ -196,10 +238,31 @@ export default function RulesTab({ boardSlug }: { boardSlug: string }) {
     )
   }
 
+  if (rules.length) {
+    return (
+      <>
+        <div className='flex items-center gap-2'>
+          <p className='text-2xl font-semibold flex-1'>Rules</p>
+          <Button className='mt-2' onClick={() => setStep(1)}>
+            <p className='font-bold'>Create automation</p>
+          </Button>
+        </div>
+        <Separator className='mt-4 mb-10' />
+
+        <div className='space-y-4'>
+          {rules.map((rule) => (
+            <ButlerCard key={rule.id} rule={rule} lists={lists} />
+          ))}
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       <p className='text-2xl font-semibold'>Rules</p>
       <Separator className='mt-4 mb-2' />
+
       <div className='grid grid-cols-12 p-4 gap-6'>
         <div className='col-span-6 space-y-4'>
           <p className='text-2xl font-semibold'>

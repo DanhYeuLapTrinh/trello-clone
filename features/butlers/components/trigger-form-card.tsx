@@ -11,7 +11,7 @@ import { useState } from 'react'
 import { ZodError } from 'zod'
 import { AutomationTemplate, Part, PartId } from '../types'
 import { getInitialState } from '../utils'
-import { automationTriggerSchema, AutomationTriggerSchema } from '../validations'
+import { automationTriggerSchema, AutomationTriggerSchema } from '../validations/client'
 
 export default function TriggerFormCard({
   rule,

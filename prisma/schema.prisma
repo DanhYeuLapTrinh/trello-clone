@@ -57,6 +57,11 @@ enum ActivityAction {
   UNASSIGN_MEMBER
 }
 
+enum ButlerCategory {
+  RULE
+  SCHEDULED
+}
+
 model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique
@@ -156,6 +161,7 @@ model Board {
   boardMemberships BoardMember[]
   lists            List[]
   labels           Label[]
+  rules            Butler[]
 
   @@map("boards")
 }
@@ -326,4 +332,17 @@ model Attachment {
   card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@map("attachments")
+}
+
+model Butler {
+  id        String         @id @default(uuid())
+  boardId   String
+  category  ButlerCategory
+  details   Json?
+  isEnabled Boolean        @default(true)
+  isDeleted Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
 }

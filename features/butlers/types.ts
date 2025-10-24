@@ -1,9 +1,10 @@
+import { ButlerCategory } from '@prisma/client'
+import { ActionSchema, TriggerSchema } from './validations/server'
+
 export interface Option {
   label: string
   value: string
 }
-
-export type AutomationCategory = 'rule' | 'scheduled'
 
 export type FieldValue = { type: string; value: string | number }
 
@@ -21,28 +22,16 @@ export type Part =
 
 export interface AutomationTemplate {
   id: string
-  category: AutomationCategory
+  category: ButlerCategory
   handlerKey: string
   parts: readonly Part[]
 }
 
-// Re-export them here for convenience since they are types but the original are from constants.ts
-export type { ActionHandlerKey, ActionTemplateId, PartId, TriggerHandlerKey, TriggerTemplateId } from './constants'
-
-// Backend-ready format types
-export interface BackendTrigger {
-  handlerKey: string
-  category: AutomationCategory
-  [key: string]: string | number | AutomationCategory
-}
-
-export interface BackendAction {
-  handlerKey: string
-  category: AutomationCategory
-  [key: string]: string | number | AutomationCategory
-}
-
 export interface BackendRuleData {
-  trigger: BackendTrigger
-  actions: BackendAction[]
+  [key: string]: TriggerSchema | ActionSchema[]
+  trigger: TriggerSchema
+  actions: ActionSchema[]
 }
+
+// Re-export them here for convenience since they are types but the original are from constants.ts
+export type { HandlerKey, PartId, TemplateId } from './constants'

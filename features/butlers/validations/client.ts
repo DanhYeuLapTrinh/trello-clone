@@ -1,6 +1,6 @@
-import { ButlerCategory } from '@prisma/client'
+import { ButlerCategory, HandlerKey } from '@prisma/client'
 import z from 'zod'
-import { HandlerKey, TemplateId } from '../types'
+import { TemplateId } from '../types'
 
 const fieldSchemas = {
   textDisplay: z.object({
@@ -52,25 +52,30 @@ export const createButler = <
   })
 
 // Schemas
-const whenCardCreatedSchema = createButler('t-card-created', 'WHEN_CARD_CREATED', ButlerCategory.RULE, {
+const whenCardCreatedSchema = createButler('t-card-created', HandlerKey.WHEN_CARD_CREATED, ButlerCategory.RULE, {
   't-card-created-text-display': fieldSchemas.textDisplay,
   't-card-created-by': fieldSchemas.select
 })
 
-const whenCardAddedToListSchema = createButler('t-card-added-to-list', 'WHEN_CARD_ADDED_TO_LIST', ButlerCategory.RULE, {
-  't-card-added-to-list-text-display': fieldSchemas.textDisplay,
-  't-card-added-to-list-listId': fieldSchemas.listCombobox,
-  't-card-added-to-list-by': fieldSchemas.select
-})
+const whenCardAddedToListSchema = createButler(
+  't-card-added-to-list',
+  HandlerKey.WHEN_CARD_ADDED_TO_LIST,
+  ButlerCategory.RULE,
+  {
+    't-card-added-to-list-text-display': fieldSchemas.textDisplay,
+    't-card-added-to-list-listId': fieldSchemas.listCombobox,
+    't-card-added-to-list-by': fieldSchemas.select
+  }
+)
 
-const whenListCreatedSchema = createButler('t-list-created', 'WHEN_LIST_CREATED', ButlerCategory.RULE, {
+const whenListCreatedSchema = createButler('t-list-created', HandlerKey.WHEN_LIST_CREATED, ButlerCategory.RULE, {
   't-list-created-text-display': fieldSchemas.textDisplay,
   't-list-created-by': fieldSchemas.select
 })
 
 const whenCardMarkedCompleteSchema = createButler(
   't-card-marked-complete',
-  'WHEN_CARD_MARKED_COMPLETE',
+  HandlerKey.WHEN_CARD_MARKED_COMPLETE,
   ButlerCategory.RULE,
   {
     't-card-marked-complete-text-display': fieldSchemas.textDisplay,
@@ -79,14 +84,19 @@ const whenCardMarkedCompleteSchema = createButler(
   }
 )
 
-const whenScheduledDailySchema = createButler('t-sched-every-day', 'WHEN_SCHEDULED_DAILY', ButlerCategory.SCHEDULED, {
-  't-sched-every-day-text-display': fieldSchemas.textDisplay,
-  't-sched-every-day-interval': fieldSchemas.select
-})
+const whenScheduledDailySchema = createButler(
+  't-sched-every-day',
+  HandlerKey.WHEN_SCHEDULED_DAILY,
+  ButlerCategory.SCHEDULED,
+  {
+    't-sched-every-day-text-display': fieldSchemas.textDisplay,
+    't-sched-every-day-interval': fieldSchemas.select
+  }
+)
 
 const whenScheduledWeeklySchema = createButler(
   't-sched-every-week-on',
-  'WHEN_SCHEDULED_WEEKLY',
+  HandlerKey.WHEN_SCHEDULED_WEEKLY,
   ButlerCategory.SCHEDULED,
   {
     't-sched-every-week-on-text-display': fieldSchemas.textDisplay,
@@ -96,7 +106,7 @@ const whenScheduledWeeklySchema = createButler(
 
 const whenScheduledXWeeksSchema = createButler(
   't-sched-every-x-weeks',
-  'WHEN_SCHEDULED_X_WEEKS',
+  HandlerKey.WHEN_SCHEDULED_X_WEEKS,
   ButlerCategory.SCHEDULED,
   {
     't-sched-every-x-weeks-text-display-1': fieldSchemas.textDisplay,
@@ -108,7 +118,7 @@ const whenScheduledXWeeksSchema = createButler(
 
 const moveCopyCardToListSchema = createButler(
   'a-move-copy-card-to-list',
-  'MOVE_COPY_CARD_TO_LIST',
+  HandlerKey.MOVE_COPY_CARD_TO_LIST,
   ButlerCategory.RULE,
   {
     'a-move-copy-card-to-list-action': fieldSchemas.select,
@@ -118,23 +128,23 @@ const moveCopyCardToListSchema = createButler(
   }
 )
 
-const moveCardSchema = createButler('a-move-card', 'MOVE_CARD', ButlerCategory.RULE, {
+const moveCardSchema = createButler('a-move-card', HandlerKey.MOVE_CARD, ButlerCategory.RULE, {
   'a-move-card-text-display': fieldSchemas.textDisplay,
   'a-move-card-action': fieldSchemas.select
 })
 
-const markCardStatusSchema = createButler('a-mark-card-status', 'MARK_CARD_STATUS', ButlerCategory.RULE, {
+const markCardStatusSchema = createButler('a-mark-card-status', HandlerKey.MARK_CARD_STATUS, ButlerCategory.RULE, {
   'a-mark-card-status-text-display': fieldSchemas.textDisplay,
   'a-mark-card-status-status': fieldSchemas.select
 })
 
-const addMemberSchema = createButler('a-add-member', 'ADD_MEMBER', ButlerCategory.RULE, {
+const addMemberSchema = createButler('a-add-member', HandlerKey.ADD_MEMBER, ButlerCategory.RULE, {
   'a-add-member-text-display': fieldSchemas.textDisplay,
   'a-add-member-assignment': fieldSchemas.select,
   'a-add-member-text-display-2': fieldSchemas.textDisplay
 })
 
-const createCardSchema = createButler('a-create-card', 'CREATE_CARD', ButlerCategory.SCHEDULED, {
+const createCardSchema = createButler('a-create-card', HandlerKey.CREATE_CARD, ButlerCategory.SCHEDULED, {
   'a-create-card-text-display': fieldSchemas.textDisplay,
   'a-create-card-type': fieldSchemas.select,
   'a-create-card-text-display-2': fieldSchemas.textDisplay,
@@ -143,13 +153,18 @@ const createCardSchema = createButler('a-create-card', 'CREATE_CARD', ButlerCate
   'a-create-card-listId': fieldSchemas.listCombobox
 })
 
-const moveCopyAllCardsSchema = createButler('a-move-copy-all-cards', 'MOVE_COPY_ALL_CARDS', ButlerCategory.SCHEDULED, {
-  'a-move-copy-all-cards-action': fieldSchemas.select,
-  'a-move-copy-all-cards-text-display': fieldSchemas.textDisplay,
-  'a-move-copy-all-cards-fromListId': fieldSchemas.listCombobox,
-  'a-move-copy-all-cards-text-display-2': fieldSchemas.textDisplay,
-  'a-move-copy-all-cards-toListId': fieldSchemas.listCombobox
-})
+const moveCopyAllCardsSchema = createButler(
+  'a-move-copy-all-cards',
+  HandlerKey.MOVE_COPY_ALL_CARDS,
+  ButlerCategory.SCHEDULED,
+  {
+    'a-move-copy-all-cards-action': fieldSchemas.select,
+    'a-move-copy-all-cards-text-display': fieldSchemas.textDisplay,
+    'a-move-copy-all-cards-fromListId': fieldSchemas.listCombobox,
+    'a-move-copy-all-cards-text-display-2': fieldSchemas.textDisplay,
+    'a-move-copy-all-cards-toListId': fieldSchemas.listCombobox
+  }
+)
 
 // Use the 'handlerKey' field to decide which schema to use
 export const automationTriggerSchema = z.discriminatedUnion('handlerKey', [

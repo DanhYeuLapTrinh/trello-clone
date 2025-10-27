@@ -118,6 +118,7 @@ export default function RulesTab({ boardSlug }: { boardSlug: string }) {
 
     createButlerAction.execute({
       boardSlug,
+      handlerKey: transformedData.trigger.handlerKey,
       category: ButlerCategory.RULE,
       trigger: transformedData.trigger,
       actions: transformedData.actions

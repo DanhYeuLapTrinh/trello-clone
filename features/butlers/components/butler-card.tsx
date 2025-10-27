@@ -5,7 +5,7 @@ import { UIList } from '@/types/ui'
 import { Butler } from '@prisma/client'
 import { formatDistanceToNow } from 'date-fns'
 import { Copy, Lightbulb, Pencil, Trash2 } from 'lucide-react'
-import { BackendRuleData } from '../types'
+import { ButlerData } from '../types'
 import { transformToReadableString } from '../utils'
 
 interface ButlerCardProps {
@@ -14,7 +14,7 @@ interface ButlerCardProps {
 }
 
 export default function ButlerCard({ rule, lists }: ButlerCardProps) {
-  const details = rule.details as BackendRuleData | null
+  const details = rule.details as ButlerData | null
   if (!details) return null
 
   return (

@@ -1,15 +1,26 @@
-import { ButlerCategory } from '@prisma/client'
+import { ButlerCategory, HandlerKey } from '@prisma/client'
 import z from 'zod'
+import {
+  ByOption,
+  CardCreationTypeOption,
+  DayOption,
+  IntervalOption,
+  MemberAssignmentOption,
+  MoveCardActionOption,
+  MoveCopyOption,
+  PositionOption,
+  StatusOption
+} from '../types'
 
-const byFieldSchema = z.enum(['me', 'anyone', 'anyone-except-me'])
-const statusFieldSchema = z.enum(['complete', 'incomplete'])
-const dayFieldSchema = z.enum(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'])
-const intervalFieldSchema = z.enum(['day', 'weekday'])
-const moveCopyFieldSchema = z.enum(['move', 'copy'])
-const positionFieldSchema = z.enum(['top', 'bottom'])
-const moveCardActionFieldSchema = z.enum(['top-current', 'bottom-current', 'next', 'previous'])
-const memberAssignmentFieldSchema = z.enum(['random', 'turn'])
-const cardCreationTypeFieldSchema = z.enum(['new', 'unique'])
+const byFieldSchema = z.enum(ByOption)
+const statusFieldSchema = z.enum(StatusOption)
+const dayFieldSchema = z.enum(DayOption)
+const intervalFieldSchema = z.enum(IntervalOption)
+const moveCopyFieldSchema = z.enum(MoveCopyOption)
+const positionFieldSchema = z.enum(PositionOption)
+const moveCardActionFieldSchema = z.enum(MoveCardActionOption)
+const memberAssignmentFieldSchema = z.enum(MemberAssignmentOption)
+const cardCreationTypeFieldSchema = z.enum(CardCreationTypeOption)
 
 // Schemas
 const whenCardCreatedTriggerSchema = z.object({
@@ -121,6 +132,7 @@ export const actionSchema = z.discriminatedUnion('handlerKey', [
 export const createButlerSchema = z.object({
   boardSlug: z.string(),
   category: z.enum(ButlerCategory),
+  handlerKey: z.enum(HandlerKey),
   trigger: triggerSchema,
   actions: z.array(actionSchema).min(1, 'At least one action is required')
 })

@@ -12,7 +12,7 @@ import {
   positionOptions,
   statusOptions
 } from './constants'
-import { BackendRuleData, FieldValue, Part, PartId } from './types'
+import { ButlerData, FieldValue, Part, PartId } from './types'
 import { AutomationActionSchema, AutomationTriggerSchema } from './validations/client'
 import { ActionSchema, TriggerSchema } from './validations/server'
 
@@ -137,7 +137,7 @@ export const getFieldFromAction = (action: AutomationActionSchema, fieldId: stri
 export const transformRuleForBackend = (data: {
   trigger: AutomationTriggerSchema
   actions: AutomationActionSchema[]
-}): BackendRuleData => {
+}): ButlerData => {
   const extractFieldValues = (fields: Record<string, FieldValue>): Record<string, string | number> => {
     return Object.fromEntries(
       Object.entries(fields)
@@ -156,12 +156,12 @@ export const transformRuleForBackend = (data: {
       handlerKey: data.trigger.handlerKey,
       category: data.trigger.category,
       ...extractFieldValues(data.trigger.fields as Record<string, FieldValue>)
-    } as BackendRuleData['trigger'],
+    } as ButlerData['trigger'],
     actions: data.actions.map((action) => ({
       handlerKey: action.handlerKey,
       category: action.category,
       ...extractFieldValues(action.fields as Record<string, FieldValue>)
-    })) as BackendRuleData['actions']
+    })) as ButlerData['actions']
   }
 }
 
@@ -296,19 +296,15 @@ export const transformToReadableString = (
   return `${triggerText}, ${actionsString}`
 }
 
-export const createTempButler = ({
-  category,
-  details
-}: {
-  category: ButlerCategory
-  details: BackendRuleData
-}): Butler => {
+export const createTempButler = ({ category, details }: { category: ButlerCategory; details: ButlerData }): Butler => {
   const now = new Date()
 
   return {
     id: getTempId('butler'),
     boardId: getTempId('board'),
+    handlerKey: details.trigger.handlerKey,
     category,
+    creatorId: getTempId('user'),
     isEnabled: true,
     details,
     isDeleted: false,
@@ -339,10 +335,10 @@ export const createButlerQueries = ({
   queryClient: QueryClient
   boardSlug: string
   category: ButlerCategory
-  details: BackendRuleData
+  details: ButlerData
 }) => {
   updateBoardButlersQuery(queryClient, boardSlug, category, (prev) => {
-    return [createTempButler({ category, details }), ...prev]
+    return [...prev, createTempButler({ category, details })]
   })
 }
 

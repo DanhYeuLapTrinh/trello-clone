@@ -126,7 +126,8 @@ export const createCard = protectedActionClient
             title: parsedInput.title,
             slug: slugify(parsedInput.title),
             listId: list.id,
-            position: (latestPosition?.position ?? -1) + 1
+            position: (latestPosition?.position ?? -1) + 1,
+            creatorId: ctx.currentUser.id
           }
         })
 

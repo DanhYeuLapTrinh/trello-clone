@@ -1,5 +1,16 @@
 import { ButlerCategory } from '@prisma/client'
-import { Option } from './types'
+import {
+  ByOption,
+  CardCreationTypeOption,
+  DayOption,
+  IntervalOption,
+  MemberAssignmentOption,
+  MoveCardActionOption,
+  MoveCopyOption,
+  Option,
+  PositionOption,
+  StatusOption
+} from './types'
 import {
   createBySelector,
   createDaySelector,
@@ -12,57 +23,57 @@ import {
   createTextInput
 } from './utils'
 
-export const byOptions: Option[] = [
-  { label: 'by me', value: 'me' },
-  { label: 'by anyone', value: 'anyone' },
-  { label: 'by anyone except me', value: 'anyone-except-me' }
+export const byOptions: Option<ByOption>[] = [
+  { label: 'by me', value: ByOption.ME },
+  { label: 'by anyone', value: ByOption.ANYONE },
+  { label: 'by anyone except me', value: ByOption.ANYONE_EXCEPT_ME }
 ]
 
-export const dayOptions: Option[] = [
-  { label: 'monday', value: 'mon' },
-  { label: 'tuesday', value: 'tue' },
-  { label: 'wednesday', value: 'wed' },
-  { label: 'thursday', value: 'thu' },
-  { label: 'friday', value: 'fri' },
-  { label: 'saturday', value: 'sat' },
-  { label: 'sunday', value: 'sun' }
+export const dayOptions: Option<DayOption>[] = [
+  { label: 'monday', value: DayOption.MON },
+  { label: 'tuesday', value: DayOption.TUE },
+  { label: 'wednesday', value: DayOption.WED },
+  { label: 'thursday', value: DayOption.THU },
+  { label: 'friday', value: DayOption.FRI },
+  { label: 'saturday', value: DayOption.SAT },
+  { label: 'sunday', value: DayOption.SUN }
 ]
 
-export const intervalOptions: Option[] = [
-  { label: 'day', value: 'day' },
-  { label: 'weekday', value: 'weekday' }
+export const intervalOptions: Option<IntervalOption>[] = [
+  { label: 'day', value: IntervalOption.DAY },
+  { label: 'weekday', value: IntervalOption.WEEKDAY }
 ]
 
-export const statusOptions: Option[] = [
-  { label: 'complete', value: 'complete' },
-  { label: 'incomplete', value: 'incomplete' }
+export const statusOptions: Option<StatusOption>[] = [
+  { label: 'complete', value: StatusOption.COMPLETE },
+  { label: 'incomplete', value: StatusOption.INCOMPLETE }
 ]
 
-export const moveCopyOptions: Option[] = [
-  { label: 'move', value: 'move' },
-  { label: 'copy', value: 'copy' }
+export const moveCopyOptions: Option<MoveCopyOption>[] = [
+  { label: 'move', value: MoveCopyOption.MOVE },
+  { label: 'copy', value: MoveCopyOption.COPY }
 ]
 
-export const positionOptions: Option[] = [
-  { label: 'to the top of list', value: 'top' },
-  { label: 'to the bottom of list', value: 'bottom' }
+export const positionOptions: Option<PositionOption>[] = [
+  { label: 'to the top of list', value: PositionOption.TOP },
+  { label: 'to the bottom of list', value: PositionOption.BOTTOM }
 ]
 
-export const moveCardActionOptions: Option[] = [
-  { label: 'to the top of the list', value: 'top-current' },
-  { label: 'to the bottom of the list', value: 'bottom-current' },
-  { label: 'the next list on the board', value: 'next' },
-  { label: 'the previous list on the board', value: 'previous' }
+export const moveCardActionOptions: Option<MoveCardActionOption>[] = [
+  { label: 'to the top of the list', value: MoveCardActionOption.TOP_CURRENT },
+  { label: 'to the bottom of the list', value: MoveCardActionOption.BOTTOM_CURRENT },
+  { label: 'the next list on the board', value: MoveCardActionOption.NEXT },
+  { label: 'the previous list on the board', value: MoveCardActionOption.PREVIOUS }
 ]
 
-export const memberAssignmentOptions: Option[] = [
-  { label: 'at random', value: 'random' },
-  { label: 'in turn', value: 'turn' }
+export const memberAssignmentOptions: Option<MemberAssignmentOption>[] = [
+  { label: 'at random', value: MemberAssignmentOption.RANDOM },
+  { label: 'in turn', value: MemberAssignmentOption.TURN }
 ]
 
-export const cardCreationTypeOptions: Option[] = [
-  { label: 'a new', value: 'new' },
-  { label: 'a unique', value: 'unique' }
+export const cardCreationTypeOptions: Option<CardCreationTypeOption>[] = [
+  { label: 'a new', value: CardCreationTypeOption.NEW },
+  { label: 'a unique', value: CardCreationTypeOption.UNIQUE }
 ]
 
 // Use 'as const' so TS treats values as literals (e.g. 'rule'), not string — helps auto-infer types for future templates.
@@ -238,9 +249,6 @@ export const actionTemplates = [...ruleActionTemplates, ...scheduledActionTempla
 
 // Auto-infer types from templates
 export type TemplateId = (typeof triggerTemplates)[number]['id'] | (typeof actionTemplates)[number]['id']
-export type HandlerKey =
-  | (typeof triggerTemplates)[number]['handlerKey']
-  | (typeof actionTemplates)[number]['handlerKey']
 export type PartId =
   | (typeof triggerTemplates)[number]['parts'][number]['id']
   | (typeof actionTemplates)[number]['parts'][number]['id']

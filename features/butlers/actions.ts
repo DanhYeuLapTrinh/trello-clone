@@ -17,7 +17,7 @@ export const getBoardButlers = async (slug: string, category: ButlerCategory) =>
       category: category
     },
     orderBy: {
-      updatedAt: 'desc'
+      createdAt: 'asc'
     }
   })
 
@@ -28,7 +28,7 @@ export const createButler = protectedActionClient
   .inputSchema(createButlerSchema, {
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
   })
-  .action(async ({ parsedInput }) => {
+  .action(async ({ parsedInput, ctx }) => {
     try {
       const board = await prisma.board.findUnique({
         where: {
@@ -44,6 +44,8 @@ export const createButler = protectedActionClient
         data: {
           boardId: board.id,
           category: parsedInput.category,
+          handlerKey: parsedInput.handlerKey,
+          creatorId: ctx.currentUser.id,
           details: {
             trigger: parsedInput.trigger,
             actions: parsedInput.actions
@@ -55,7 +57,6 @@ export const createButler = protectedActionClient
 
       return { message: 'Butler đã được tạo thành công.' }
     } catch (error) {
-      console.log(error)
       throw error
     }
   })

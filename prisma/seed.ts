@@ -212,6 +212,7 @@ async function seedSystem() {
         },
         create: {
           id: card.id,
+          creatorId: card.creatorId,
           messageId: card.messageId,
           title: card.title,
           slug: card.slug,

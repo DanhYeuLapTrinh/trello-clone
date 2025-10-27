@@ -1,5 +1,6 @@
 'use client'
 
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import CardItem from '@/features/cards/components/card-item'
 import CreateListButton from '@/features/lists/components/create-list-button'
 import ListItem from '@/features/lists/components/list-item'
@@ -33,7 +34,7 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className='flex-1 p-3 overflow-x-auto overflow-y-hidden'>
+      <ScrollArea className='flex-1 p-3 overflow-x-auto overflow-y-hidden'>
         <div className='flex gap-3 min-w-max items-start'>
           <SortableContext
             id={slug}
@@ -50,11 +51,12 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
             {activeList ? <ListItem list={activeList} slug={slug} /> : null}
           </DragOverlay>
 
-          <div className='flex-shrink-0'>
+          <div className='shrink-0'>
             <CreateListButton boardId={boardId} slug={slug} />
           </div>
         </div>
-      </div>
+        <ScrollBar orientation='horizontal' />
+      </ScrollArea>
     </DndContext>
   )
 }

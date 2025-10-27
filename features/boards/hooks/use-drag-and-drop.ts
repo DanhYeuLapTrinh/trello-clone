@@ -199,6 +199,10 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
   }
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    setActiveCard(null)
+    setActiveList(null)
+    setOriginalActiveCard(null)
+
     if (!over) return
 
     const activeId = active.id
@@ -280,10 +284,6 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
         })
       }
     }
-
-    setActiveCard(null)
-    setActiveList(null)
-    setOriginalActiveCard(null)
   }
 
   return {

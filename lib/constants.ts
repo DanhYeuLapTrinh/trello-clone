@@ -183,3 +183,5 @@ export const ROLE_LABEL: Record<Role, string> = {
   Admin: 'Quản trị viên',
   Member: 'Thành viên'
 }
+
+export const POSITION_GAP = 1024

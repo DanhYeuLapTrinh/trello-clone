@@ -11,7 +11,7 @@ export const createCardSchema = z.object({
 export const moveCardWithinListSchema = z.object({
   cardId: z.uuid(),
   listId: z.uuid(),
-  newPosition: z.number().min(0, 'Vị trí phải lớn hơn hoặc bằng 0'),
+  newPosition: z.number(),
   slug: z.string().min(1, 'Slug không được để trống')
 })
 
@@ -19,7 +19,7 @@ export const moveCardBetweenListsSchema = z.object({
   cardId: z.uuid(),
   sourceListId: z.uuid(),
   targetListId: z.uuid(),
-  newPosition: z.number().min(0, 'Vị trí phải lớn hơn hoặc bằng 0'),
+  newPosition: z.number(),
   slug: z.string().min(1, 'Slug không được để trống')
 })
 

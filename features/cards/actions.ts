@@ -154,6 +154,7 @@ export const createCard = protectedActionClient
           name: 'app/card.created',
           data: {
             cardId: card.id,
+            listId: list.id,
             boardSlug: list.board.slug,
             userId: ctx.currentUser.id
           }

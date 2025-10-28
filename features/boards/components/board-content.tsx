@@ -25,6 +25,8 @@ const BoardContentInner = ({ boardId, slug, channelName }: BoardContentProps) =>
     switch (message.name) {
       case ABLY_EVENTS.CARD_CREATED:
         queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
+      case ABLY_EVENTS.CARD_ADDED_TO_LIST:
+        queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
       default:
         queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
     }

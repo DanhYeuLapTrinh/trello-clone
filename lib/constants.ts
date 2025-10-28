@@ -185,3 +185,17 @@ export const ROLE_LABEL: Record<Role, string> = {
 }
 
 export const POSITION_GAP = 1024
+
+export const ABLY_CHANNELS = {
+  BOARD: (boardSlug: string) => `board:${boardSlug}`
+} as const
+
+export const ABLY_EVENTS = {
+  LIST_CREATED: 'list.created',
+  CARD_CREATED: 'card.created'
+} as const
+
+export type AblyEventPayload = {
+  [ABLY_EVENTS.CARD_CREATED]: { boardSlug: string }
+  [ABLY_EVENTS.LIST_CREATED]: { listId: string; boardSlug: string; data: Record<string, unknown> }
+}

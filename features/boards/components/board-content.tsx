@@ -4,18 +4,32 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import CardItem from '@/features/cards/components/card-item'
 import CreateListButton from '@/features/lists/components/create-list-button'
 import ListItem from '@/features/lists/components/list-item'
+import { ABLY_EVENTS } from '@/lib/constants'
 import { defaultDropAnimation, DndContext, DragOverlay, rectIntersection } from '@dnd-kit/core'
 import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ChannelProvider, useChannel } from 'ably/react'
 import { getBoardListsWithCards } from '../actions'
 import { useDragAndDrop } from '../hooks/use-drag-and-drop'
 
 interface BoardContentProps {
   boardId: string
   slug: string
+  channelName: string
 }
 
-export default function BoardContent({ boardId, slug }: BoardContentProps) {
+const BoardContentInner = ({ boardId, slug, channelName }: BoardContentProps) => {
+  const queryClient = useQueryClient()
+
+  useChannel(channelName, (message) => {
+    switch (message.name) {
+      case ABLY_EVENTS.CARD_CREATED:
+        queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
+      default:
+        queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
+    }
+  })
+
   const { data: lists } = useQuery({
     queryKey: ['board', 'lists', 'cards', slug],
     queryFn: () => getBoardListsWithCards(slug)
@@ -34,8 +48,8 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <ScrollArea className='flex-1 p-3 overflow-x-auto overflow-y-hidden'>
-        <div className='flex gap-3 min-w-max items-start'>
+      <ScrollArea className='flex-1 overflow-x-auto overflow-y-hidden'>
+        <div className='flex gap-3 min-w-max items-start p-3'>
           <SortableContext
             id={slug}
             items={lists?.map((list) => list.id) ?? []}
@@ -58,5 +72,13 @@ export default function BoardContent({ boardId, slug }: BoardContentProps) {
         <ScrollBar orientation='horizontal' />
       </ScrollArea>
     </DndContext>
+  )
+}
+
+export default function BoardContent({ boardId, slug, channelName }: BoardContentProps) {
+  return (
+    <ChannelProvider channelName={channelName}>
+      <BoardContentInner boardId={boardId} slug={slug} channelName={channelName} />
+    </ChannelProvider>
   )
 }

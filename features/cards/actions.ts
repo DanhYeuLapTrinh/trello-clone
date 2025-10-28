@@ -1,6 +1,7 @@
 'use server'
 
 import { POSITION_GAP } from '@/lib/constants'
+import { inngest } from '@/lib/inngest/client'
 import { cardReminderJob } from '@/lib/jobs/handlers'
 import { CardReminderSchema } from '@/lib/jobs/validations'
 import { protectedActionClient } from '@/lib/safe-action'
@@ -99,7 +100,13 @@ export const createCard = protectedActionClient
     try {
       const list = await prisma.list.findUnique({
         where: {
-          id: parsedInput.listId
+          id: parsedInput.listId,
+          board: { slug: parsedInput.slug }
+        },
+        select: {
+          id: true,
+          name: true,
+          board: { select: { slug: true } }
         }
       })
 
@@ -140,6 +147,15 @@ export const createCard = protectedActionClient
             action: 'CREATE',
             details: createCardDetails,
             cardId: card.id
+          }
+        })
+
+        await inngest.send({
+          name: 'app/card.created',
+          data: {
+            cardId: card.id,
+            boardSlug: list.board.slug,
+            userId: ctx.currentUser.id
           }
         })
 

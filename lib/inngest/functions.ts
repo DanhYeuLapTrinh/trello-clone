@@ -1,7 +1,11 @@
+import 'server-only'
+
 import { ButlerData } from '@/features/butlers/types'
 import prisma from '@/prisma/prisma'
+import ablyService from '@/services/ably.service'
 import { NotFoundError } from '@/types/error'
 import { ButlerCategory, HandlerKey } from '@prisma/client'
+import { ABLY_CHANNELS, ABLY_EVENTS } from '../constants'
 import { inngest } from './client'
 import { shouldExecuteButler } from './utils'
 
@@ -18,7 +22,7 @@ export const handleCardCreated = inngest.createFunction(
 
     const card = await step.run('get-card', async () => {
       return await prisma.card.findUnique({
-        where: { id: cardId },
+        where: { id: cardId, list: { board: { slug: boardSlug } } },
         select: { id: true, listId: true, position: true, creatorId: true }
       })
     })
@@ -111,6 +115,14 @@ export const handleCardCreated = inngest.createFunction(
         executedActionSummaries.push(actionResult)
       }
     }
+
+    await step.run('ably-publish', async () => {
+      await ablyService.publish(ABLY_CHANNELS.BOARD(boardSlug), ABLY_EVENTS.CARD_CREATED, {
+        boardSlug
+      })
+
+      return { message: 'Ably publish successful.' }
+    })
 
     return {
       message: 'All butler rules processed successfully.',

@@ -23,10 +23,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <AppProvider>
-      <html lang='en'>
-        <body className={`${notoSans.className} ${firaCode.variable} antialiased`}>{children}</body>
-      </html>
-    </AppProvider>
+    <html lang='en'>
+      <body className={`${notoSans.className} ${firaCode.variable} antialiased`}>
+        <AppProvider>{children}</AppProvider>
+      </body>
+    </html>
   )
 }

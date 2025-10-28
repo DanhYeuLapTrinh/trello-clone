@@ -5,7 +5,7 @@ import BoardContent from '@/features/boards/components/board-content'
 import BoardNameInput from '@/features/boards/components/board-name-input'
 import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
 import ShareBoardDialog from '@/features/boards/components/share-board-dialog'
-import { boardBackgroundClasses } from '@/lib/constants'
+import { ABLY_CHANNELS, boardBackgroundClasses } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { Trello, UserPlus, Zap } from 'lucide-react'
@@ -72,7 +72,7 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
           </div>
         </div>
 
-        <BoardContent boardId={board.id} slug={board.slug} />
+        <BoardContent boardId={board.id} slug={board.slug} channelName={ABLY_CHANNELS.BOARD(board.slug)} />
       </div>
     </HydrationBoundary>
   )

@@ -56,6 +56,11 @@ export enum PositionOption {
   BOTTOM = 'bottom'
 }
 
+export enum ListPositionOption {
+  FIRST = 'first',
+  LAST = 'last'
+}
+
 export enum MoveCardActionOption {
   TOP_CURRENT = 'top-current',
   BOTTOM_CURRENT = 'bottom-current',

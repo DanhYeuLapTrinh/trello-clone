@@ -182,6 +182,7 @@ async function seedSystem() {
           position: list.position,
           isDeleted: list.isDeleted,
           boardId: list.boardId,
+          creatorId: list.creatorId,
           updatedAt: new Date(list.updatedAt)
         },
         create: {
@@ -190,6 +191,7 @@ async function seedSystem() {
           position: list.position,
           isDeleted: list.isDeleted,
           boardId: list.boardId,
+          creatorId: list.creatorId,
           createdAt: new Date(list.createdAt),
           updatedAt: new Date(list.updatedAt)
         }

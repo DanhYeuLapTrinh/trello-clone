@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "db": "npx prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:system": "tsx prisma/seed.ts --system",
     "inngest": "npx inngest-cli@latest dev",

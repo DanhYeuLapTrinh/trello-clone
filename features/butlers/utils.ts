@@ -6,6 +6,7 @@ import {
   cardCreationTypeOptions,
   dayOptions,
   intervalOptions,
+  listPositionOptions,
   memberAssignmentOptions,
   moveCardActionOptions,
   moveCopyOptions,
@@ -74,6 +75,13 @@ export const createPositionSelector = <T extends string>(id: T): Part => ({
   id,
   defaultValue: 'top',
   options: positionOptions
+})
+
+export const createListPositionSelector = <T extends string>(id: T): Part => ({
+  type: 'select',
+  id,
+  defaultValue: 'first',
+  options: listPositionOptions
 })
 
 export const createMoveCardActionSelector = <T extends string>(id: T): Part => ({
@@ -277,6 +285,11 @@ export const transformToReadableString = (
         const moveCopyOption = moveCopyOptions.find((opt) => opt.value === action.action)
         const actionLabel = moveCopyOption ? moveCopyOption.label : 'move'
         return `${actionLabel} all the cards in list ${getListName(action.fromListId as string)} to list ${getListName(action.toListId as string)}`
+      }
+      case 'MOVE_LIST': {
+        const positionOption = listPositionOptions.find((opt) => opt.value === action.position)
+        const positionLabel = positionOption ? positionOption.label : 'untitled action'
+        return `move the list ${positionLabel} in the board`
       }
       default:
         return ''

@@ -166,6 +166,12 @@ const moveCopyAllCardsSchema = createButler(
   }
 )
 
+const moveListSchema = createButler('a-move-list', HandlerKey.MOVE_LIST, ButlerCategory.RULE, {
+  'a-move-list-text-display': fieldSchemas.textDisplay,
+  'a-move-list-position': fieldSchemas.select,
+  'a-move-list-text-display-2': fieldSchemas.textDisplay
+})
+
 // Use the 'handlerKey' field to decide which schema to use
 export const automationTriggerSchema = z.discriminatedUnion('handlerKey', [
   whenCardCreatedSchema,
@@ -183,7 +189,8 @@ export const automationActionSchema = z.discriminatedUnion('handlerKey', [
   markCardStatusSchema,
   addMemberSchema,
   createCardSchema,
-  moveCopyAllCardsSchema
+  moveCopyAllCardsSchema,
+  moveListSchema
 ])
 
 export const createRuleSchema = z.object({

@@ -1,9 +1,10 @@
-import { ButlerCategory } from '@prisma/client'
+import { ButlerCategory, HandlerKey } from '@prisma/client'
 import {
   ByOption,
   CardCreationTypeOption,
   DayOption,
   IntervalOption,
+  ListPositionOption,
   MemberAssignmentOption,
   MoveCardActionOption,
   MoveCopyOption,
@@ -15,6 +16,7 @@ import {
   createBySelector,
   createDaySelector,
   createListCombobox,
+  createListPositionSelector,
   createMemberAssignmentSelector,
   createMoveCardActionSelector,
   createMoveCopySelector,
@@ -59,6 +61,11 @@ export const positionOptions: Option<PositionOption>[] = [
   { label: 'to the bottom of list', value: PositionOption.BOTTOM }
 ]
 
+export const listPositionOptions: Option<ListPositionOption>[] = [
+  { label: 'to the first position', value: ListPositionOption.FIRST },
+  { label: 'to the last position', value: ListPositionOption.LAST }
+]
+
 export const moveCardActionOptions: Option<MoveCardActionOption>[] = [
   { label: 'to the top of the list', value: MoveCardActionOption.TOP_CURRENT },
   { label: 'to the bottom of the list', value: MoveCardActionOption.BOTTOM_CURRENT },
@@ -81,7 +88,7 @@ export const ruleTriggerTemplates = [
   {
     id: 't-card-created' as const,
     category: ButlerCategory.RULE,
-    handlerKey: 'WHEN_CARD_CREATED' as const,
+    handlerKey: HandlerKey.WHEN_CARD_CREATED,
     parts: [
       createTextDisplay('t-card-created-text-display', 'when a card is created in the board'),
       createBySelector('t-card-created-by')
@@ -90,7 +97,7 @@ export const ruleTriggerTemplates = [
   {
     id: 't-card-added-to-list' as const,
     category: ButlerCategory.RULE,
-    handlerKey: 'WHEN_CARD_ADDED_TO_LIST' as const,
+    handlerKey: HandlerKey.WHEN_CARD_ADDED_TO_LIST,
     parts: [
       createTextDisplay('t-card-added-to-list-text-display', 'when a card is added to list'),
       createListCombobox('t-card-added-to-list-listId'),
@@ -100,16 +107,16 @@ export const ruleTriggerTemplates = [
   {
     id: 't-list-created' as const,
     category: ButlerCategory.RULE,
-    handlerKey: 'WHEN_LIST_CREATED' as const,
+    handlerKey: HandlerKey.WHEN_LIST_CREATED,
     parts: [
-      createTextDisplay('t-list-created-text-display', 'when list is created by'),
+      createTextDisplay('t-list-created-text-display', 'when list is created'),
       createBySelector('t-list-created-by')
     ]
   },
   {
     id: 't-card-marked-complete' as const,
     category: ButlerCategory.RULE,
-    handlerKey: 'WHEN_CARD_MARKED_COMPLETE' as const,
+    handlerKey: HandlerKey.WHEN_CARD_MARKED_COMPLETE,
     parts: [
       createTextDisplay('t-card-marked-complete-text-display', 'when the card is marked as'),
       {
@@ -127,7 +134,7 @@ export const scheduledTriggerTemplates = [
   {
     id: 't-sched-every-day' as const,
     category: ButlerCategory.SCHEDULED,
-    handlerKey: 'WHEN_SCHEDULED_DAILY' as const,
+    handlerKey: HandlerKey.WHEN_SCHEDULED_DAILY,
     parts: [
       createTextDisplay('t-sched-every-day-text-display', 'every'),
       {
@@ -140,7 +147,7 @@ export const scheduledTriggerTemplates = [
   {
     id: 't-sched-every-week-on' as const,
     category: ButlerCategory.SCHEDULED,
-    handlerKey: 'WHEN_SCHEDULED_WEEKLY' as const,
+    handlerKey: HandlerKey.WHEN_SCHEDULED_WEEKLY,
     parts: [
       createTextDisplay('t-sched-every-week-on-text-display', 'every'),
       createDaySelector('t-sched-every-week-on-day')
@@ -149,7 +156,7 @@ export const scheduledTriggerTemplates = [
   {
     id: 't-sched-every-x-weeks' as const,
     category: ButlerCategory.SCHEDULED,
-    handlerKey: 'WHEN_SCHEDULED_X_WEEKS' as const,
+    handlerKey: HandlerKey.WHEN_SCHEDULED_X_WEEKS,
     parts: [
       createTextDisplay('t-sched-every-x-weeks-text-display-1', 'every'),
       {
@@ -168,7 +175,7 @@ export const ruleActionTemplates = [
   {
     id: 'a-move-copy-card-to-list' as const,
     category: ButlerCategory.RULE,
-    handlerKey: 'MOVE_COPY_CARD_TO_LIST' as const,
+    handlerKey: HandlerKey.MOVE_COPY_CARD_TO_LIST,
     parts: [
       createMoveCopySelector('a-move-copy-card-to-list-action'),
       createTextDisplay('a-move-copy-card-to-list-text-display', 'the card'),
@@ -179,7 +186,7 @@ export const ruleActionTemplates = [
   {
     id: 'a-move-card' as const,
     category: ButlerCategory.RULE,
-    handlerKey: 'MOVE_CARD' as const,
+    handlerKey: HandlerKey.MOVE_CARD,
     parts: [
       createTextDisplay('a-move-card-text-display', 'move the card'),
       createMoveCardActionSelector('a-move-card-action')
@@ -188,7 +195,7 @@ export const ruleActionTemplates = [
   {
     id: 'a-mark-card-status' as const,
     category: ButlerCategory.RULE,
-    handlerKey: 'MARK_CARD_STATUS' as const,
+    handlerKey: HandlerKey.MARK_CARD_STATUS,
     parts: [
       createTextDisplay('a-mark-card-status-text-display', 'mark the card as'),
       {
@@ -202,11 +209,21 @@ export const ruleActionTemplates = [
   {
     id: 'a-add-member' as const,
     category: ButlerCategory.RULE,
-    handlerKey: 'ADD_MEMBER' as const,
+    handlerKey: HandlerKey.ADD_MEMBER,
     parts: [
       createTextDisplay('a-add-member-text-display', 'add member'),
       createMemberAssignmentSelector('a-add-member-assignment'),
       createTextDisplay('a-add-member-text-display-2', 'to the card')
+    ]
+  },
+  {
+    id: 'a-move-list' as const,
+    category: ButlerCategory.RULE,
+    handlerKey: HandlerKey.MOVE_LIST,
+    parts: [
+      createTextDisplay('a-move-list-text-display', 'move the list'),
+      createListPositionSelector('a-move-list-position'),
+      createTextDisplay('a-move-list-text-display-2', 'in the board')
     ]
   }
 ] as const
@@ -215,7 +232,7 @@ export const scheduledActionTemplates = [
   {
     id: 'a-create-card' as const,
     category: ButlerCategory.SCHEDULED,
-    handlerKey: 'CREATE_CARD' as const,
+    handlerKey: HandlerKey.CREATE_CARD,
     parts: [
       createTextDisplay('a-create-card-text-display', 'create'),
       {
@@ -233,7 +250,7 @@ export const scheduledActionTemplates = [
   {
     id: 'a-move-copy-all-cards' as const,
     category: ButlerCategory.SCHEDULED,
-    handlerKey: 'MOVE_COPY_ALL_CARDS' as const,
+    handlerKey: HandlerKey.MOVE_COPY_ALL_CARDS,
     parts: [
       createMoveCopySelector('a-move-copy-all-cards-action'),
       createTextDisplay('a-move-copy-all-cards-text-display', 'all the cards in list'),

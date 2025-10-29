@@ -78,6 +78,7 @@ enum HandlerKey {
   ADD_MEMBER
   CREATE_CARD
   MOVE_COPY_ALL_CARDS
+  MOVE_LIST
 }
 
 model User {
@@ -104,6 +105,7 @@ model User {
   activities    Activity[]     @relation("UserActivities")
   rules         Butler[]
   cards         Card[]
+  lists         List[]
 
   @@map("users")
 }
@@ -204,11 +206,13 @@ model List {
   id        String   @id @default(uuid())
   name      String
   position  Int
+  boardId   String
+  creatorId String
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  boardId String
+  creator User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
   cards   Card[]
 

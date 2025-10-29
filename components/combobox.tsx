@@ -10,7 +10,7 @@ import { Option } from '@/features/butlers/types'
 import { cn } from '@/lib/utils'
 
 interface ComboboxProps {
-  options: Option[]
+  options: Option<string>[]
   placeholder?: string
   value: string
   onChange: (value: string) => void

@@ -5,6 +5,7 @@ import {
   CardCreationTypeOption,
   DayOption,
   IntervalOption,
+  ListPositionOption,
   MemberAssignmentOption,
   MoveCardActionOption,
   MoveCopyOption,
@@ -18,6 +19,7 @@ const dayFieldSchema = z.enum(DayOption)
 const intervalFieldSchema = z.enum(IntervalOption)
 const moveCopyFieldSchema = z.enum(MoveCopyOption)
 const positionFieldSchema = z.enum(PositionOption)
+const listPositionFieldSchema = z.enum(ListPositionOption)
 const moveCardActionFieldSchema = z.enum(MoveCardActionOption)
 const memberAssignmentFieldSchema = z.enum(MemberAssignmentOption)
 const cardCreationTypeFieldSchema = z.enum(CardCreationTypeOption)
@@ -110,6 +112,12 @@ const moveCopyAllCardsActionSchema = z.object({
   toListId: z.uuid()
 })
 
+const moveListActionSchema = z.object({
+  handlerKey: z.literal('MOVE_LIST'),
+  category: z.literal(ButlerCategory.RULE),
+  position: listPositionFieldSchema
+})
+
 export const triggerSchema = z.discriminatedUnion('handlerKey', [
   whenCardCreatedTriggerSchema,
   whenCardAddedToListTriggerSchema,
@@ -126,7 +134,8 @@ export const actionSchema = z.discriminatedUnion('handlerKey', [
   markCardStatusActionSchema,
   addMemberActionSchema,
   createCardActionSchema,
-  moveCopyAllCardsActionSchema
+  moveCopyAllCardsActionSchema,
+  moveListActionSchema
 ])
 
 export const createButlerSchema = z.object({

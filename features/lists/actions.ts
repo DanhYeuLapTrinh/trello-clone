@@ -1,6 +1,7 @@
 'use server'
 
 import { POSITION_GAP } from '@/lib/constants'
+import { inngest } from '@/lib/inngest/client'
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
 import { ConflictError, NotFoundError } from '@/types/error'
@@ -13,23 +14,39 @@ export const createList = protectedActionClient
   .inputSchema(createListSchema, {
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
   })
-  .action(async ({ parsedInput }) => {
+  .action(async ({ parsedInput, ctx }) => {
     try {
       const latestPosition = await prisma.list.findFirst({
         where: {
-          boardId: parsedInput.boardId
+          board: {
+            id: parsedInput.boardId
+          }
         },
         orderBy: {
           position: 'desc'
         }
       })
+      const newPosition = latestPosition ? latestPosition.position + POSITION_GAP : 0
 
-      const list = await prisma.list.create({
-        data: {
-          name: parsedInput.name,
-          boardId: parsedInput.boardId,
-          position: (latestPosition?.position ?? -1) + 1
-        }
+      const [list] = await prisma.$transaction(async (tx) => {
+        const list = await tx.list.create({
+          data: {
+            name: parsedInput.name,
+            boardId: parsedInput.boardId,
+            creatorId: ctx.currentUser.id,
+            position: newPosition
+          }
+        })
+
+        await inngest.send({
+          name: 'app/list.created',
+          data: {
+            listId: list.id,
+            userId: ctx.currentUser.id
+          }
+        })
+
+        return [list]
       })
 
       revalidatePath(`/b/${parsedInput.slug}`)

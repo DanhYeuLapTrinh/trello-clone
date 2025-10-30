@@ -9,19 +9,20 @@ import { cn } from '@/lib/utils'
 import { UIList } from '@/types/ui'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
-import { ZodError } from 'zod'
+import { z, ZodError } from 'zod'
 import { AutomationTemplate, Part, PartId } from '../types'
 import { getInitialState } from '../utils'
-import { automationActionSchema, AutomationActionSchema } from '../validations/client'
 
-export default function ActionFormCard({
+export default function ActionFormCard<T extends z.ZodTypeAny>({
   action,
-  lists,
-  onAdd
+  lists = [],
+  onAdd,
+  schema
 }: {
   action: AutomationTemplate
-  lists: UIList[]
-  onAdd: (data: AutomationActionSchema) => void
+  lists?: UIList[]
+  onAdd: (data: z.infer<T>) => void
+  schema: T
 }) {
   const [fieldValues, setFieldValues] = useState(() => getInitialState(action.parts))
   const [fieldErrors, setFieldErrors] = useState<Set<PartId>>(new Set())
@@ -52,7 +53,7 @@ export default function ActionFormCard({
 
   const handleAdd = () => {
     try {
-      const validatedData = automationActionSchema.parse({
+      const validatedData = schema.parse({
         templateId: action.id,
         handlerKey: action.handlerKey,
         category: action.category,
@@ -95,7 +96,7 @@ export default function ActionFormCard({
                   placeholder={part.placeholder}
                   value={String(fieldValues[part.id]?.value ?? '')}
                   onChange={(e) => handleValueChange(part, e.target.value)}
-                  className={cn('w-40', hasError && 'border-red-500 focus:ring-red-500')}
+                  className={cn('w-40', hasError && 'ring-destructive ring-2 ring-offset-1')}
                 />
               )
             case 'list-combobox':

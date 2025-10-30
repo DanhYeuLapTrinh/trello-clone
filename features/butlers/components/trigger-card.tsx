@@ -2,12 +2,12 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { UIList } from '@/types/ui'
 import { Trash2 } from 'lucide-react'
-import { ruleTriggerTemplates } from '../constants'
+import { ruleTriggerTemplates, scheduledTriggerTemplates } from '../constants'
 import { getFieldFromTrigger } from '../utils'
 import { AutomationTriggerSchema } from '../validations/client'
 
 const renderTriggerDisplay = (trigger: AutomationTriggerSchema, lists: UIList[]) => {
-  const template = ruleTriggerTemplates.find((t) => t.id === trigger.templateId)
+  const template = [...ruleTriggerTemplates, ...scheduledTriggerTemplates].find((t) => t.id === trigger.templateId)
   if (!template) return null
 
   return template.parts.map((part) => {
@@ -38,11 +38,11 @@ const renderTriggerDisplay = (trigger: AutomationTriggerSchema, lists: UIList[])
 
 export default function TriggerCard({
   trigger,
-  lists,
+  lists = [],
   onDelete
 }: {
   trigger: AutomationTriggerSchema
-  lists: UIList[]
+  lists?: UIList[]
   onDelete: () => void
 }) {
   return (

@@ -15,8 +15,10 @@ import { ruleActionTemplates, ruleTriggerTemplates } from '../constants'
 import { useCreateButler } from '../hooks/use-create-butler'
 import { createButlerQueries, transformRuleForBackend } from '../utils'
 import {
-  AutomationActionSchema,
-  AutomationTriggerSchema,
+  AutomationRuleActionSchema,
+  automationRuleActionSchema,
+  AutomationRuleTriggerSchema,
+  automationRuleTriggerSchema,
   createRuleSchema,
   CreateRuleSchema
 } from '../validations/client'
@@ -71,8 +73,9 @@ export default function RulesTab({ boardSlug }: { boardSlug: string }) {
     name: 'actions'
   })
 
-  const handleSelectTrigger = (data: AutomationTriggerSchema) => {
+  const handleSelectTrigger = (data: AutomationRuleTriggerSchema) => {
     setValue('trigger', data)
+    setStep(2)
   }
 
   const handleDeleteTrigger = () => {
@@ -80,7 +83,7 @@ export default function RulesTab({ boardSlug }: { boardSlug: string }) {
     setStep(1)
   }
 
-  const handleAddAction = (data: AutomationActionSchema) => {
+  const handleAddAction = (data: AutomationRuleActionSchema) => {
     const isFirstAction = fields.length === 0
 
     if (isFirstAction) {
@@ -100,7 +103,7 @@ export default function RulesTab({ boardSlug }: { boardSlug: string }) {
   }
 
   const handleCancel = () => {
-    methods.reset()
+    reset()
     setStep(0)
   }
 
@@ -168,7 +171,13 @@ export default function RulesTab({ boardSlug }: { boardSlug: string }) {
                 <p className='text-xl font-semibold'>Select Action</p>
                 <div className='space-y-3'>
                   {ruleActionTemplates.map((action) => (
-                    <ActionFormCard key={action.id} action={action} lists={lists} onAdd={handleAddAction} />
+                    <ActionFormCard
+                      key={action.id}
+                      action={action}
+                      lists={lists}
+                      onAdd={handleAddAction}
+                      schema={automationRuleActionSchema}
+                    />
                   ))}
                 </div>
               </div>
@@ -185,8 +194,8 @@ export default function RulesTab({ boardSlug }: { boardSlug: string }) {
                 key={rule.id}
                 rule={rule}
                 lists={lists}
-                setStep={setStep}
                 onSelect={handleSelectTrigger}
+                schema={automationRuleTriggerSchema}
               />
             ))}
           </div>

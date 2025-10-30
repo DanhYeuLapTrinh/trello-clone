@@ -120,7 +120,7 @@ export const ruleTriggerTemplates = [
     parts: [
       createTextDisplay('t-card-marked-complete-text-display', 'when the card is marked as'),
       {
-        type: 'select',
+        type: 'select' as const,
         id: 't-card-marked-complete-status',
         defaultValue: 'complete',
         options: statusOptions
@@ -138,7 +138,8 @@ export const scheduledTriggerTemplates = [
     parts: [
       createTextDisplay('t-sched-every-day-text-display', 'every'),
       {
-        type: 'select',
+        type: 'select' as const,
+        defaultValue: 'day',
         id: 't-sched-every-day-interval',
         options: intervalOptions
       }
@@ -160,7 +161,7 @@ export const scheduledTriggerTemplates = [
     parts: [
       createTextDisplay('t-sched-every-x-weeks-text-display-1', 'every'),
       {
-        type: 'number-input',
+        type: 'number-input' as const,
         id: 't-sched-every-x-weeks-interval',
         placeholder: 'number',
         defaultValue: 2
@@ -199,7 +200,7 @@ export const ruleActionTemplates = [
     parts: [
       createTextDisplay('a-mark-card-status-text-display', 'mark the card as'),
       {
-        type: 'select',
+        type: 'select' as const,
         id: 'a-mark-card-status-status',
         defaultValue: 'complete',
         options: statusOptions
@@ -236,7 +237,7 @@ export const scheduledActionTemplates = [
     parts: [
       createTextDisplay('a-create-card-text-display', 'create'),
       {
-        type: 'select',
+        type: 'select' as const,
         id: 'a-create-card-type',
         defaultValue: 'new',
         options: cardCreationTypeOptions

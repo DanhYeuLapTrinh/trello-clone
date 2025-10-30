@@ -29,23 +29,31 @@ const renderActionDisplay = (action: AutomationActionSchema, lists: UIList[]) =>
           </p>
         )
       case 'number-input':
-        return <p key={part.id}>{field.value}</p>
+        return (
+          <p key={part.id} className='font-semibold text-primary'>
+            {field.value}
+          </p>
+        )
       case 'text-input':
-        return <p key={part.id}>&quot;{field.value}&quot;</p>
+        return (
+          <p key={part.id} className='font-semibold text-primary'>
+            &quot;{field.value}&quot;
+          </p>
+        )
     }
   })
 }
 
 export default function ActionCard({
   action,
-  lists,
+  lists = [],
   position,
   isDisabled,
   onSwap,
   onDelete
 }: {
   action: AutomationActionSchema
-  lists: UIList[]
+  lists?: UIList[]
   position: number
   isDisabled: boolean
   onSwap: () => void

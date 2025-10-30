@@ -60,6 +60,7 @@ export const createListCombobox = <T extends string>(id: T): Part => ({
 export const createDaySelector = <T extends string>(id: T): Part => ({
   type: 'select',
   id,
+  placeholder: 'select days',
   options: dayOptions
 })
 

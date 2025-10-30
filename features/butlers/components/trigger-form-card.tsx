@@ -3,26 +3,26 @@
 import { Combobox } from '@/components/combobox'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { UIList } from '@/types/ui'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
-import { ZodError } from 'zod'
+import { z, ZodError } from 'zod'
 import { AutomationTemplate, Part, PartId } from '../types'
 import { getInitialState } from '../utils'
-import { automationTriggerSchema, AutomationTriggerSchema } from '../validations/client'
 
-export default function TriggerFormCard({
+export default function TriggerFormCard<T extends z.ZodTypeAny>({
   rule,
-  lists,
-  setStep,
-  onSelect
+  lists = [],
+  onSelect,
+  schema
 }: {
   rule: AutomationTemplate
-  lists: UIList[]
-  setStep: (step: number) => void
-  onSelect: (data: AutomationTriggerSchema) => void
+  lists?: UIList[]
+  onSelect: (data: z.infer<T>) => void
+  schema: T
 }) {
   const [fieldValues, setFieldValues] = useState(() => getInitialState(rule.parts))
   const [fieldErrors, setFieldErrors] = useState<Set<PartId>>(new Set())
@@ -53,7 +53,7 @@ export default function TriggerFormCard({
 
   const handleSelect = () => {
     try {
-      const validatedData = automationTriggerSchema.parse({
+      const validatedData = schema.parse({
         templateId: rule.id,
         handlerKey: rule.handlerKey,
         category: rule.category,
@@ -62,7 +62,6 @@ export default function TriggerFormCard({
 
       onSelect(validatedData)
       setFieldErrors(new Set())
-      setStep(2)
     } catch (error) {
       if (error instanceof ZodError) {
         const errorFields = new Set<PartId>()
@@ -106,10 +105,10 @@ export default function TriggerFormCard({
               return (
                 <Select
                   key={part.id}
-                  value={String(fieldValues[part.id]?.value)}
+                  value={String(fieldValues[part.id]?.value ?? '')}
                   onValueChange={(value) => handleValueChange(part, value)}
                 >
-                  <SelectTrigger className={cn(hasError && 'border-red-500 focus:ring-red-500')}>
+                  <SelectTrigger className={cn(hasError && 'ring-destructive ring-2 ring-offset-1')}>
                     <SelectValue placeholder={part.placeholder} />
                   </SelectTrigger>
                   <SelectContent>
@@ -120,6 +119,17 @@ export default function TriggerFormCard({
                     ))}
                   </SelectContent>
                 </Select>
+              )
+            case 'number-input':
+              return (
+                <Input
+                  key={part.id}
+                  type='number'
+                  placeholder={part.placeholder}
+                  className={cn('w-fit', hasError && 'ring-destructive ring-2 ring-offset-1')}
+                  value={String(fieldValues[part.id]?.value ?? '')}
+                  onChange={(e) => handleValueChange(part, Number(e.target.value))}
+                />
               )
             default:
               return null

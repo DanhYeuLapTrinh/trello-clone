@@ -13,7 +13,7 @@ const fieldSchemas = {
   }),
   numberInput: z.object({
     type: z.literal('number-input'),
-    value: z.number()
+    value: z.number().min(1, 'Value must be greater than 0')
   }),
   select: z.object({
     type: z.literal('select'),
@@ -172,7 +172,45 @@ const moveListSchema = createButler('a-move-list', HandlerKey.MOVE_LIST, ButlerC
   'a-move-list-text-display-2': fieldSchemas.textDisplay
 })
 
-// Use the 'handlerKey' field to decide which schema to use
+// RULE category schemas
+export const automationRuleTriggerSchema = z.discriminatedUnion('handlerKey', [
+  whenCardCreatedSchema,
+  whenCardAddedToListSchema,
+  whenListCreatedSchema,
+  whenCardMarkedCompleteSchema
+])
+
+export const automationRuleActionSchema = z.discriminatedUnion('handlerKey', [
+  moveCopyCardToListSchema,
+  moveCardSchema,
+  markCardStatusSchema,
+  addMemberSchema,
+  moveListSchema
+])
+
+export const createRuleSchema = z.object({
+  trigger: automationRuleTriggerSchema,
+  actions: z.array(automationRuleActionSchema).min(1, 'At least one action is required')
+})
+
+// SCHEDULED category schemas
+export const automationScheduledTriggerSchema = z.discriminatedUnion('handlerKey', [
+  whenScheduledDailySchema,
+  whenScheduledWeeklySchema,
+  whenScheduledXWeeksSchema
+])
+
+export const automationScheduledActionSchema = z.discriminatedUnion('handlerKey', [
+  createCardSchema,
+  moveCopyAllCardsSchema
+])
+
+export const createScheduledSchema = z.object({
+  trigger: automationScheduledTriggerSchema,
+  actions: z.array(automationScheduledActionSchema).min(1, 'At least one action is required')
+})
+
+// Combined schemas (for generic use cases if needed)
 export const automationTriggerSchema = z.discriminatedUnion('handlerKey', [
   whenCardCreatedSchema,
   whenCardAddedToListSchema,
@@ -193,11 +231,14 @@ export const automationActionSchema = z.discriminatedUnion('handlerKey', [
   moveListSchema
 ])
 
-export const createRuleSchema = z.object({
-  trigger: automationTriggerSchema,
-  actions: z.array(automationActionSchema).min(1, 'At least one action is required')
-})
+// Type exports
+export type AutomationRuleTriggerSchema = z.infer<typeof automationRuleTriggerSchema>
+export type AutomationRuleActionSchema = z.infer<typeof automationRuleActionSchema>
+export type CreateRuleSchema = z.infer<typeof createRuleSchema>
+
+export type AutomationScheduledTriggerSchema = z.infer<typeof automationScheduledTriggerSchema>
+export type AutomationScheduledActionSchema = z.infer<typeof automationScheduledActionSchema>
+export type CreateScheduledSchema = z.infer<typeof createScheduledSchema>
 
 export type AutomationTriggerSchema = z.infer<typeof automationTriggerSchema>
 export type AutomationActionSchema = z.infer<typeof automationActionSchema>
-export type CreateRuleSchema = z.infer<typeof createRuleSchema>

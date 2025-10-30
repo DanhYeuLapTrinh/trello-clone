@@ -4,7 +4,6 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import CardItem from '@/features/cards/components/card-item'
 import CreateListButton from '@/features/lists/components/create-list-button'
 import ListItem from '@/features/lists/components/list-item'
-import { ABLY_EVENTS } from '@/lib/constants'
 import { defaultDropAnimation, DndContext, DragOverlay, rectIntersection } from '@dnd-kit/core'
 import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -22,14 +21,7 @@ const BoardContentInner = ({ boardId, slug, channelName }: BoardContentProps) =>
   const queryClient = useQueryClient()
 
   useChannel(channelName, (message) => {
-    switch (message.name) {
-      case ABLY_EVENTS.CARD_CREATED:
-        queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
-      case ABLY_EVENTS.CARD_ADDED_TO_LIST:
-        queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
-      default:
-        queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
-    }
+    queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
   })
 
   const { data: lists } = useQuery({

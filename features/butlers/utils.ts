@@ -150,7 +150,7 @@ export const transformRuleForBackend = (data: {
     return Object.fromEntries(
       Object.entries(fields)
         // Remove text-display fields since they are only for UI
-        .filter(([_fieldId, fieldData]) => fieldData.type !== 'text-display')
+        .filter(([, fieldData]) => fieldData.type !== 'text-display')
         .map(([fieldId, fieldData]) => {
           // Format fieldName to exclude the template prefix. e.g., 't-card-created-by' -> 'by'
           const fieldName = fieldId.split('-').slice(-1)[0]
@@ -179,6 +179,7 @@ export const transformRuleForBackend = (data: {
  * @param trigger - The trigger schema from the server
  * @param actions - Array of action schemas from the server
  * @param listMap - Optional map of list IDs to list names for resolving list references
+ * @param creatorName - Optional name of the rule creator (replaces "me" with actual name)
  *
  * @example
  * const description = transformToReadableString(
@@ -192,14 +193,16 @@ export const transformRuleForBackend = (data: {
  *     { handlerKey: 'MOVE_CARD', category: 'RULE', action: 'top-current' },
  *     { handlerKey: 'ADD_MEMBER', category: 'RULE', assignment: 'random' }
  *   ],
- *   { '9a130680-ed71-4b65-99b1-db9d646e33fc': 'Defined' }
+ *   { '9a130680-ed71-4b65-99b1-db9d646e33fc': 'Defined' },
+ *   'John Doe'
  * )
- * // Returns: "when a card is added to list "Defined" by me, move the card to the top of the list, and add member at random to the card"
+ * // Returns: "when a card is added to list "Defined" by John Doe, move the card to the top of the list, and add member at random to the card"
  */
 export const transformToReadableString = (
   trigger: TriggerSchema,
   actions: ActionSchema[],
-  listMap?: Record<string, string>
+  listMap?: Record<string, string>,
+  creatorName?: string
 ): string => {
   const getListName = (listId: string | undefined): string => {
     if (!listId) return '[list]'
@@ -208,7 +211,17 @@ export const transformToReadableString = (
 
   const formatBy = (by: string | undefined): string => {
     const option = byOptions.find((opt) => opt.value === by)
-    return option ? option.label : ''
+    if (!option) return ''
+
+    if (option.value === 'me' && creatorName) {
+      return `by ${creatorName}`
+    }
+
+    if (option.value === 'anyone-except-me' && creatorName) {
+      return `by anyone except ${creatorName}`
+    }
+
+    return option.label
   }
 
   const formatDay = (day: string | undefined): string => {
@@ -264,7 +277,7 @@ export const transformToReadableString = (
       case 'MOVE_CARD': {
         const moveActionOption = moveCardActionOptions.find((opt) => opt.value === action.action)
         const actionLabel = moveActionOption ? moveActionOption.label : 'to the top of the list'
-        return `move the card ${actionLabel}`
+        return `move the card to ${actionLabel}`
       }
       case 'MARK_CARD_STATUS': {
         const statusOption = statusOptions.find((opt) => opt.value === action.status)

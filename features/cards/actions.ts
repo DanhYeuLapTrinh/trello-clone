@@ -21,6 +21,7 @@ import {
   moveCardBetweenListsSchema,
   moveCardWithinListSchema,
   toggleAssignCardSchema,
+  toggleCompleteCardSchema,
   toggleWatchCardSchema,
   updateCardBackgroundSchema,
   updateCardDateSchema,
@@ -124,6 +125,26 @@ export const createCard = protectedActionClient
       })
       const newPosition = latestPosition ? latestPosition.position + POSITION_GAP : 0
 
+      const slugs = await prisma.card.findMany({
+        where: {
+          list: {
+            board: {
+              slug: parsedInput.slug
+            }
+          }
+        }
+      })
+
+      const existingSlugs = new Set(slugs.map((s) => s.slug))
+
+      const baseSlug = slugify(parsedInput.title)
+      let candidate = baseSlug
+      let counter = 1
+
+      while (existingSlugs.has(candidate)) {
+        candidate = `${baseSlug}-${counter++}`
+      }
+
       const createCardDetails: CreateDetails = {
         nameSnapshot: list.name,
         initialValues: parsedInput
@@ -133,7 +154,7 @@ export const createCard = protectedActionClient
         const card = await tx.card.create({
           data: {
             title: parsedInput.title,
-            slug: slugify(parsedInput.title),
+            slug: candidate,
             listId: list.id,
             position: newPosition,
             creatorId: ctx.currentUser.id
@@ -973,6 +994,52 @@ export const toggleAssignCard = protectedActionClient
 
       revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
       return { message: 'Thành viên đã được cập nhật thành công.' }
+    } catch (error) {
+      throw error
+    }
+  })
+
+export const toggleCompleteCard = protectedActionClient
+  .inputSchema(toggleCompleteCardSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput, ctx }) => {
+    try {
+      const { cardSlug, boardSlug } = parsedInput
+
+      const card = await prisma.card.findFirst({
+        where: {
+          slug: cardSlug,
+          list: { board: { slug: boardSlug } }
+        },
+        select: {
+          id: true,
+          isCompleted: true
+        }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.card.update({
+          where: { id: card.id },
+          data: { isCompleted: !card.isCompleted }
+        })
+
+        await inngest.send({
+          name: 'app/card.status',
+          data: {
+            cardId: card.id,
+            userId: ctx.currentUser.id
+          }
+        })
+      })
+
+      revalidatePath(`/b/${boardSlug}`)
+
+      return { message: 'Thẻ đã được cập nhật thành công.' }
     } catch (error) {
       throw error
     }

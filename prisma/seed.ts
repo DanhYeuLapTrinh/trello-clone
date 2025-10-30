@@ -3,6 +3,7 @@ import {
   Activity,
   Attachment,
   Board,
+  BoardMember,
   Butler,
   Card,
   CardLabel,
@@ -37,6 +38,8 @@ const users = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'user.json
 const workspaces = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'workspace.json'), 'utf8'))
   .data as Workspace[]
 const butlers = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'butler.json'), 'utf8')).data as Butler[]
+const boardMembers = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'board-member.json'), 'utf8'))
+  .data as BoardMember[]
 
 /** --- System Data --- */
 async function seedSystem() {
@@ -261,6 +264,29 @@ async function seedSystem() {
           listId: card.listId,
           createdAt: new Date(card.createdAt),
           updatedAt: new Date(card.updatedAt)
+        }
+      })
+    }
+  })
+
+  // 7. Seed Board Members (depends on Boards and Users)
+  console.log('  👥 Seeding board members...')
+  await prisma.$transaction(async (tx) => {
+    for (const boardMember of boardMembers) {
+      await tx.boardMember.upsert({
+        where: { id: boardMember.id },
+        update: {
+          role: boardMember.role,
+          boardId: boardMember.boardId,
+          userId: boardMember.userId,
+          lastAssignedAt: new Date(boardMember.lastAssignedAt)
+        },
+        create: {
+          id: boardMember.id,
+          role: boardMember.role,
+          boardId: boardMember.boardId,
+          userId: boardMember.userId,
+          lastAssignedAt: new Date(boardMember.lastAssignedAt)
         }
       })
     }

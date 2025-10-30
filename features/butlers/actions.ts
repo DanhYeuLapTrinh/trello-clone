@@ -14,10 +14,14 @@ export const getBoardButlers = async (slug: string, category: ButlerCategory) =>
       board: {
         slug: slug
       },
-      category: category
+      category: category,
+      isDeleted: false
     },
     orderBy: {
       createdAt: 'asc'
+    },
+    include: {
+      creator: true
     }
   })
 

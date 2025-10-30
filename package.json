@@ -11,6 +11,7 @@
     "db": "npx prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:system": "tsx prisma/seed.ts --system",
+    "db:reset": "npx prisma migrate reset",
     "inngest": "npx inngest-cli@latest dev",
     "ngrok": "ngrok http --url=postelemental-jamel-nonauthoritatively.ngrok-free.app 3000"
   },

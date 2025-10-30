@@ -192,8 +192,9 @@ model BoardMember {
   id   String @id @default(uuid())
   role Role   @default(Member)
 
-  boardId String
-  userId  String
+  boardId        String
+  userId         String
+  lastAssignedAt DateTime @default(now())
 
   board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -34,7 +34,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
 
   const { execute: moveCardWithinListAction } = useAction(moveCardWithinList, {
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
+      queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', slug] })
     },
     onError: (err) => {
       toast.error(err.error?.serverError || 'Lỗi khi di chuyển thẻ.')
@@ -43,7 +43,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
 
   const { execute: moveCardBetweenListsAction } = useAction(moveCardBetweenLists, {
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
+      queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', slug] })
     },
     onError: (err) => {
       toast.error(err.error?.serverError || 'Lỗi khi di chuyển thẻ giữa các danh sách.')
@@ -52,7 +52,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
 
   const { execute: moveListAction } = useAction(moveList, {
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['board', 'lists', slug] })
+      queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', slug] })
     },
     onError: (err) => {
       toast.error(err.error?.serverError || 'Lỗi khi di chuyển danh sách.')
@@ -99,7 +99,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
     newPosition: number,
     movedCard: CardPreview
   ) => {
-    queryClient.setQueryData(['board', 'lists', slug], (oldLists: ListWithCards[]) => {
+    queryClient.setQueryData(['board', 'lists', 'cards', slug], (oldLists: ListWithCards[]) => {
       if (!oldLists) return oldLists
 
       const newLists = [...oldLists]
@@ -128,7 +128,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
     activeList: ListWithCards,
     overListIndex: number
   ) => {
-    queryClient.setQueryData(['board', 'lists', slug], (oldLists: ListWithCards[]) => {
+    queryClient.setQueryData(['board', 'lists', 'cards', slug], (oldLists: ListWithCards[]) => {
       if (!oldLists) return oldLists
 
       const newLists = [...oldLists]
@@ -199,6 +199,10 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
   }
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    setActiveCard(null)
+    setActiveList(null)
+    setOriginalActiveCard(null)
+
     if (!over) return
 
     const activeId = active.id
@@ -208,7 +212,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
     if (originalActiveCard && overList) {
       if (originalActiveCard.listId === overList.id) {
         // Move card within list
-        queryClient.setQueryData(['board', 'lists', slug], (oldLists: ListWithCards[]) => {
+        queryClient.setQueryData(['board', 'lists', 'cards', slug], (oldLists: ListWithCards[]) => {
           if (!oldLists) return oldLists
 
           const originalList = oldLists.find((list) => list.id === originalActiveCard.listId)
@@ -268,7 +272,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
       const overIndex = lists?.findIndex((list) => list.id === overId)
 
       if (activeIndex !== overIndex && activeIndex !== undefined && overIndex !== undefined) {
-        queryClient.setQueryData(['board', 'lists', slug], (oldLists: ListWithCards[]) => {
+        queryClient.setQueryData(['board', 'lists', 'cards', slug], (oldLists: ListWithCards[]) => {
           if (!oldLists) return oldLists
           return arrayMove([...oldLists], activeIndex, overIndex)
         })
@@ -280,10 +284,6 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
         })
       }
     }
-
-    setActiveCard(null)
-    setActiveList(null)
-    setOriginalActiveCard(null)
   }
 
   return {

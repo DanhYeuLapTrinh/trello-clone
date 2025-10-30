@@ -11,7 +11,7 @@ export const createCardSchema = z.object({
 export const moveCardWithinListSchema = z.object({
   cardId: z.uuid(),
   listId: z.uuid(),
-  newPosition: z.number().min(0, 'Vị trí phải lớn hơn hoặc bằng 0'),
+  newPosition: z.number(),
   slug: z.string().min(1, 'Slug không được để trống')
 })
 
@@ -19,7 +19,7 @@ export const moveCardBetweenListsSchema = z.object({
   cardId: z.uuid(),
   sourceListId: z.uuid(),
   targetListId: z.uuid(),
-  newPosition: z.number().min(0, 'Vị trí phải lớn hơn hoặc bằng 0'),
+  newPosition: z.number(),
   slug: z.string().min(1, 'Slug không được để trống')
 })
 
@@ -244,6 +244,11 @@ export const toggleAssignCardSchema = z.object({
   targetId: z.uuid()
 })
 
+export const toggleCompleteCardSchema = z.object({
+  cardSlug: z.string(),
+  boardSlug: z.string()
+})
+
 export type CreateCardSchema = z.infer<typeof createCardSchema>
 export type MoveCardWithinListSchema = z.infer<typeof moveCardWithinListSchema>
 export type MoveCardBetweenListsSchema = z.infer<typeof moveCardBetweenListsSchema>
@@ -256,3 +261,4 @@ export type DeleteCardDateSchema = z.infer<typeof deleteCardDateSchema>
 export type UpdateCardBackgroundSchema = z.infer<typeof updateCardBackgroundSchema>
 export type ToggleWatchCardSchema = z.infer<typeof toggleWatchCardSchema>
 export type ToggleAssignCardSchema = z.infer<typeof toggleAssignCardSchema>
+export type ToggleCompleteCardSchema = z.infer<typeof toggleCompleteCardSchema>

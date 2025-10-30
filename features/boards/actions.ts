@@ -7,6 +7,7 @@ import prisma from '@/prisma/prisma'
 import mailService from '@/services/mail.service'
 import { BoardUser, ListWithCards } from '@/types/common'
 import { NotFoundError } from '@/types/error'
+import { UIList } from '@/types/ui'
 import { Label, Role } from '@prisma/client'
 import { render } from '@react-email/render'
 import { flattenValidationErrors } from 'next-safe-action'
@@ -290,3 +291,16 @@ export const shareBoard = protectedActionClient
       throw error
     }
   })
+
+export const getBoardLists = async (slug: string): Promise<UIList[]> => {
+  const lists = await prisma.list.findMany({
+    where: {
+      board: { slug }
+    },
+    omit: {
+      isDeleted: true
+    }
+  })
+
+  return lists
+}

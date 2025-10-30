@@ -183,3 +183,26 @@ export const ROLE_LABEL: Record<Role, string> = {
   Admin: 'Quản trị viên',
   Member: 'Thành viên'
 }
+
+export const POSITION_GAP = 1024
+export const DEFAULT_POSITION = 0
+
+export const ABLY_CHANNELS = {
+  BOARD: (boardSlug: string) => `board:${boardSlug}`
+} as const
+
+export const ABLY_EVENTS = {
+  LIST_CREATED: 'list.created',
+  CARD_CREATED: 'card.created',
+  CARD_ADDED_TO_LIST: 'card.added-to-list',
+  LIST_MOVED: 'list.moved',
+  CARD_STATUS: 'card.status'
+} as const
+
+export type AblyEventPayload = {
+  [ABLY_EVENTS.CARD_CREATED]: { boardSlug: string; cardSlug: string }
+  [ABLY_EVENTS.CARD_ADDED_TO_LIST]: { boardSlug: string }
+  [ABLY_EVENTS.LIST_CREATED]: { listId: string; boardSlug: string; data: Record<string, unknown> }
+  [ABLY_EVENTS.LIST_MOVED]: { boardSlug: string }
+  [ABLY_EVENTS.CARD_STATUS]: { boardSlug: string }
+}

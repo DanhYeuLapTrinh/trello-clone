@@ -57,6 +57,30 @@ enum ActivityAction {
   UNASSIGN_MEMBER
 }
 
+enum ButlerCategory {
+  RULE
+  SCHEDULED
+}
+
+enum HandlerKey {
+  // Triggers
+  WHEN_CARD_CREATED
+  WHEN_CARD_ADDED_TO_LIST
+  WHEN_LIST_CREATED
+  WHEN_CARD_MARKED_COMPLETE
+  WHEN_SCHEDULED_DAILY
+  WHEN_SCHEDULED_WEEKLY
+  WHEN_SCHEDULED_X_WEEKS
+  // Actions
+  MOVE_COPY_CARD_TO_LIST
+  MOVE_CARD
+  MARK_CARD_STATUS
+  ADD_MEMBER
+  CREATE_CARD
+  MOVE_COPY_ALL_CARDS
+  MOVE_LIST
+}
+
 model User {
   id        String   @id @default(uuid())
   clerkId   String   @unique
@@ -79,6 +103,9 @@ model User {
   comments      Comment[]
   watchedCards  CardWatcher[]
   activities    Activity[]     @relation("UserActivities")
+  rules         Butler[]
+  cards         Card[]
+  lists         List[]
 
   @@map("users")
 }
@@ -156,6 +183,7 @@ model Board {
   boardMemberships BoardMember[]
   lists            List[]
   labels           Label[]
+  rules            Butler[]
 
   @@map("boards")
 }
@@ -164,8 +192,9 @@ model BoardMember {
   id   String @id @default(uuid())
   role Role   @default(Member)
 
-  boardId String
-  userId  String
+  boardId        String
+  userId         String
+  lastAssignedAt DateTime @default(now())
 
   board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -178,11 +207,13 @@ model List {
   id        String   @id @default(uuid())
   name      String
   position  Int
+  boardId   String
+  creatorId String
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  boardId String
+  creator User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
   cards   Card[]
 
@@ -200,14 +231,18 @@ model Card {
   startDate    DateTime?
   endDate      DateTime?
   reminderType CardReminderType @default(NONE)
+  isCompleted  Boolean          @default(false)
   isDeleted    Boolean          @default(false)
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
 
-  listId   String
-  list     List      @relation(fields: [listId], references: [id], onDelete: Cascade)
-  subtasks Subtask[]
+  listId String
+  list   List   @relation(fields: [listId], references: [id], onDelete: Cascade)
 
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  subtasks    Subtask[]
   assignees   CardAssignee[]
   comments    Comment[]
   attachments Attachment[]
@@ -326,4 +361,20 @@ model Attachment {
   card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   @@map("attachments")
+}
+
+model Butler {
+  id         String         @id @default(uuid())
+  boardId    String
+  creatorId  String
+  category   ButlerCategory
+  handlerKey HandlerKey
+  details    Json?
+  isEnabled  Boolean        @default(true)
+  isDeleted  Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  creator User  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
 }

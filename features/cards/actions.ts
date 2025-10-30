@@ -1,5 +1,7 @@
 'use server'
 
+import { POSITION_GAP } from '@/lib/constants'
+import { inngest } from '@/lib/inngest/client'
 import { cardReminderJob } from '@/lib/jobs/handlers'
 import { CardReminderSchema } from '@/lib/jobs/validations'
 import { protectedActionClient } from '@/lib/safe-action'
@@ -19,6 +21,7 @@ import {
   moveCardBetweenListsSchema,
   moveCardWithinListSchema,
   toggleAssignCardSchema,
+  toggleCompleteCardSchema,
   toggleWatchCardSchema,
   updateCardBackgroundSchema,
   updateCardDateSchema,
@@ -98,7 +101,13 @@ export const createCard = protectedActionClient
     try {
       const list = await prisma.list.findUnique({
         where: {
-          id: parsedInput.listId
+          id: parsedInput.listId,
+          board: { slug: parsedInput.slug }
+        },
+        select: {
+          id: true,
+          name: true,
+          board: { select: { slug: true } }
         }
       })
 
@@ -114,6 +123,27 @@ export const createCard = protectedActionClient
           position: 'desc'
         }
       })
+      const newPosition = latestPosition ? latestPosition.position + POSITION_GAP : 0
+
+      const slugs = await prisma.card.findMany({
+        where: {
+          list: {
+            board: {
+              slug: parsedInput.slug
+            }
+          }
+        }
+      })
+
+      const existingSlugs = new Set(slugs.map((s) => s.slug))
+
+      const baseSlug = slugify(parsedInput.title)
+      let candidate = baseSlug
+      let counter = 1
+
+      while (existingSlugs.has(candidate)) {
+        candidate = `${baseSlug}-${counter++}`
+      }
 
       const createCardDetails: CreateDetails = {
         nameSnapshot: list.name,
@@ -124,9 +154,10 @@ export const createCard = protectedActionClient
         const card = await tx.card.create({
           data: {
             title: parsedInput.title,
-            slug: slugify(parsedInput.title),
+            slug: candidate,
             listId: list.id,
-            position: (latestPosition?.position ?? -1) + 1
+            position: newPosition,
+            creatorId: ctx.currentUser.id
           }
         })
 
@@ -137,6 +168,16 @@ export const createCard = protectedActionClient
             action: 'CREATE',
             details: createCardDetails,
             cardId: card.id
+          }
+        })
+
+        await inngest.send({
+          name: 'app/card.created',
+          data: {
+            cardId: card.id,
+            listId: list.id,
+            boardSlug: list.board.slug,
+            userId: ctx.currentUser.id
           }
         })
 
@@ -273,22 +314,28 @@ export const moveCardWithinList = protectedActionClient
       // Remove the card from its current position
       const otherCards = cards.filter((card) => card.id !== parsedInput.cardId)
 
-      // Insert the card at the new position
-      const reorderedCards = [
-        ...otherCards.slice(0, parsedInput.newPosition),
-        cardToMove,
-        ...otherCards.slice(parsedInput.newPosition)
-      ]
+      // Calculate new position based on gap-based system
+      let newPosition: number
 
-      // Update positions for all affected cards
-      const updatePromises = reorderedCards.map((card, index) =>
-        prisma.card.update({
-          where: { id: card.id },
-          data: { position: index }
-        })
-      )
+      if (otherCards.length === 0) {
+        newPosition = 0
+      } else if (parsedInput.newPosition === 0) {
+        // Moving to the near top
+        newPosition = otherCards[0].position - POSITION_GAP
+      } else if (parsedInput.newPosition >= otherCards.length) {
+        // Moving to the end
+        newPosition = otherCards[otherCards.length - 1].position + POSITION_GAP
+      } else {
+        // Moving between two cards
+        const prevCard = otherCards[parsedInput.newPosition - 1]
+        const nextCard = otherCards[parsedInput.newPosition]
+        newPosition = Math.floor((prevCard.position + nextCard.position) / 2)
+      }
 
-      await prisma.$transaction(updatePromises)
+      await prisma.card.update({
+        where: { id: parsedInput.cardId },
+        data: { position: newPosition }
+      })
 
       revalidatePath(`/b/${parsedInput.slug}`)
 
@@ -310,7 +357,7 @@ export const moveCardBetweenLists = protectedActionClient
       return
     }
 
-    const [cardToMove, fromList, toList, targetListCards, sourceListCards] = await Promise.all([
+    const [cardToMove, fromList, toList, targetListCards] = await Promise.all([
       prisma.card.findUnique({
         where: { id: cardId },
         select: { id: true, title: true, position: true, listId: true }
@@ -327,14 +374,6 @@ export const moveCardBetweenLists = protectedActionClient
         where: { listId: targetListId },
         select: { id: true, position: true },
         orderBy: { position: 'asc' }
-      }),
-      prisma.card.findMany({
-        where: {
-          listId: sourceListId,
-          id: { not: cardId }
-        },
-        select: { id: true, position: true },
-        orderBy: { position: 'asc' }
       })
     ])
 
@@ -346,41 +385,32 @@ export const moveCardBetweenLists = protectedActionClient
       throw new BadRequestError(`Invalid position: ${newPosition}. Must be between 0 and ${targetListCards.length}`)
     }
 
-    const updateOperations = []
+    // Calculate new position based on gap-based system
+    let calculatedPosition: number
 
-    // Update the moved card
-    updateOperations.push(
+    if (targetListCards.length === 0) {
+      calculatedPosition = 0
+    } else if (newPosition === 0) {
+      // Moving to the near top
+      calculatedPosition = targetListCards[0].position - POSITION_GAP
+    } else if (newPosition >= targetListCards.length) {
+      // Moving to the end
+      calculatedPosition = targetListCards[targetListCards.length - 1].position + POSITION_GAP
+    } else {
+      // Moving between two cards
+      const prevCard = targetListCards[newPosition - 1]
+      const nextCard = targetListCards[newPosition]
+      calculatedPosition = Math.floor((prevCard.position + nextCard.position) / 2)
+    }
+
+    await prisma.$transaction([
       prisma.card.update({
         where: { id: cardId },
         data: {
           listId: targetListId,
-          position: newPosition
+          position: calculatedPosition
         }
-      })
-    )
-
-    // Update positions in target list (shift cards at and after new position)
-    const targetUpdates = targetListCards
-      .filter((_, index) => index >= newPosition)
-      .map((card, index) =>
-        prisma.card.update({
-          where: { id: card.id },
-          data: { position: newPosition + index + 1 }
-        })
-      )
-
-    // Update positions in source list (reindex remaining cards)
-    const sourceUpdates = sourceListCards.map((card, index) =>
-      prisma.card.update({
-        where: { id: card.id },
-        data: { position: index }
-      })
-    )
-
-    updateOperations.push(...targetUpdates, ...sourceUpdates)
-
-    await prisma.$transaction([
-      ...updateOperations,
+      }),
       prisma.activity.create({
         data: {
           userId: ctx.currentUser.id,
@@ -964,6 +994,52 @@ export const toggleAssignCard = protectedActionClient
 
       revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
       return { message: 'Thành viên đã được cập nhật thành công.' }
+    } catch (error) {
+      throw error
+    }
+  })
+
+export const toggleCompleteCard = protectedActionClient
+  .inputSchema(toggleCompleteCardSchema, {
+    handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
+  })
+  .action(async ({ parsedInput, ctx }) => {
+    try {
+      const { cardSlug, boardSlug } = parsedInput
+
+      const card = await prisma.card.findFirst({
+        where: {
+          slug: cardSlug,
+          list: { board: { slug: boardSlug } }
+        },
+        select: {
+          id: true,
+          isCompleted: true
+        }
+      })
+
+      if (!card) {
+        throw new NotFoundError('Card')
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.card.update({
+          where: { id: card.id },
+          data: { isCompleted: !card.isCompleted }
+        })
+
+        await inngest.send({
+          name: 'app/card.status',
+          data: {
+            cardId: card.id,
+            userId: ctx.currentUser.id
+          }
+        })
+      })
+
+      revalidatePath(`/b/${boardSlug}`)
+
+      return { message: 'Thẻ đã được cập nhật thành công.' }
     } catch (error) {
       throw error
     }

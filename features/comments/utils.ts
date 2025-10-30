@@ -128,5 +128,5 @@ export const updateCardBackgroundQueries = (
 // Invalidates
 export const invalidateCommentQueries = (queryClient: QueryClient, boardSlug: string, cardSlug: string) => {
   queryClient.invalidateQueries({ queryKey: ['card', 'activities', 'comments', boardSlug, cardSlug] })
-  queryClient.invalidateQueries({ queryKey: ['board', 'lists', boardSlug] })
+  queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', boardSlug] })
 }

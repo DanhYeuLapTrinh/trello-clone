@@ -16,7 +16,8 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { createElement } from 'react'
+import { createElement, useEffect, useState } from 'react'
+import { useToggleCompleteCard } from '../hooks/use-toggle-complete-card'
 import {
   formatCardDateRange,
   getSubtaskStats,
@@ -27,11 +28,19 @@ import {
 
 interface CardItemProps {
   card: CardPreview
-  slug?: string
+  slug: string
 }
 
 export default function CardItem({ card, slug }: CardItemProps) {
   const router = useRouter()
+  const [completed, setCompleted] = useState(card.isCompleted)
+
+  // Sync local state with prop when card.isCompleted changes (e.g., from butler automation)
+  useEffect(() => {
+    setCompleted(card.isCompleted)
+  }, [card.isCompleted])
+
+  const { toggleCompleteCardAction } = useToggleCompleteCard(slug, card.slug)
 
   const isDisplayIcon = shouldDisplayCardIcons({
     _count: card._count,
@@ -47,14 +56,17 @@ export default function CardItem({ card, slug }: CardItemProps) {
   const isWatching = card.watchers.length > 0
 
   const handleCardClick = () => {
-    if (slug) {
-      router.push(`/b/${slug}/c/${card.slug}`)
-    }
+    router.push(`/b/${slug}/c/${card.slug}`)
+  }
+
+  const handleToggleCompleteCard = () => {
+    setCompleted((prev) => !prev)
+    toggleCompleteCardAction.execute({ cardSlug: card.slug, boardSlug: slug })
   }
 
   return (
     <Card
-      className='p-0 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary group relative gap-0'
+      className='p-0 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary group relative gap-0 mr-1'
       onClick={handleCardClick}
     >
       {card.imageUrl ? (
@@ -81,8 +93,18 @@ export default function CardItem({ card, slug }: CardItemProps) {
         )}
 
         <div className='flex items-start gap-2'>
-          <Checkbox className='rounded-full border-foreground mt-0.5 hidden group-hover:block' />
-          <p className='text-sm w-[85%]'>{card.title}</p>
+          <Checkbox
+            className={cn(
+              'rounded-full border-foreground mt-0.5',
+              completed
+                ? 'data-[state=checked]:bg-lime-600 data-[state=checked]:border-lime-600'
+                : 'hidden group-hover:block'
+            )}
+            checked={completed}
+            onCheckedChange={handleToggleCompleteCard}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <p className={cn('text-sm w-[85%]', completed ? 'text-muted-foreground' : '')}>{card.title}</p>
         </div>
 
         {isDisplayIcon ? (

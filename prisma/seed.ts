@@ -3,6 +3,8 @@ import {
   Activity,
   Attachment,
   Board,
+  BoardMember,
+  Butler,
   Card,
   CardLabel,
   CardWatcher,
@@ -35,6 +37,9 @@ const subtask = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'subtask
 const users = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'user.json'), 'utf8')).data as User[]
 const workspaces = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'workspace.json'), 'utf8'))
   .data as Workspace[]
+const butlers = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'butler.json'), 'utf8')).data as Butler[]
+const boardMembers = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'board-member.json'), 'utf8'))
+  .data as BoardMember[]
 
 /** --- System Data --- */
 async function seedSystem() {
@@ -138,7 +143,38 @@ async function seedSystem() {
     }
   })
 
-  // 4. Seed Lists (depends on Boards)
+  // 4. Seed Butlers (depends on Boards)
+  console.log('  📝 Seeding butlers...')
+  await prisma.$transaction(async (tx) => {
+    for (const butler of butlers) {
+      await tx.butler.upsert({
+        where: { id: butler.id },
+        update: {
+          boardId: butler.boardId,
+          creatorId: butler.creatorId,
+          category: butler.category,
+          handlerKey: butler.handlerKey,
+          details: butler.details as any,
+          isEnabled: butler.isEnabled,
+          isDeleted: butler.isDeleted
+        },
+        create: {
+          id: butler.id,
+          boardId: butler.boardId,
+          creatorId: butler.creatorId,
+          category: butler.category,
+          handlerKey: butler.handlerKey,
+          details: butler.details as any,
+          isEnabled: butler.isEnabled,
+          isDeleted: butler.isDeleted,
+          createdAt: new Date(butler.createdAt),
+          updatedAt: new Date(butler.updatedAt)
+        }
+      })
+    }
+  })
+
+  // 5. Seed Lists (depends on Boards)
   console.log('  📝 Seeding lists...')
   await prisma.$transaction(async (tx) => {
     for (const list of lists) {
@@ -149,6 +185,7 @@ async function seedSystem() {
           position: list.position,
           isDeleted: list.isDeleted,
           boardId: list.boardId,
+          creatorId: list.creatorId,
           updatedAt: new Date(list.updatedAt)
         },
         create: {
@@ -157,6 +194,7 @@ async function seedSystem() {
           position: list.position,
           isDeleted: list.isDeleted,
           boardId: list.boardId,
+          creatorId: list.creatorId,
           createdAt: new Date(list.createdAt),
           updatedAt: new Date(list.updatedAt)
         }
@@ -164,7 +202,7 @@ async function seedSystem() {
     }
   })
 
-  // 5. Seed Labels (depends on Boards)
+  // 6. Seed Labels (depends on Boards)
   console.log('  🏷️ Seeding labels...')
   await prisma.$transaction(async (tx) => {
     for (const label of labels) {
@@ -190,7 +228,7 @@ async function seedSystem() {
     }
   })
 
-  // 6. Seed Cards (depends on Lists)
+  // 7. Seed Cards (depends on Lists)
   console.log('  🃏 Seeding cards...')
   await prisma.$transaction(async (tx) => {
     for (const card of cards) {
@@ -212,6 +250,7 @@ async function seedSystem() {
         },
         create: {
           id: card.id,
+          creatorId: card.creatorId,
           messageId: card.messageId,
           title: card.title,
           slug: card.slug,
@@ -230,6 +269,29 @@ async function seedSystem() {
     }
   })
 
+  // 7. Seed Board Members (depends on Boards and Users)
+  console.log('  👥 Seeding board members...')
+  await prisma.$transaction(async (tx) => {
+    for (const boardMember of boardMembers) {
+      await tx.boardMember.upsert({
+        where: { id: boardMember.id },
+        update: {
+          role: boardMember.role,
+          boardId: boardMember.boardId,
+          userId: boardMember.userId,
+          lastAssignedAt: new Date(boardMember.lastAssignedAt)
+        },
+        create: {
+          id: boardMember.id,
+          role: boardMember.role,
+          boardId: boardMember.boardId,
+          userId: boardMember.userId,
+          lastAssignedAt: new Date(boardMember.lastAssignedAt)
+        }
+      })
+    }
+  })
+
   console.log('✅ System data seeded successfully!')
 }
 
@@ -237,7 +299,7 @@ async function seedSystem() {
 async function seedDemoData() {
   console.log('🌱 Seeding demo data...')
 
-  // 7. Seed Subtasks (depends on Cards, self-referential)
+  // 8. Seed Subtasks (depends on Cards, self-referential)
   console.log('  ✅ Seeding subtasks...')
   await prisma.$transaction(async (tx) => {
     // First pass: create subtasks without parent references
@@ -276,7 +338,7 @@ async function seedDemoData() {
     }
   })
 
-  // 8. Seed Card Watchers (depends on Cards and Users)
+  // 9. Seed Card Watchers (depends on Cards and Users)
   console.log('  👀 Seeding card watchers...')
   await prisma.$transaction(async (tx) => {
     for (const watcher of cardWatchers) {
@@ -301,7 +363,7 @@ async function seedDemoData() {
     }
   })
 
-  // 9. Seed Card Labels (depends on Cards and Labels)
+  // 10. Seed Card Labels (depends on Cards and Labels)
   console.log('  🏷️ Seeding card labels...')
   await prisma.$transaction(async (tx) => {
     for (const cardLabel of cardLabels) {
@@ -326,7 +388,7 @@ async function seedDemoData() {
     }
   })
 
-  // 10. Seed Comments (depends on Cards and Users)
+  // 11. Seed Comments (depends on Cards and Users)
   console.log('  💬 Seeding comments...')
   await prisma.$transaction(async (tx) => {
     for (const comment of comments) {
@@ -352,7 +414,7 @@ async function seedDemoData() {
     }
   })
 
-  // 11. Seed Attachments (depends on Cards)
+  // 12. Seed Attachments (depends on Cards)
   console.log('  📎 Seeding attachments...')
   await prisma.$transaction(async (tx) => {
     for (const attachment of attachments) {
@@ -380,7 +442,7 @@ async function seedDemoData() {
     }
   })
 
-  // 12. Seed Activities (depends on Cards and Users)
+  // 13. Seed Activities (depends on Cards and Users)
   console.log('  📊 Seeding activities...')
   await prisma.$transaction(async (tx) => {
     for (const activity of activities) {

@@ -1,14 +1,14 @@
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getBoardLabels, getBoardListsWithCards, getBoardUsers, getBoardWithWorkspace } from '@/features/boards/actions'
 import BoardContent from '@/features/boards/components/board-content'
 import BoardNameInput from '@/features/boards/components/board-name-input'
 import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
 import ShareBoardDialog from '@/features/boards/components/share-board-dialog'
-import { boardBackgroundClasses } from '@/lib/constants'
+import { ABLY_CHANNELS, boardBackgroundClasses } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
-import { Trello, UserPlus } from 'lucide-react'
+import { Trello, UserPlus, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -19,7 +19,7 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
   const { workspace, board } = await getBoardWithWorkspace(slug)
 
   await queryClient.prefetchQuery({
-    queryKey: ['board', 'lists', slug],
+    queryKey: ['board', 'lists', 'cards', slug],
     queryFn: () => getBoardListsWithCards(slug)
   })
 
@@ -40,7 +40,7 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className={cn('h-screen flex flex-col', boardBackgroundClasses[board.background])}>
-        <div className='px-3 py-2 bg-background flex items-center justify-between gap-4 flex-shrink-0'>
+        <div className='px-3 py-2 bg-background flex items-center justify-between gap-4 shrink-0'>
           <Link href={`/w/${workspace.shortName}/home`}>
             <Trello className='size-7' />
           </Link>
@@ -54,16 +54,25 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
         </div>
 
         <div className='bg-black/20 backdrop-blur-md px-4 py-3 shadow-lg flex items-center justify-between'>
-          <BoardNameInput name={board.name} />
-          <ShareBoardDialog boardSlug={board.slug}>
-            <Button variant='secondary'>
-              <UserPlus />
-              Chia sẻ
-            </Button>
-          </ShareBoardDialog>
+          <div className='flex-1'>
+            <BoardNameInput name={board.name} />
+          </div>
+
+          <div className='space-x-2'>
+            <ShareBoardDialog boardSlug={board.slug}>
+              <Button variant='secondary'>
+                <UserPlus />
+                Chia sẻ
+              </Button>
+            </ShareBoardDialog>
+
+            <Link href={`/b/${board.slug}/butler`} className={buttonVariants({ variant: 'secondary', size: 'icon' })}>
+              <Zap />
+            </Link>
+          </div>
         </div>
 
-        <BoardContent boardId={board.id} slug={board.slug} />
+        <BoardContent boardId={board.id} slug={board.slug} channelName={ABLY_CHANNELS.BOARD(board.slug)} />
       </div>
     </HydrationBoundary>
   )

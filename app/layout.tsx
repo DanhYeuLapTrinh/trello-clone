@@ -1,10 +1,15 @@
 import AppProvider from '@/components/app.provider'
 import type { Metadata } from 'next'
-import { Noto_Sans } from 'next/font/google'
+import { Fira_Code, Noto_Sans } from 'next/font/google'
 import './globals.css'
 
 const notoSans = Noto_Sans({
   subsets: ['latin']
+})
+
+const firaCode = Fira_Code({
+  subsets: ['latin'],
+  variable: '--font-fira-code'
 })
 
 export const metadata: Metadata = {
@@ -18,10 +23,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <AppProvider>
-      <html lang='en'>
-        <body className={`${notoSans.className} antialiased`}>{children}</body>
-      </html>
-    </AppProvider>
+    <html lang='en'>
+      <body className={`${notoSans.className} ${firaCode.variable} antialiased`}>
+        <AppProvider>{children}</AppProvider>
+      </body>
+    </html>
   )
 }

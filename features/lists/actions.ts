@@ -1,5 +1,7 @@
 'use server'
 
+import { POSITION_GAP } from '@/lib/constants'
+import { inngest } from '@/lib/inngest/client'
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
 import { ConflictError, NotFoundError } from '@/types/error'
@@ -12,23 +14,39 @@ export const createList = protectedActionClient
   .inputSchema(createListSchema, {
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
   })
-  .action(async ({ parsedInput }) => {
+  .action(async ({ parsedInput, ctx }) => {
     try {
       const latestPosition = await prisma.list.findFirst({
         where: {
-          boardId: parsedInput.boardId
+          board: {
+            id: parsedInput.boardId
+          }
         },
         orderBy: {
           position: 'desc'
         }
       })
+      const newPosition = latestPosition ? latestPosition.position + POSITION_GAP : 0
 
-      const list = await prisma.list.create({
-        data: {
-          name: parsedInput.name,
-          boardId: parsedInput.boardId,
-          position: (latestPosition?.position ?? -1) + 1
-        }
+      const [list] = await prisma.$transaction(async (tx) => {
+        const list = await tx.list.create({
+          data: {
+            name: parsedInput.name,
+            boardId: parsedInput.boardId,
+            creatorId: ctx.currentUser.id,
+            position: newPosition
+          }
+        })
+
+        await inngest.send({
+          name: 'app/list.created',
+          data: {
+            listId: list.id,
+            userId: ctx.currentUser.id
+          }
+        })
+
+        return [list]
       })
 
       revalidatePath(`/b/${parsedInput.slug}`)
@@ -57,27 +75,37 @@ export const moveList = protectedActionClient
         throw new NotFoundError('List')
       }
 
-      // Get all lists in the board ordered by position
-      const allLists = await prisma.list.findMany({
-        where: { boardId: listToMove.boardId },
+      // Get all lists in the board ordered by position (excluding the one being moved)
+      const otherLists = await prisma.list.findMany({
+        where: {
+          boardId: listToMove.boardId,
+          id: { not: parsedInput.listId }
+        },
         orderBy: { position: 'asc' }
       })
 
-      // Remove the list being moved from the array
-      const otherLists = allLists.filter((list) => list.id !== parsedInput.listId)
+      let newPosition: number
 
-      // Insert the moved list at the new position
-      otherLists.splice(parsedInput.newPosition, 0, listToMove)
+      if (otherLists.length === 0) {
+        // Only list in the board
+        newPosition = 0
+      } else if (parsedInput.newPosition === 0) {
+        // Moving to the near top
+        newPosition = otherLists[0].position - POSITION_GAP
+      } else if (parsedInput.newPosition >= otherLists.length) {
+        // Moving to the end
+        newPosition = otherLists[otherLists.length - 1].position + POSITION_GAP
+      } else {
+        // Moving between two lists
+        const prevList = otherLists[parsedInput.newPosition - 1]
+        const nextList = otherLists[parsedInput.newPosition]
+        newPosition = Math.floor((prevList.position + nextList.position) / 2)
+      }
 
-      // Update positions for all lists
-      const updatePromises = otherLists.map((list, index) =>
-        prisma.list.update({
-          where: { id: list.id },
-          data: { position: index }
-        })
-      )
-
-      await prisma.$transaction(updatePromises)
+      await prisma.list.update({
+        where: { id: parsedInput.listId },
+        data: { position: newPosition }
+      })
 
       revalidatePath(`/b/${parsedInput.slug}`)
 

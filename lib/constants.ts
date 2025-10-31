@@ -196,7 +196,8 @@ export const ABLY_EVENTS = {
   CARD_CREATED: 'card.created',
   CARD_ADDED_TO_LIST: 'card.added-to-list',
   LIST_MOVED: 'list.moved',
-  CARD_STATUS: 'card.status'
+  CARD_STATUS: 'card.status',
+  SCHEDULED_ACTION: 'scheduled.action'
 } as const
 
 export type AblyEventPayload = {
@@ -205,4 +206,5 @@ export type AblyEventPayload = {
   [ABLY_EVENTS.LIST_CREATED]: { listId: string; boardSlug: string; data: Record<string, unknown> }
   [ABLY_EVENTS.LIST_MOVED]: { boardSlug: string }
   [ABLY_EVENTS.CARD_STATUS]: { boardSlug: string }
+  [ABLY_EVENTS.SCHEDULED_ACTION]: { boardSlug: string }
 }

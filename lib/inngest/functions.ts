@@ -1,135 +1,13 @@
 import 'server-only'
 
-import { ButlerData, ListPositionOption, MoveCopyOption, StatusOption } from '@/features/butlers/types'
-import { ActionSchema } from '@/features/butlers/validations/server'
+import { ButlerData, ListPositionOption, StatusOption } from '@/features/butlers/types'
 import prisma from '@/prisma/prisma'
 import ablyService from '@/services/ably.service'
 import { ButlerCategory, HandlerKey } from '@prisma/client'
-import { ABLY_CHANNELS, ABLY_EVENTS, POSITION_GAP } from '../constants'
+import { ABLY_CHANNELS, ABLY_EVENTS, DEFAULT_POSITION, POSITION_GAP } from '../constants'
 import { inngest } from './client'
-import {
-  assignMemberToCard,
-  copyCardToList,
-  moveCardToList,
-  moveCardWithinBoard,
-  shouldExecuteButler,
-  updateCardStatus
-} from './utils'
-
-// Actions
-/**
- * Execute card-related actions for card triggers (WHEN_CARD_CREATED, WHEN_CARD_ADDED_TO_LIST)
- * Only handles actions that operate on cards, not lists
- */
-const executeCardAction = async ({
-  cardId,
-  listId,
-  listPosition,
-  cardTitle,
-  boardId,
-  action,
-  stepId,
-  step
-}: {
-  cardId: string
-  listId: string
-  listPosition: number
-  cardTitle: string
-  boardId: string
-  action: ActionSchema
-  stepId: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  step: any
-}) => {
-  return await step.run(stepId, async () => {
-    switch (action.handlerKey) {
-      case HandlerKey.MOVE_COPY_CARD_TO_LIST: {
-        const { action: actionType, listId: targetListId, position: targetPosition } = action
-
-        if (actionType === MoveCopyOption.COPY) {
-          return await copyCardToList(cardId, targetListId, targetPosition)
-        }
-
-        if (actionType === MoveCopyOption.MOVE) {
-          return await moveCardToList(cardId, targetListId, targetPosition)
-        }
-
-        return { action: 'move-copy', status: 'skipped', details: 'Invalid action type.' }
-      }
-      case HandlerKey.MOVE_CARD: {
-        const { action: actionType } = action
-        return await moveCardWithinBoard(cardId, actionType, listId, listPosition, boardId)
-      }
-      case HandlerKey.MARK_CARD_STATUS: {
-        const { status: targetStatus } = action
-        return await updateCardStatus(cardId, targetStatus, cardTitle)
-      }
-      case HandlerKey.ADD_MEMBER: {
-        const { assignment } = action
-        return await assignMemberToCard(cardId, assignment, boardId, cardTitle)
-      }
-      case HandlerKey.MOVE_LIST:
-        // TODO: Implement this in the future
-        return { action: 'move-list', status: 'skipped', details: 'MOVE_LIST action is not implemented yet.' }
-      default:
-        return { action: 'unknown', status: 'skipped', details: `Unknown handler key ${action.handlerKey}` }
-    }
-  })
-}
-
-/**
- * Execute card-related actions for card status trigger (WHEN_CARD_MARKED_COMPLETE)
- * Only handles actions that operate on cards, not lists
- */
-const executeCardStatusAction = async (
-  cardId: string,
-  action: ActionSchema,
-  stepId: string,
-  card: {
-    id: string
-    isCompleted: boolean
-    title: string
-    creatorId: string
-    list: { id: string; position: number; boardId: string; board: { slug: string } }
-  },
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  step: any
-) => {
-  return await step.run(stepId, async () => {
-    switch (action.handlerKey) {
-      case HandlerKey.MOVE_COPY_CARD_TO_LIST: {
-        const { action: actionType, listId: targetListId, position: targetPosition } = action
-
-        if (actionType === MoveCopyOption.COPY) {
-          return await copyCardToList(cardId, targetListId, targetPosition)
-        }
-
-        if (actionType === MoveCopyOption.MOVE) {
-          return await moveCardToList(cardId, targetListId, targetPosition)
-        }
-
-        return { action: 'move-copy', status: 'skipped', details: 'Invalid action type.' }
-      }
-      case HandlerKey.MOVE_CARD: {
-        const { action: actionType } = action
-        return await moveCardWithinBoard(cardId, actionType, card.list.id, card.list.position, card.list.boardId)
-      }
-      case HandlerKey.MARK_CARD_STATUS: {
-        const { status: targetStatus } = action
-        return await updateCardStatus(cardId, targetStatus, card.title)
-      }
-      case HandlerKey.ADD_MEMBER: {
-        const { assignment } = action
-        return await assignMemberToCard(cardId, assignment, card.list.boardId, card.title)
-      }
-      case HandlerKey.MOVE_LIST:
-        // This action is not valid for card triggers
-        return { action: 'move-list', status: 'skipped', details: 'MOVE_LIST action is not valid for card triggers.' }
-      default:
-        return { action: 'unknown', status: 'skipped', details: `Unknown handler key ${action.handlerKey}` }
-    }
-  })
-}
+import { masterCronScheduler } from './cron'
+import { executeCardAction, executeCardStatusAction, executeScheduledAction, shouldExecuteButler } from './utils'
 
 // Functions
 export const handleCardCreated = inngest.createFunction(
@@ -150,7 +28,11 @@ export const handleCardCreated = inngest.createFunction(
     })
 
     if (!originalList) {
-      return { message: 'Original list not found.' }
+      return {
+        success: false,
+        message: 'Original list not found.',
+        listId: originalListId
+      }
     }
 
     const card = await step.run('get-card', async () => {
@@ -169,7 +51,11 @@ export const handleCardCreated = inngest.createFunction(
     })
 
     if (!card) {
-      return { message: 'Card not found.' }
+      return {
+        success: false,
+        message: 'Card not found.',
+        cardId
+      }
     }
 
     // Fetch ALL relevant butler rules (both WHEN_CARD_CREATED and WHEN_CARD_ADDED_TO_LIST)
@@ -198,7 +84,12 @@ export const handleCardCreated = inngest.createFunction(
     })
 
     if (allButlers.length === 0) {
-      return { message: 'No rules found for this event.' }
+      return {
+        success: true,
+        message: 'No rules found for this event.',
+        boardSlug,
+        processedButlers: 0
+      }
     }
 
     const executedActionSummaries = []
@@ -224,7 +115,6 @@ export const handleCardCreated = inngest.createFunction(
 
       let allActionsSucceeded = true
 
-      // Execute all actions for this butler rule
       for (const [actionIndex, action] of actions.entries()) {
         const stepId = `butler-${butlerIndex}-action-${actionIndex}-key-${action.handlerKey}`
         const actionResult = await executeCardAction({
@@ -266,7 +156,12 @@ export const handleCardCreated = inngest.createFunction(
     }
 
     return {
+      success: true,
       message: 'All butler rules processed successfully.',
+      boardSlug,
+      cardId,
+      processedButlers: allButlers.length,
+      totalActions: executedActionSummaries.length,
       summary: executedActionSummaries
     }
   }
@@ -301,7 +196,11 @@ export const handleListCreated = inngest.createFunction(
     })
 
     if (!list) {
-      return { message: 'List not found.' }
+      return {
+        success: false,
+        message: 'List not found.',
+        listId
+      }
     }
 
     const allButlers = await step.run('get-all-butlers', async () => {
@@ -328,7 +227,12 @@ export const handleListCreated = inngest.createFunction(
     })
 
     if (allButlers.length === 0) {
-      return { message: 'No rules found for this event.' }
+      return {
+        success: true,
+        message: 'No rules found for this event.',
+        boardId: list.board.id,
+        processedButlers: 0
+      }
     }
 
     const executedActionSummaries = []
@@ -350,7 +254,6 @@ export const handleListCreated = inngest.createFunction(
 
       let allActionsSucceeded = true
 
-      // Execute all actions for this butler rule
       for (const [actionIndex, action] of actions.entries()) {
         const stepId = `butler-${butlerIndex}-action-${actionIndex}-key-${action.handlerKey}`
 
@@ -367,14 +270,14 @@ export const handleListCreated = inngest.createFunction(
                   _max: { position: true }
                 })
 
-                newPosition = (maxPos._max.position ?? 0) + POSITION_GAP
+                newPosition = maxPos._max.position === null ? DEFAULT_POSITION : maxPos._max.position + POSITION_GAP
               } else if (position === ListPositionOption.FIRST) {
                 const minPos = await prisma.list.aggregate({
                   where: { boardId: list.board.id },
                   _min: { position: true }
                 })
 
-                newPosition = (minPos._min.position ?? 0) - POSITION_GAP
+                newPosition = minPos._min.position === null ? DEFAULT_POSITION : minPos._min.position - POSITION_GAP
               } else {
                 return { action: 'move', status: 'skipped', details: 'Invalid position target.' }
               }
@@ -422,7 +325,12 @@ export const handleListCreated = inngest.createFunction(
     }
 
     return {
+      success: true,
       message: 'All butler rules processed successfully.',
+      boardId: list.board.id,
+      boardSlug: list.board.slug,
+      processedButlers: allButlers.length,
+      totalActions: executedActionSummaries.length,
       summary: executedActionSummaries
     }
   }
@@ -452,7 +360,11 @@ export const handleCardStatus = inngest.createFunction(
     })
 
     if (!card) {
-      return { message: 'Card not found.' }
+      return {
+        success: false,
+        message: 'Card not found.',
+        cardId
+      }
     }
 
     const allButlers = await step.run('get-all-butlers', async () => {
@@ -479,7 +391,12 @@ export const handleCardStatus = inngest.createFunction(
     })
 
     if (allButlers.length === 0) {
-      return { message: 'No rules found for this event.' }
+      return {
+        success: true,
+        message: 'No rules found for this event.',
+        boardId: card.list.boardId,
+        processedButlers: 0
+      }
     }
 
     const executedActionSummaries = []
@@ -525,10 +442,339 @@ export const handleCardStatus = inngest.createFunction(
     }
 
     return {
+      success: true,
       message: 'All butler rules processed successfully.',
+      boardId: card.list.boardId,
+      boardSlug: card.list.board.slug,
+      processedButlers: allButlers.length,
+      totalActions: executedActionSummaries.length,
       summary: executedActionSummaries
     }
   }
 )
 
-export const functions = [handleCardCreated, handleListCreated, handleCardStatus]
+// Scheduled Functions
+export const handleScheduledDaily = inngest.createFunction(
+  {
+    id: 'handle-scheduled-daily'
+  },
+  {
+    event: 'app/scheduled.daily'
+  },
+  async ({ event, step }) => {
+    const { boardId, interval } = event.data
+
+    const board = await step.run('get-board', async () => {
+      return await prisma.board.findUnique({
+        where: { id: boardId },
+        select: { id: true, slug: true }
+      })
+    })
+
+    if (!board) {
+      return { message: 'Board not found.' }
+    }
+
+    const allButlers = await step.run('get-all-butlers', async () => {
+      return await prisma.butler.findMany({
+        where: {
+          boardId: board.id,
+          category: ButlerCategory.SCHEDULED,
+          handlerKey: HandlerKey.WHEN_SCHEDULED_DAILY,
+          isEnabled: true,
+          isDeleted: false
+        },
+        select: {
+          id: true,
+          creatorId: true,
+          category: true,
+          handlerKey: true,
+          details: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: 'asc' }
+      })
+    })
+
+    if (allButlers.length === 0) {
+      return {
+        success: true,
+        message: 'No scheduled rules found for this board.',
+        boardId: board.id,
+        boardSlug: board.slug,
+        interval,
+        processedButlers: 0
+      }
+    }
+
+    const executedActionSummaries = []
+
+    for (const [butlerIndex, butler] of allButlers.entries()) {
+      const parsedDetails = butler.details as ButlerData
+      const { trigger, actions } = parsedDetails
+
+      // Check if interval matches (day vs weekday)
+      if (trigger.handlerKey === HandlerKey.WHEN_SCHEDULED_DAILY && trigger.interval !== interval) {
+        continue
+      }
+
+      let allActionsSucceeded = true
+
+      for (const [actionIndex, action] of actions.entries()) {
+        const stepId = `butler-${butlerIndex}-action-${actionIndex}-key-${action.handlerKey}`
+        const actionResult = await executeScheduledAction(action, stepId, step)
+        executedActionSummaries.push(actionResult)
+
+        if (actionResult.status !== 'success') {
+          allActionsSucceeded = false
+        }
+      }
+
+      if (allActionsSucceeded) {
+        await step.run(`ably-publish-${butlerIndex}`, async () => {
+          await ablyService.publish(ABLY_CHANNELS.BOARD(board.slug), ABLY_EVENTS.SCHEDULED_ACTION, {
+            boardSlug: board.slug
+          })
+
+          return { action: 'ably-publish', status: 'success', target: board.slug }
+        })
+      }
+    }
+
+    return {
+      success: true,
+      message: 'All scheduled daily butlers processed successfully.',
+      boardId: board.id,
+      boardSlug: board.slug,
+      interval,
+      processedButlers: allButlers.length,
+      executedButlers: executedActionSummaries.length > 0 ? executedActionSummaries.length : 0,
+      totalActions: executedActionSummaries.length,
+      summary: executedActionSummaries
+    }
+  }
+)
+
+export const handleScheduledWeekly = inngest.createFunction(
+  {
+    id: 'handle-scheduled-weekly'
+  },
+  {
+    event: 'app/scheduled.weekly'
+  },
+  async ({ event, step }) => {
+    const { boardId, day } = event.data
+
+    const board = await step.run('get-board', async () => {
+      return await prisma.board.findUnique({
+        where: { id: boardId },
+        select: { id: true, slug: true }
+      })
+    })
+
+    if (!board) {
+      return {
+        success: false,
+        message: 'Board not found.',
+        boardId
+      }
+    }
+
+    const allButlers = await step.run('get-all-butlers', async () => {
+      return await prisma.butler.findMany({
+        where: {
+          boardId: board.id,
+          category: ButlerCategory.SCHEDULED,
+          handlerKey: HandlerKey.WHEN_SCHEDULED_WEEKLY,
+          isEnabled: true,
+          isDeleted: false
+        },
+        select: {
+          id: true,
+          creatorId: true,
+          category: true,
+          handlerKey: true,
+          details: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: 'asc' }
+      })
+    })
+
+    if (allButlers.length === 0) {
+      return {
+        success: true,
+        message: 'No scheduled weekly rules found for this board.',
+        boardId: board.id,
+        boardSlug: board.slug,
+        day,
+        processedButlers: 0
+      }
+    }
+
+    const executedActionSummaries = []
+
+    for (const [butlerIndex, butler] of allButlers.entries()) {
+      const parsedDetails = butler.details as ButlerData
+      const { trigger, actions } = parsedDetails
+
+      // Check if day matches
+      if (trigger.handlerKey === HandlerKey.WHEN_SCHEDULED_WEEKLY && trigger.day !== day) {
+        continue
+      }
+
+      let allActionsSucceeded = true
+
+      for (const [actionIndex, action] of actions.entries()) {
+        const stepId = `butler-${butlerIndex}-action-${actionIndex}-key-${action.handlerKey}`
+        const actionResult = await executeScheduledAction(action, stepId, step)
+        executedActionSummaries.push(actionResult)
+
+        if (actionResult.status !== 'success') {
+          allActionsSucceeded = false
+        }
+      }
+
+      if (allActionsSucceeded) {
+        await step.run(`ably-publish-${butlerIndex}`, async () => {
+          await ablyService.publish(ABLY_CHANNELS.BOARD(board.slug), ABLY_EVENTS.SCHEDULED_ACTION, {
+            boardSlug: board.slug
+          })
+
+          return { action: 'ably-publish', status: 'success', target: board.slug }
+        })
+      }
+    }
+
+    return {
+      success: true,
+      message: 'All scheduled weekly butlers processed successfully.',
+      boardId: board.id,
+      boardSlug: board.slug,
+      day,
+      processedButlers: allButlers.length,
+      executedButlers: executedActionSummaries.length > 0 ? executedActionSummaries.length : 0,
+      totalActions: executedActionSummaries.length,
+      summary: executedActionSummaries
+    }
+  }
+)
+
+export const handleScheduledXWeeks = inngest.createFunction(
+  {
+    id: 'handle-scheduled-x-weeks'
+  },
+  {
+    event: 'app/scheduled.x-weeks'
+  },
+  async ({ event, step }) => {
+    const { boardId, day, weekNumber } = event.data
+
+    const board = await step.run('get-board', async () => {
+      return await prisma.board.findUnique({
+        where: { id: boardId },
+        select: { id: true, slug: true }
+      })
+    })
+
+    if (!board) {
+      return {
+        success: false,
+        message: 'Board not found.',
+        boardId
+      }
+    }
+
+    const allButlers = await step.run('get-all-butlers', async () => {
+      return await prisma.butler.findMany({
+        where: {
+          boardId: board.id,
+          category: ButlerCategory.SCHEDULED,
+          handlerKey: HandlerKey.WHEN_SCHEDULED_X_WEEKS,
+          isEnabled: true,
+          isDeleted: false
+        },
+        select: {
+          id: true,
+          creatorId: true,
+          category: true,
+          handlerKey: true,
+          details: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: 'asc' }
+      })
+    })
+
+    if (allButlers.length === 0) {
+      return {
+        success: true,
+        message: 'No scheduled x-weeks rules found for this board.',
+        boardId: board.id,
+        boardSlug: board.slug,
+        day,
+        weekNumber,
+        processedButlers: 0
+      }
+    }
+
+    const executedActionSummaries = []
+
+    for (const [butlerIndex, butler] of allButlers.entries()) {
+      const parsedDetails = butler.details as ButlerData
+      const { trigger, actions } = parsedDetails
+
+      // Check if day matches and week number aligns with interval
+      if (trigger.handlerKey === HandlerKey.WHEN_SCHEDULED_X_WEEKS) {
+        if (trigger.day !== day || weekNumber % trigger.interval !== 0) {
+          continue
+        }
+      }
+
+      let allActionsSucceeded = true
+
+      for (const [actionIndex, action] of actions.entries()) {
+        const stepId = `butler-${butlerIndex}-action-${actionIndex}-key-${action.handlerKey}`
+        const actionResult = await executeScheduledAction(action, stepId, step)
+        executedActionSummaries.push(actionResult)
+
+        if (actionResult.status !== 'success') {
+          allActionsSucceeded = false
+        }
+      }
+
+      if (allActionsSucceeded) {
+        await step.run(`ably-publish-${butlerIndex}`, async () => {
+          await ablyService.publish(ABLY_CHANNELS.BOARD(board.slug), ABLY_EVENTS.SCHEDULED_ACTION, {
+            boardSlug: board.slug
+          })
+
+          return { action: 'ably-publish', status: 'success', target: board.slug }
+        })
+      }
+    }
+
+    return {
+      success: true,
+      message: 'All scheduled x-weeks butlers processed successfully.',
+      boardId: board.id,
+      boardSlug: board.slug,
+      day,
+      weekNumber,
+      processedButlers: allButlers.length,
+      executedButlers: executedActionSummaries.length > 0 ? executedActionSummaries.length : 0,
+      totalActions: executedActionSummaries.length,
+      summary: executedActionSummaries
+    }
+  }
+)
+
+export const functions = [
+  handleCardCreated,
+  handleListCreated,
+  handleCardStatus,
+  handleScheduledDaily,
+  handleScheduledWeekly,
+  handleScheduledXWeeks,
+  masterCronScheduler
+]

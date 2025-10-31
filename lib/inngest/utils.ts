@@ -7,6 +7,7 @@ import {
   PositionOption,
   StatusOption
 } from '@/features/butlers/types'
+import { ActionSchema } from '@/features/butlers/validations/server'
 import prisma from '@/prisma/prisma'
 import { User } from '@prisma/client'
 import { DEFAULT_POSITION, POSITION_GAP } from '../constants'
@@ -74,91 +75,114 @@ export const copyCardToList = async (
   copiedCardId?: string
   details?: string
 }> => {
-  return await prisma.$transaction(async (tx) => {
-    // Get the original card with all its relations
-    const originalCard = await tx.card.findUnique({
-      where: { id: cardId },
-      include: {
-        subtasks: {
-          where: { isDeleted: false },
-          orderBy: { createdAt: 'asc' }
-        },
-        assignees: true,
-        attachments: {
-          where: { isDeleted: false },
-          orderBy: { createdAt: 'asc' }
-        },
-        cardLabels: true,
-        watchers: true
-      }
-    })
-
-    if (!originalCard) {
-      return { action: 'copy', status: 'skipped', details: 'Original card not found.' }
-    }
-
-    // Calculate position for the copied card
-    const newPosition = await calculateCardPosition(targetListId, targetPosition)
-
-    // Generate a unique slug for the copied card
-    const timestamp = Date.now()
-    const newSlug = `${originalCard.slug}-copied-${timestamp}`
-
-    // Create the copied card with all its relations
-    const copiedCard = await tx.card.create({
-      data: {
-        title: `${originalCard.title} (copied)`,
-        slug: newSlug,
-        description: originalCard.description,
-        position: newPosition,
-        imageUrl: originalCard.imageUrl,
-        startDate: originalCard.startDate,
-        endDate: originalCard.endDate,
-        reminderType: originalCard.reminderType,
-        isCompleted: originalCard.isCompleted,
-        listId: targetListId,
-        creatorId: originalCard.creatorId,
-        subtasks: {
-          create: originalCard.subtasks.map((subtask) => ({
-            title: subtask.title,
-            isDone: subtask.isDone,
-            isDeleted: false
-          }))
-        },
-        assignees: {
-          create: originalCard.assignees.map((assignee) => ({
-            userId: assignee.userId
-          }))
-        },
-        attachments: {
-          create: originalCard.attachments.map((attachment) => ({
-            url: attachment.url,
-            fileName: attachment.fileName,
-            fileType: attachment.fileType,
-            isDeleted: false
-          }))
-        },
-        cardLabels: {
-          create: originalCard.cardLabels.map((cardLabel) => ({
-            labelId: cardLabel.labelId
-          }))
-        },
-        watchers: {
-          create: originalCard.watchers.map((watcher) => ({
-            userId: watcher.userId
-          }))
-        }
-      }
-    })
-
-    return {
-      action: 'copy',
-      status: 'success',
-      target: targetListId,
-      pos: newPosition,
-      copiedCardId: copiedCard.id
+  const originalCard = await prisma.card.findUnique({
+    where: { id: cardId },
+    select: {
+      slug: true,
+      title: true,
+      description: true,
+      imageUrl: true,
+      startDate: true,
+      endDate: true,
+      reminderType: true,
+      isCompleted: true,
+      creatorId: true
     }
   })
+
+  if (!originalCard) {
+    return { action: 'copy', status: 'skipped', details: 'Original card not found.' }
+  }
+
+  const newPosition = await calculateCardPosition(targetListId, targetPosition)
+
+  const timestamp = Date.now()
+  const copiedCard = await prisma.card.create({
+    data: {
+      title: `${originalCard.title} (copied)`,
+      slug: `${originalCard.slug}-copied-${timestamp}`,
+      description: originalCard.description,
+      position: newPosition,
+      imageUrl: originalCard.imageUrl,
+      startDate: originalCard.startDate,
+      endDate: originalCard.endDate,
+      reminderType: originalCard.reminderType,
+      isCompleted: originalCard.isCompleted,
+      listId: targetListId,
+      creatorId: originalCard.creatorId
+    }
+  })
+
+  await Promise.allSettled([
+    prisma.subtask
+      .findMany({
+        where: { cardId, isDeleted: false },
+        select: { title: true, isDone: true }
+      })
+      .then((subtasks) =>
+        prisma.subtask.createMany({
+          data: subtasks.map((s) => ({
+            cardId: copiedCard.id,
+            title: s.title,
+            isDone: s.isDone,
+            isDeleted: false
+          }))
+        })
+      ),
+
+    prisma.cardAssignee
+      .findMany({
+        where: { cardId },
+        select: { userId: true }
+      })
+      .then((assignees) =>
+        prisma.cardAssignee.createMany({
+          data: assignees.map((a) => ({
+            cardId: copiedCard.id,
+            userId: a.userId
+          }))
+        })
+      ),
+
+    prisma.attachment
+      .findMany({
+        where: { cardId, isDeleted: false },
+        select: { url: true, fileName: true, fileType: true }
+      })
+      .then((attachments) =>
+        prisma.attachment.createMany({
+          data: attachments.map((a) => ({
+            cardId: copiedCard.id,
+            url: a.url,
+            fileName: a.fileName,
+            fileType: a.fileType,
+            isDeleted: false
+          }))
+        })
+      ),
+
+    prisma.cardLabel
+      .findMany({
+        where: { cardId },
+        select: { labelId: true }
+      })
+      .then((labels) =>
+        prisma.cardLabel.createMany({
+          data: labels.map((l) => ({
+            cardId: copiedCard.id,
+            labelId: l.labelId
+          }))
+        })
+      )
+  ])
+
+  return {
+    action: 'copy',
+    status: 'success',
+    target: targetListId,
+    pos: newPosition,
+    copiedCardId: copiedCard.id
+  }
 }
 
 export const moveCardToList = async (
@@ -374,5 +398,253 @@ export const assignMemberToCard = async (
     }
 
     return { action: 'add-member', status: 'success', target: cardTitle, value: user.fullName ?? user.email }
+  })
+}
+
+/**
+ * Execute actions for card-based rule triggers (WHEN_CARD_CREATED, WHEN_CARD_ADDED_TO_LIST)
+ */
+export const executeCardAction = async ({
+  cardId,
+  listId,
+  listPosition,
+  cardTitle,
+  boardId,
+  action,
+  stepId,
+  step
+}: {
+  cardId: string
+  listId: string
+  listPosition: number
+  cardTitle: string
+  boardId: string
+  action: ActionSchema
+  stepId: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  step: any
+}) => {
+  return await step.run(stepId, async () => {
+    switch (action.handlerKey) {
+      case 'MOVE_COPY_CARD_TO_LIST': {
+        const { action: actionType, listId: targetListId, position: targetPosition } = action
+
+        if (actionType === 'copy') {
+          return await copyCardToList(cardId, targetListId, targetPosition)
+        }
+
+        if (actionType === 'move') {
+          return await moveCardToList(cardId, targetListId, targetPosition)
+        }
+
+        return { action: 'move-copy', status: 'skipped', details: 'Invalid action type.' }
+      }
+      case 'MOVE_CARD': {
+        const { action: actionType } = action
+        return await moveCardWithinBoard(cardId, actionType, listId, listPosition, boardId)
+      }
+      case 'MARK_CARD_STATUS': {
+        const { status: targetStatus } = action
+        return await updateCardStatus(cardId, targetStatus, cardTitle)
+      }
+      case 'ADD_MEMBER': {
+        const { assignment } = action
+        return await assignMemberToCard(cardId, assignment, boardId, cardTitle)
+      }
+      case 'MOVE_LIST':
+        return { action: 'move-list', status: 'skipped', details: 'MOVE_LIST action is not implemented yet.' }
+      default:
+        return { action: 'unknown', status: 'skipped', details: `Unknown handler key ${action.handlerKey}` }
+    }
+  })
+}
+
+/**
+ * Execute actions for card status triggers (WHEN_CARD_MARKED_COMPLETE)
+ */
+export const executeCardStatusAction = async (
+  cardId: string,
+  action: ActionSchema,
+  stepId: string,
+  card: {
+    id: string
+    isCompleted: boolean
+    title: string
+    creatorId: string
+    list: { id: string; position: number; boardId: string; board: { slug: string } }
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  step: any
+) => {
+  return await step.run(stepId, async () => {
+    switch (action.handlerKey) {
+      case 'MOVE_COPY_CARD_TO_LIST': {
+        const { action: actionType, listId: targetListId, position: targetPosition } = action
+
+        if (actionType === 'copy') {
+          return await copyCardToList(cardId, targetListId, targetPosition)
+        }
+
+        if (actionType === 'move') {
+          return await moveCardToList(cardId, targetListId, targetPosition)
+        }
+
+        return { action: 'move-copy', status: 'skipped', details: 'Invalid action type.' }
+      }
+      case 'MOVE_CARD': {
+        const { action: actionType } = action
+        return await moveCardWithinBoard(cardId, actionType, card.list.id, card.list.position, card.list.boardId)
+      }
+      case 'MARK_CARD_STATUS': {
+        const { status: targetStatus } = action
+        return await updateCardStatus(cardId, targetStatus, card.title)
+      }
+      case 'ADD_MEMBER': {
+        const { assignment } = action
+        return await assignMemberToCard(cardId, assignment, card.list.boardId, card.title)
+      }
+      case 'MOVE_LIST':
+        return { action: 'move-list', status: 'skipped', details: 'MOVE_LIST action is not valid for card triggers.' }
+      default:
+        return { action: 'unknown', status: 'skipped', details: `Unknown handler key ${action.handlerKey}` }
+    }
+  })
+}
+
+/**
+ * Execute actions for scheduled triggers (WHEN_SCHEDULED_DAILY, WHEN_SCHEDULED_WEEKLY, etc.)
+ */
+export const executeScheduledAction = async (
+  action: ActionSchema,
+  stepId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  step: any
+) => {
+  return await step.run(stepId, async () => {
+    switch (action.handlerKey) {
+      case 'CREATE_CARD': {
+        const { type, title, listId } = action
+
+        // Check if unique card type - prevent duplicates
+        if (type === 'unique') {
+          const existingCard = await prisma.card.findFirst({
+            where: {
+              title,
+              listId,
+              isDeleted: false
+            }
+          })
+
+          if (existingCard) {
+            return { action: 'create-card', status: 'skipped', details: 'Card with this title already exists.' }
+          }
+        }
+
+        // Get the list and board owner to determine position and creator
+        const list = await prisma.list.findUnique({
+          where: { id: listId },
+          select: { id: true, boardId: true, board: { select: { ownerId: true } } }
+        })
+
+        if (!list) {
+          return { action: 'create-card', status: 'failed', details: 'List not found.' }
+        }
+
+        // Create the card at the top of the list
+        const minPosCard = await prisma.card.aggregate({
+          where: { listId, isDeleted: false },
+          _min: { position: true }
+        })
+
+        const newPosition =
+          minPosCard._min.position === null ? DEFAULT_POSITION : minPosCard._min.position - POSITION_GAP
+
+        const slugify = (text: string): string => {
+          return text
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+        }
+
+        const card = await prisma.card.create({
+          data: {
+            title,
+            slug: `${slugify(title)}-${Date.now()}`,
+            listId,
+            position: newPosition,
+            creatorId: list.board.ownerId
+          }
+        })
+
+        return { action: 'create-card', status: 'success', cardId: card.id, title: card.title }
+      }
+      case 'MOVE_COPY_ALL_CARDS': {
+        const { action: actionType, fromListId, toListId } = action
+
+        const cards = await prisma.card.findMany({
+          where: { listId: fromListId, isDeleted: false },
+          orderBy: { position: 'asc' },
+          select: { id: true }
+        })
+
+        if (cards.length === 0) {
+          return { action: 'move-copy-all', status: 'skipped', details: 'No cards to move/copy.' }
+        }
+
+        // For MOVE - use bulk update (much faster)
+        if (actionType === 'move') {
+          // Get target position
+          const newPosition = await calculateCardPosition(toListId, PositionOption.TOP)
+
+          // Bulk update all cards - single query
+          await prisma.card.updateMany({
+            where: {
+              id: { in: cards.map((c) => c.id) }
+            },
+            data: {
+              listId: toListId,
+              position: newPosition
+            }
+          })
+
+          return { action: 'move-copy-all', status: 'success', count: cards.length, moved: cards.length }
+        }
+
+        // For COPY - process in batches to avoid timeout
+        if (actionType === 'copy') {
+          const BATCH_SIZE = 10
+          let totalCopied = 0
+
+          for (let i = 0; i < cards.length; i += BATCH_SIZE) {
+            const batch = cards.slice(i, i + BATCH_SIZE)
+
+            // Process batch in parallel
+            await Promise.allSettled(batch.map((card) => copyCardToList(card.id, toListId, PositionOption.TOP)))
+
+            totalCopied += batch.length
+          }
+
+          return { action: 'move-copy-all', status: 'success', count: cards.length, copied: totalCopied }
+        }
+
+        return { action: 'move-copy-all', status: 'skipped', details: 'Invalid action type.' }
+      }
+      case 'MOVE_COPY_CARD_TO_LIST':
+      case 'MOVE_CARD':
+      case 'MARK_CARD_STATUS':
+      case 'ADD_MEMBER':
+      case 'MOVE_LIST':
+        return {
+          action: action.handlerKey.toLowerCase(),
+          status: 'skipped',
+          details: `${action.handlerKey} action is not valid for scheduled triggers.`
+        }
+      default: {
+        return { action: 'unknown', status: 'skipped', details: `Unknown handler key` }
+      }
+    }
   })
 }

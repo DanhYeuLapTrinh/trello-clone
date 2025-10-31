@@ -9,6 +9,7 @@ import { Bot, CalendarDays, Settings2, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import RulesTab from './rules-tab'
+import ScheduledTab from './scheduled-tab'
 
 interface BoardButlerDialogProps {
   isOpen: boolean
@@ -80,6 +81,7 @@ export default function BoardButlerDialog({ isOpen, boardSlug }: BoardButlerDial
 
           <div className='col-span-10 xl:w-5xl xl:mx-auto p-10 '>
             {tabValue === ButlerCategory.RULE && <RulesTab boardSlug={boardSlug} />}
+            {tabValue === ButlerCategory.SCHEDULED && <ScheduledTab boardSlug={boardSlug} />}
           </div>
           <X className='absolute top-2 right-2 cursor-pointer' onClick={() => handleOpenChange(false)} />
         </div>

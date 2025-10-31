@@ -1,0 +1,380 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  Owner
+  Admin
+  Member
+}
+
+enum CardReminderType {
+  NONE
+  EXPIRED_DATE
+  FIVE_MINUTES_BEFORE
+  TEN_MINUTES_BEFORE
+  FIFTEEN_MINUTES_BEFORE
+  ONE_HOUR_BEFORE
+  TWO_HOURS_BEFORE
+  ONE_DAY_BEFORE
+  TWO_DAYS_BEFORE
+}
+
+enum BoardBackground {
+  OCEAN
+  SUNSET
+  FOREST
+  ROYAL_PURPLE
+  GOLDEN
+  FIRE
+  SKY
+  ROSE
+  AQUA
+  GRAY
+}
+
+enum BoardVisibility {
+  PUBLIC
+  WORKSPACE
+  PRIVATE
+}
+
+enum ActivityModel {
+  CARD
+}
+
+enum ActivityAction {
+  CREATE
+  UPDATE
+  DELETE
+  MOVE
+  ASSIGN_MEMBER
+  UNASSIGN_MEMBER
+}
+
+enum ButlerCategory {
+  RULE
+  SCHEDULED
+}
+
+enum HandlerKey {
+  // Triggers
+  WHEN_CARD_CREATED
+  WHEN_CARD_ADDED_TO_LIST
+  WHEN_LIST_CREATED
+  WHEN_CARD_MARKED_COMPLETE
+  WHEN_SCHEDULED_DAILY
+  WHEN_SCHEDULED_WEEKLY
+  WHEN_SCHEDULED_X_WEEKS
+  // Actions
+  MOVE_COPY_CARD_TO_LIST
+  MOVE_CARD
+  MARK_CARD_STATUS
+  ADD_MEMBER
+  CREATE_CARD
+  MOVE_COPY_ALL_CARDS
+  MOVE_LIST
+}
+
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  fullName  String?
+  imageUrl  String?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownedWorkspaces      Workspace[]       @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+
+  ownedBoards      Board[]       @relation("BoardOwner")
+  boardMemberships BoardMember[]
+
+  cardAssignees CardAssignee[]
+  comments      Comment[]
+  watchedCards  CardWatcher[]
+  activities    Activity[]     @relation("UserActivities")
+  rules         Butler[]
+  cards         Card[]
+  lists         List[]
+
+  @@map("users")
+}
+
+model Activity {
+  id        String         @id @default(uuid())
+  model     ActivityModel
+  action    ActivityAction
+  details   Json?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  userId String
+  user   User   @relation("UserActivities", fields: [userId], references: [id], onDelete: Cascade)
+
+  cardId String
+  card   Card   @relation("CardActivities", fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId])
+  @@index([userId])
+  @@map("activities")
+}
+
+model Workspace {
+  id          String   @id @default(uuid())
+  name        String
+  shortName   String   @unique
+  websiteUrl  String?
+  description String?
+  imageUrl    String?
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  ownerId String
+  owner   User   @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  workspaceMemberships WorkspaceMember[]
+  boards               Board[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id   String @id @default(uuid())
+  role Role   @default(Member)
+
+  workspaceId String
+  userId      String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+model Board {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  background  BoardBackground @default(OCEAN)
+  visibility  BoardVisibility @default(WORKSPACE)
+  slug        String          @unique
+  isDeleted   Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  ownerId String
+  owner   User   @relation("BoardOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  boardMemberships BoardMember[]
+  lists            List[]
+  labels           Label[]
+  rules            Butler[]
+
+  @@map("boards")
+}
+
+model BoardMember {
+  id   String @id @default(uuid())
+  role Role   @default(Member)
+
+  boardId        String
+  userId         String
+  lastAssignedAt DateTime @default(now())
+
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId])
+  @@map("board_members")
+}
+
+model List {
+  id        String   @id @default(uuid())
+  name      String
+  position  Int
+  boardId   String
+  creatorId String
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  creator User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  cards   Card[]
+
+  @@map("lists")
+}
+
+model Card {
+  id           String           @id @default(uuid())
+  messageId    String?
+  title        String
+  slug         String           @unique
+  description  String?
+  position     Int
+  imageUrl     String?
+  startDate    DateTime?
+  endDate      DateTime?
+  reminderType CardReminderType @default(NONE)
+  isCompleted  Boolean          @default(false)
+  isDeleted    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  listId String
+  list   List   @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  creatorId String
+  creator   User   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  subtasks    Subtask[]
+  assignees   CardAssignee[]
+  comments    Comment[]
+  attachments Attachment[]
+  cardLabels  CardLabel[]
+  watchers    CardWatcher[]
+  activities  Activity[]     @relation("CardActivities")
+
+  @@map("cards")
+}
+
+model CardWatcher {
+  id String @id @default(uuid())
+
+  cardId String
+  userId String
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cardId, userId])
+  @@map("card_watchers")
+}
+
+model Subtask {
+  id     String  @id @default(uuid())
+  title  String
+  isDone Boolean @default(false)
+
+  cardId   String
+  card     Card      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  parentId String?
+  parent   Subtask?  @relation("Subtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  children Subtask[] @relation("Subtasks")
+
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subtasks")
+}
+
+model CardAssignee {
+  id String @id @default(uuid())
+
+  cardId String
+  userId String
+
+  card Card @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, userId])
+  @@map("card_assignees")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cardId String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Label {
+  id        String   @id @default(uuid())
+  title     String?
+  color     String?
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  boardId String?
+  board   Board?  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  cardLabels CardLabel[]
+
+  @@map("labels")
+}
+
+model CardLabel {
+  id String @id @default(uuid())
+
+  cardId  String
+  labelId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  card  Card  @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([cardId, labelId])
+  @@map("card_labels")
+}
+
+model Attachment {
+  id        String   @id @default(uuid())
+  url       String
+  fileName  String?
+  fileType  String
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cardId String
+  card   Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+model Butler {
+  id         String         @id @default(uuid())
+  boardId    String
+  creatorId  String
+  category   ButlerCategory
+  handlerKey HandlerKey
+  details    Json?
+  isEnabled  Boolean        @default(true)
+  isDeleted  Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  creator User  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+}

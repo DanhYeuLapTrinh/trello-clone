@@ -54,7 +54,7 @@ export default async function WorkspaceDetailPage({ params }: { params: { shortN
                 </div>
               </div>
               <div className='h-[30%] flex items-center px-2'>
-                <p className='text-sm font-medium'>{board.name}</p>
+                <p className='text-sm font-medium truncate'>{board.name}</p>
               </div>
             </Link>
           ))}

@@ -33,6 +33,9 @@ export const createBoard = protectedActionClient
         }
       })
 
+      revalidatePath(`/w/${parsedInput.workspaceId}`)
+      revalidatePath(`/`)
+
       return board
     } catch (error) {
       throw error

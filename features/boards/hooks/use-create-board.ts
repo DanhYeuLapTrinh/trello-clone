@@ -8,6 +8,7 @@ import { createBoardSchema, CreateBoardSchema } from '../validations'
 
 export const useCreateBoard = (workspaceId: string) => {
   const router = useRouter()
+
   const methods = useForm<CreateBoardSchema>({
     defaultValues: {
       name: '',
@@ -18,7 +19,7 @@ export const useCreateBoard = (workspaceId: string) => {
     resolver: zodResolver(createBoardSchema)
   })
 
-  const { execute, isPending, result } = useAction(createBoard, {
+  const { executeAsync, isPending, result } = useAction(createBoard, {
     onSuccess: () => {
       toast.success('Bảng đã được tạo thành công.')
       router.push(`/b/${result.data?.slug}`)
@@ -31,5 +32,5 @@ export const useCreateBoard = (workspaceId: string) => {
     }
   })
 
-  return { methods, execute, isPending }
+  return { methods, executeAsync, isPending }
 }

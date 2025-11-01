@@ -15,6 +15,18 @@ export const boardBackgroundClasses: Record<BoardBackground, string> = {
   GRAY: 'bg-gradient-to-br from-gray-200 via-slate-400 to-gray-500'
 }
 
+export const workspaceBackgroundClasses: Record<string, string> = {
+  OCEAN: 'bg-gradient-to-b from-blue-700 to-blue-500',
+  SUNSET: 'bg-gradient-to-b from-red-600 to-pink-500',
+  FOREST: 'bg-gradient-to-b from-green-700 to-emerald-500',
+  ROYAL_PURPLE: 'bg-gradient-to-b from-indigo-700 to-purple-500',
+  GOLDEN: 'bg-gradient-to-b from-amber-600 to-amber-400',
+  FIRE: 'bg-gradient-to-b from-orange-600 to-yellow-400',
+  SKY: 'bg-gradient-to-b from-sky-600 to-cyan-400',
+  ROSE: 'bg-gradient-to-b from-fuchsia-600 to-pink-400',
+  AQUA: 'bg-gradient-to-b from-teal-600 to-cyan-400'
+}
+
 export const boardVisibility: Record<BoardVisibility, { title: string; description: string; icon: LucideIcon }> = {
   PUBLIC: {
     title: 'Công khai',

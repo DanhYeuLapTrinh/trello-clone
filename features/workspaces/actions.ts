@@ -10,25 +10,96 @@ import { CreateWorkspaceSchema, createWorkspaceSchema } from './validations'
 
 export const getMeWorkspaces = async () => {
   const { id } = await getMe()
-  const workspaces = await getWorkspacesByUserId(id)
+
+  const workspaces = await prisma.workspace.findMany({
+    where: {
+      ownerId: id,
+      isDeleted: false
+    },
+    select: {
+      id: true,
+      shortName: true,
+      name: true
+    },
+    orderBy: {
+      createdAt: 'asc'
+    }
+  })
 
   return workspaces
 }
 
-export const getWorkspacesByUserId = async (userId: string) => {
+export const getMeWorkspacesWithBoards = async () => {
+  const { id } = await getMe()
+
   const workspaces = await prisma.workspace.findMany({
     where: {
-      OR: [
-        {
-          workspaceMemberships: {
-            some: { userId }
+      ownerId: id,
+      isDeleted: false
+    },
+    select: {
+      id: true,
+      name: true,
+      imageUrl: true,
+      shortName: true,
+      boards: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          background: true,
+          visibility: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'asc'
+    }
+  })
+
+  return workspaces
+}
+
+export const getGuestWorkspacesWithBoards = async () => {
+  const { id } = await getMe()
+
+  const workspaces = await prisma.workspace.findMany({
+    where: {
+      isDeleted: false,
+      boards: {
+        some: {
+          boardMemberships: {
+            some: {
+              userId: id
+            }
+          }
+        }
+      }
+    },
+    select: {
+      id: true,
+      name: true,
+      imageUrl: true,
+      shortName: true,
+      ownerId: true,
+      boards: {
+        where: {
+          boardMemberships: {
+            some: {
+              userId: id
+            }
           }
         },
-        {
-          ownerId: userId
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          background: true,
+          visibility: true
         }
-      ]
-    }
+      }
+    },
+    orderBy: { createdAt: 'asc' }
   })
 
   return workspaces

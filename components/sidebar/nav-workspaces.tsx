@@ -43,7 +43,7 @@ const subItems = [
 export function NavWorkspaces({ userId }: { userId: string }) {
   const pathname = usePathname()
 
-  const { data: workspaces } = useQuery({
+  const { data: workspaces = [] } = useQuery({
     queryKey: ['workspaces', userId],
     queryFn: getMeWorkspaces
   })
@@ -52,11 +52,11 @@ export function NavWorkspaces({ userId }: { userId: string }) {
     <SidebarGroup>
       <SidebarGroupLabel>Các Không gian làm việc</SidebarGroupLabel>
       <SidebarMenu>
-        {workspaces?.map((item) => (
-          <Collapsible key={item.name} asChild defaultOpen={item.shortName === pathname.split('/')[2]}>
+        {workspaces.map((workspace) => (
+          <Collapsible key={workspace.name} asChild defaultOpen={workspace.shortName === pathname.split('/')[2]}>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={item.name}>
-                <span>{item.name}</span>
+              <SidebarMenuButton tooltip={workspace.name}>
+                <span>{workspace.name}</span>
               </SidebarMenuButton>
 
               <CollapsibleTrigger asChild>
@@ -72,13 +72,13 @@ export function NavWorkspaces({ userId }: { userId: string }) {
                     const segments = pathname.split('/')
                     const isActive =
                       segments[1] === subItem.urlValue[0] &&
-                      segments[2] === item.shortName &&
+                      segments[2] === workspace.shortName &&
                       segments[3] === subItem.urlValue[1]
 
                     return (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild className={isActive ? 'bg-primary/10' : ''}>
-                          <Link href={subItem.url(item.shortName)}>
+                          <Link href={subItem.url(workspace.shortName)}>
                             <subItem.icon />
                             <span className={isActive ? 'text-primary font-medium' : ''}>{subItem.title}</span>
                           </Link>

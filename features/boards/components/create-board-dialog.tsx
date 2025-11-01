@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Form } from '@/components/ui/form'
 import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import { useCreateBoard } from '../hooks/use-create-board'
 import { CreateBoardSchema } from '../validations'
@@ -16,14 +17,17 @@ interface CreateBoardDialogProps {
 }
 
 export default function CreateBoardDialog({ workspaceId, children, asChild = false }: CreateBoardDialogProps) {
-  const { methods, execute, isPending } = useCreateBoard(workspaceId)
+  const [open, setOpen] = useState(false)
 
-  const onSubmit: SubmitHandler<CreateBoardSchema> = (data) => {
-    execute(data)
+  const { methods, executeAsync, isPending } = useCreateBoard(workspaceId)
+
+  const onSubmit: SubmitHandler<CreateBoardSchema> = async (data) => {
+    await executeAsync(data)
+    setOpen(false)
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild={asChild}>{children}</DialogTrigger>
       <DialogContent aria-describedby='Tạo bảng'>
         <DialogHeader>

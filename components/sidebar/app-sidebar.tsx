@@ -16,16 +16,18 @@ import {
   SidebarMenuItem
 } from '@/components/ui/sidebar'
 
-const data = {
+const items = {
   main: [
     {
       name: 'Bảng',
-      url: '#',
+      url: '/',
+      urlValue: [''],
       icon: Trello
     },
     {
       name: 'Trang chủ',
       url: '#',
+      urlValue: ['home'],
       icon: Activity
     }
   ]
@@ -52,7 +54,7 @@ export function AppSidebar({ userId, ...props }: React.ComponentProps<typeof Sid
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain projects={data.main} />
+        <NavMain items={items.main} />
         <NavWorkspaces userId={userId} />
       </SidebarContent>
       <SidebarFooter>

@@ -26,9 +26,9 @@ import LabelPopover from '@/features/labels/components/label-popover'
 import SubtaskPopover from '@/features/subtasks/components/subtask-popover'
 import SubtaskSection from '@/features/subtasks/components/subtask-section'
 import { useMe } from '@/hooks/use-me'
-import { FILE_FOLDER, FILE_TYPE_GROUPS } from '@/lib/constants'
-import { cn, getColorTextClass } from '@/lib/utils'
-import { FileInfo } from '@/types/common'
+import { FILE_FOLDER, FILE_TYPE_GROUPS } from '@/shared/constants'
+import { FileInfo } from '@/shared/types'
+import { cn, getColorTextClass } from '@/shared/utils'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -50,10 +50,10 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import AttachmentPopover from '../../attachments/components/attachment-popover'
-import { getCard, getCardActivitiesAndComments } from '../actions'
 import { useToggleWatchCard } from '../hooks/use-toggle-watch-card'
 import { useUpdateCard } from '../hooks/use-update-card'
 import { useUpdateCardBackground } from '../hooks/use-update-card-background'
+import { getCard, getCardActivitiesAndComments } from '../queries'
 import {
   formatCardDate,
   formatCardDateTime,
@@ -335,7 +335,7 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                           <FormItem>
                             <FormControl>
                               <Textarea
-                                className='!text-2xl font-bold resize-none'
+                                className='text-2xl! font-bold resize-none'
                                 defaultValue={field.value}
                                 onChange={field.onChange}
                                 onBlur={onBlurTitle}

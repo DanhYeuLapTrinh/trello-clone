@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Option } from '@/features/butlers/types'
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/utils'
 
 interface ComboboxProps {
   options: Option<string>[]

@@ -1,4 +1,4 @@
-import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
+import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/shared/utils'
 import { QueryClient } from '@tanstack/react-query'
 
 export const createTempSubtask = (title: string, cardId: string, parentId: string | null = null) => {

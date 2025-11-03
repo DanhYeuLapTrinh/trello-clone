@@ -1,6 +1,6 @@
 'use client'
 
-import { AppErrorType } from '@/types/error'
+import { AppErrorType } from '@/shared/error'
 import { useEffect } from 'react'
 
 interface ErrorProps {

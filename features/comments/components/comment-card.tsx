@@ -1,12 +1,13 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card } from '@/components/ui/card'
 import { formatDateRelativeVN } from '@/features/cards/utils'
-import { TimelineItemType } from '@/types/common'
-import { Comment, User } from '@prisma/client'
+import { UIComment } from '@/prisma/queries/comment'
+import { UIUser } from '@/prisma/queries/user'
+import { TimelineItemType } from '@/shared/types'
 import { SmilePlus } from 'lucide-react'
 
 interface CommentCardProps {
-  comment: Comment & { user: User } & { __type: TimelineItemType.Comment }
+  comment: UIComment & { user: UIUser } & { __type: TimelineItemType.Comment }
 }
 
 export default function CommentCard({ comment }: CommentCardProps) {
@@ -14,14 +15,11 @@ export default function CommentCard({ comment }: CommentCardProps) {
     <div className='flex items-start gap-2 w-full'>
       <Avatar>
         <AvatarImage className='size-8' src={comment.user.imageUrl || undefined} />
-        <AvatarFallback>
-          {comment.user.firstName?.[0] ?? ''}
-          {comment.user.lastName?.[0] ?? ''}
-        </AvatarFallback>
+        <AvatarFallback>{comment.user.fullName?.[0] ?? ''}</AvatarFallback>
       </Avatar>
       <div className='flex flex-col gap-1 w-full'>
         <p className='text-sm font-bold'>
-          {comment.user.firstName} {comment.user.lastName}{' '}
+          {comment.user.fullName}
           <span className='text-xs font-normal text-primary underline ml-1.5'>
             {formatDateRelativeVN(comment.createdAt)}
           </span>

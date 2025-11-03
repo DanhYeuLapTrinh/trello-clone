@@ -1,16 +1,16 @@
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { formatDateRelativeVN } from '@/features/cards/utils'
-import { FILE_TYPE_GROUPS, FILE_TYPE_LABEL } from '@/lib/constants'
-import { cn } from '@/lib/utils'
-import { Attachment } from '@prisma/client'
+import { UIAttachment } from '@/prisma/queries/attachment'
+import { FILE_TYPE_GROUPS, FILE_TYPE_LABEL } from '@/shared/constants'
+import { cn } from '@/shared/utils'
 import { ExternalLink, MoreHorizontal } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import AttachmentActions from './attachment-actions'
 
 interface FileItemProps {
-  attachment: Attachment
+  attachment: UIAttachment
   boardSlug: string
   cardSlug: string
 }

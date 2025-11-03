@@ -1,8 +1,8 @@
 'use client'
 
-import * as React from 'react'
-import { cn } from '@/lib/tiptap-utils'
 import '@/components/tiptap-ui-primitive/card/card.scss'
+import { cn } from '@/shared/tiptap-utils'
+import * as React from 'react'
 
 const Card = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>(({ className, ...props }, ref) => {
   return <div ref={ref} className={cn('tiptap-card', className)} {...props} />
@@ -39,4 +39,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.ComponentProps<'div'>>
 })
 CardFooter.displayName = 'CardFooter'
 
-export { Card, CardHeader, CardFooter, CardBody, CardItemGroup, CardGroupLabel }
+export { Card, CardBody, CardFooter, CardGroupLabel, CardHeader, CardItemGroup }

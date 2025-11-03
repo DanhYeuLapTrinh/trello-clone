@@ -1,7 +1,7 @@
 'use server'
 
 import clerkService from '@/services/clerk.service'
-import { UnauthorizedError } from '@/types/error'
+import { UnauthorizedError } from '@/shared/error'
 import { auth } from '@clerk/nextjs/server'
 
 export const getMe = async () => {

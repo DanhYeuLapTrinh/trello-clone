@@ -1,4 +1,4 @@
-import { deleteFile } from '@/lib/actions'
+import { deleteFile } from '@/shared/actions'
 import { useAction } from 'next-safe-action/hooks'
 import { toast } from 'sonner'
 

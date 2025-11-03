@@ -1,4 +1,4 @@
-import { getMe } from '@/features/users/actions'
+import { getMe } from '@/features/users/queries'
 import prisma from '@/prisma/prisma'
 import { NextRequest, NextResponse } from 'next/server'
 

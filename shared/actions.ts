@@ -1,8 +1,8 @@
 'use server'
 
 import { protectedActionClient } from '@/lib/safe-action'
-import { deleteFileSchema, uploadFilesSchema } from '@/lib/validations'
 import firebaseService from '@/services/firebase.service'
+import { deleteFileSchema, uploadFilesSchema } from '@/shared/validations'
 import { flattenValidationErrors } from 'next-safe-action'
 import z from 'zod'
 

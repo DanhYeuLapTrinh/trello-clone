@@ -1,8 +1,9 @@
-import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
-import { LabelDetail, ListWithCards } from '@/types/common'
-import { UpdateCardFn } from '@/types/ui'
+import { UILabel, UILabelDetail } from '@/prisma/queries/label'
+import { ListWithCards } from '@/prisma/queries/list'
+import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/shared/utils'
 import { Label } from '@prisma/client'
 import { QueryClient } from '@tanstack/react-query'
+import { UpdateCardFn } from '../cards/utils'
 
 export const updateCardInLists = (lists: ListWithCards[], cardSlug: string, updater: UpdateCardFn): ListWithCards[] => {
   // Find the list index
@@ -30,8 +31,8 @@ export const updateCardInLists = (lists: ListWithCards[], cardSlug: string, upda
 }
 
 export const getDisplayLabels = (
-  boardLabels: Label[] | undefined,
-  sortedCardLabelColors: typeof import('@/lib/constants').sortedCardLabelColors
+  boardLabels: UILabel[] | undefined,
+  sortedCardLabelColors: typeof import('@/shared/constants').sortedCardLabelColors
 ) => {
   const maxLabels = 7
   const displayedLabels = []
@@ -191,7 +192,7 @@ export const updateLabelInQueries = (
     const labelIndex = prev.cardLabels.findIndex((label) => label.label.id === labelId)
     if (labelIndex === -1) return prev
 
-    const newLabel: LabelDetail = {
+    const newLabel: UILabelDetail = {
       ...prev.cardLabels[labelIndex],
       label: {
         ...prev.cardLabels[labelIndex].label,
@@ -219,7 +220,7 @@ export const updateLabelInQueries = (
         const labelIndex = card.cardLabels.findIndex((cl) => cl.label.id === labelId)
         if (labelIndex === -1) return card
 
-        const updatedLabel: LabelDetail = {
+        const updatedLabel: UILabelDetail = {
           ...card.cardLabels[labelIndex],
           label: {
             ...card.cardLabels[labelIndex].label,

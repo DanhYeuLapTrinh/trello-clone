@@ -2,7 +2,8 @@
 
 import { moveCardBetweenLists, moveCardWithinList } from '@/features/cards/actions'
 import { moveList } from '@/features/lists/actions'
-import { CardPreview, ListWithCards } from '@/types/common'
+import { CardPreview } from '@/prisma/queries/card'
+import { ListWithCards } from '@/prisma/queries/list'
 import {
   Active,
   DragEndEvent,
@@ -15,14 +16,13 @@ import {
   useSensors
 } from '@dnd-kit/core'
 import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { Card } from '@prisma/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAction } from 'next-safe-action/hooks'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
 interface UseDragAndDropProps {
-  lists: ListWithCards[] | undefined
+  lists: ListWithCards[]
   slug: string
 }
 
@@ -30,7 +30,7 @@ export function useDragAndDrop({ lists, slug }: UseDragAndDropProps) {
   const queryClient = useQueryClient()
   const [activeCard, setActiveCard] = useState<CardPreview | null>(null)
   const [activeList, setActiveList] = useState<ListWithCards | null>(null)
-  const [originalActiveCard, setOriginalActiveCard] = useState<Card | null>(null)
+  const [originalActiveCard, setOriginalActiveCard] = useState<CardPreview | null>(null)
 
   const { execute: moveCardWithinListAction } = useAction(moveCardWithinList, {
     onSettled: () => {

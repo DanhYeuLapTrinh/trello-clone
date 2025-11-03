@@ -1,10 +1,10 @@
 'use server'
 
-import { POSITION_GAP } from '@/lib/constants'
 import { inngest } from '@/lib/inngest/client'
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
-import { ConflictError, NotFoundError } from '@/types/error'
+import { POSITION_GAP } from '@/shared/constants'
+import { ConflictError, NotFoundError } from '@/shared/error'
 import { Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'

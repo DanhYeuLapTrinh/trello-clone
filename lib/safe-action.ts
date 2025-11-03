@@ -1,5 +1,5 @@
 import clerkService from '@/services/clerk.service'
-import { AppError, UnauthorizedError } from '@/types/error'
+import { AppError, UnauthorizedError } from '@/shared/error'
 import { auth } from '@clerk/nextjs/server'
 import { createSafeActionClient } from 'next-safe-action'
 

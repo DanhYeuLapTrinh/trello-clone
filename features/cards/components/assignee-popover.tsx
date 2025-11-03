@@ -4,9 +4,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { getBoardUsers } from '@/features/boards/actions'
+import { getBoardUsers } from '@/features/boards/queries'
 import { useMe } from '@/hooks/use-me'
-import { Assignee } from '@/types/common'
+import { UIUser } from '@/prisma/queries/user'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import React, { useState } from 'react'
@@ -16,7 +16,7 @@ import { toggleAssignCardQueries } from '../utils'
 interface AssigneePopoverProps {
   boardSlug: string
   cardSlug: string
-  assignees: Assignee[]
+  assignees: UIUser[]
   children: React.ReactNode
 }
 
@@ -35,7 +35,7 @@ export default function AssigneePopover({ boardSlug, cardSlug, assignees, childr
 
   const boardUsers = users?.filter((user) => !assignees.some((assignee) => assignee.id === user.id)) || []
 
-  const toggleAssignee = ({ targetUser, isAssigned }: { targetUser: Assignee; isAssigned: boolean }) => {
+  const toggleAssignee = ({ targetUser, isAssigned }: { targetUser: UIUser; isAssigned: boolean }) => {
     if (!me) return
 
     toggleAssignCardQueries({

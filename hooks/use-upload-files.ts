@@ -1,5 +1,5 @@
-import { uploadFiles } from '@/lib/actions'
-import { FileInfo } from '@/types/common'
+import { uploadFiles } from '@/shared/actions'
+import { FileInfo } from '@/shared/types'
 import { useAction } from 'next-safe-action/hooks'
 import { toast } from 'sonner'
 

@@ -1,14 +1,14 @@
 'use client'
 
-import * as React from 'react'
-import { type Editor } from '@tiptap/react'
 import { NodeSelection, TextSelection } from '@tiptap/pm/state'
+import { type Editor } from '@tiptap/react'
+import * as React from 'react'
 
 // --- Hooks ---
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor'
 
 // --- Lib ---
-import { findNodePosition, isNodeInSchema, isNodeTypeSelected, isValidPosition } from '@/lib/tiptap-utils'
+import { findNodePosition, isNodeInSchema, isNodeTypeSelected, isValidPosition } from '@/shared/tiptap-utils'
 
 // --- Icons ---
 import { CodeBlockIcon } from '@/components/tiptap-icons/code-block-icon'

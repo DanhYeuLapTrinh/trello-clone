@@ -2,9 +2,8 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
-import { cn, getColorTextClass } from '@/lib/utils'
-import { LabelDetail } from '@/types/common'
-import { LabelAction } from '@/types/ui'
+import { UILabel, UILabelDetail } from '@/prisma/queries/label'
+import { cn, getColorTextClass } from '@/shared/utils'
 import { Label } from '@prisma/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { Pencil } from 'lucide-react'
@@ -12,6 +11,7 @@ import { SubmitHandler } from 'react-hook-form'
 import { useAssignLabel } from '../hooks/use-assign-label'
 import { useCreateLabel } from '../hooks/use-create-label'
 import { useUnassignLabel } from '../hooks/use-unassign-label'
+import { LabelAction } from '../types'
 import {
   addLabelToCardQueries,
   createLabelWithAssignmentQueries,
@@ -24,9 +24,9 @@ import { AssignLabelSchema, UnassignLabelSchema } from '../validations'
 interface ChooseLabelFormProps {
   boardSlug: string
   cardSlug: string
-  boardLabels: Label[] | undefined
-  sortedCardLabelColors: typeof import('@/lib/constants').sortedCardLabelColors
-  cardLabels: LabelDetail[]
+  boardLabels: UILabel[] | undefined
+  sortedCardLabelColors: typeof import('@/shared/constants').sortedCardLabelColors
+  cardLabels: UILabelDetail[]
   setLabelAction: (labelAction: LabelAction | null) => void
 }
 

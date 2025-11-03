@@ -1,4 +1,4 @@
-import { getMe } from '@/features/users/actions'
+import { getMe } from '@/features/users/queries'
 import * as Ably from 'ably'
 import { NextResponse } from 'next/server'
 

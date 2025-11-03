@@ -2,7 +2,7 @@
 
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
-import { NotFoundError } from '@/types/error'
+import { NotFoundError } from '@/shared/error'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
 import {

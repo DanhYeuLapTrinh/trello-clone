@@ -1,4 +1,4 @@
-import { AblyEventPayload } from '@/lib/constants'
+import { AblyEventPayload } from '@/shared/constants'
 import * as Ably from 'ably'
 import 'server-only'
 

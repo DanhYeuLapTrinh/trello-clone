@@ -2,17 +2,17 @@
 
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
-import { getBoardLists } from '@/features/boards/actions'
-import { cn } from '@/lib/utils'
+import { getBoardLists } from '@/features/boards/queries'
+import { cn } from '@/shared/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ButlerCategory } from '@prisma/client'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bot, ChevronRight, Plus } from 'lucide-react'
 import { Fragment, useState } from 'react'
 import { SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
-import { getBoardButlers } from '../actions'
 import { ruleActionTemplates, ruleTriggerTemplates } from '../constants'
 import { useCreateButler } from '../hooks/use-create-butler'
+import { getBoardButlers } from '../queries'
 import { createButlerQueries, transformRuleForBackend } from '../utils'
 import {
   AutomationRuleActionSchema,

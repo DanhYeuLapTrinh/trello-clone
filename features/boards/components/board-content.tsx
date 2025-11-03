@@ -8,8 +8,8 @@ import { defaultDropAnimation, DndContext, DragOverlay, rectIntersection } from 
 import { horizontalListSortingStrategy, SortableContext } from '@dnd-kit/sortable'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChannelProvider, useChannel } from 'ably/react'
-import { getBoardListsWithCards } from '../actions'
 import { useDragAndDrop } from '../hooks/use-drag-and-drop'
+import { getBoardListsWithCards } from '../queries'
 
 interface BoardContentProps {
   boardId: string
@@ -24,7 +24,7 @@ const BoardContentInner = ({ boardId, slug, channelName }: BoardContentProps) =>
     queryClient.invalidateQueries({ queryKey: ['board', 'lists', 'cards', message.data.boardSlug] })
   })
 
-  const { data: lists } = useQuery({
+  const { data: lists = [] } = useQuery({
     queryKey: ['board', 'lists', 'cards', slug],
     queryFn: () => getBoardListsWithCards(slug)
   })

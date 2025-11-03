@@ -2,8 +2,8 @@
 
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { cn } from '@/lib/utils'
-import { CardPreview } from '@/types/common'
+import { CardPreview } from '@/prisma/queries/card'
+import { cn } from '@/shared/utils'
 import {
   Clock,
   Eye,

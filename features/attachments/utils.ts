@@ -1,4 +1,4 @@
-import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
+import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/shared/utils'
 import { Attachment } from '@prisma/client'
 import { QueryClient } from '@tanstack/react-query'
 

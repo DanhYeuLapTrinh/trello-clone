@@ -1,6 +1,6 @@
-import { getBoardLists } from '@/features/boards/actions'
-import { getBoardButlers } from '@/features/butlers/actions'
+import { getBoardLists } from '@/features/boards/queries'
 import BoardButlerDialog from '@/features/butlers/components/board-butler-dialog'
+import { getBoardButlers } from '@/features/butlers/queries'
 import { ButlerCategory } from '@prisma/client'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 

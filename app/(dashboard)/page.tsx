@@ -1,16 +1,11 @@
 import { Separator } from '@/components/ui/separator'
-import { getGuestWorkspacesWithBoards, getMeWorkspacesWithBoards } from '@/features/workspaces/actions'
 import WorkspaceSection from '@/features/workspaces/components/workspace-section'
-import { workspaceBackgroundClasses } from '@/lib/constants'
+import { getGuestWorkspacesWithBoards, getMeWorkspacesWithBoards } from '@/features/workspaces/queries'
+import { UIWorkspace } from '@/prisma/queries/workspace'
+import { workspaceBackgroundClasses } from '@/shared/constants'
 import { redirect } from 'next/navigation'
 
-type Workspace = {
-  id: string
-  name: string
-  imageUrl: string | null
-}
-
-const assignWorkspaceBackgrounds = (workspaces: Workspace[]): Map<string, string> => {
+const assignWorkspaceBackgrounds = (workspaces: UIWorkspace[]): Map<string, string> => {
   const bgMap = new Map<string, string>()
   const availableBgs = Object.values(workspaceBackgroundClasses)
   const usedBgs: string[] = []
@@ -52,7 +47,7 @@ export default async function DashboardPage() {
   const backgroundMap = assignWorkspaceBackgrounds(allWorkspaces)
 
   return (
-    <div className='px-4 flex flex-col gap-10 max-w-4xl mx-auto'>
+    <div className='p-4 flex flex-col gap-10 max-w-4xl mx-auto'>
       <WorkspaceSection
         title='CÁC KHÔNG GIAN LÀM VIỆC CỦA BẠN'
         workspaces={workspaces}
@@ -60,7 +55,7 @@ export default async function DashboardPage() {
         showActions={true}
       />
 
-      <Separator />
+      {guestWorkspaces.length > 0 && <Separator />}
 
       <WorkspaceSection
         title='CÁC KHÔNG GIAN LÀM VIỆC KHÁCH'

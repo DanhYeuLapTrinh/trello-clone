@@ -1,9 +1,9 @@
 'use client'
 
-import * as React from 'react'
-import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
-import { cn } from '@/lib/tiptap-utils'
 import '@/components/tiptap-ui-primitive/dropdown-menu/dropdown-menu.scss'
+import { cn } from '@/shared/tiptap-utils'
+import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
+import * as React from 'react'
 
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root modal={false} {...props} />
@@ -73,13 +73,13 @@ DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName
 
 export {
   DropdownMenu,
-  DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuGroup,
-  DropdownMenuSub,
+  DropdownMenuItem,
   DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuRadioGroup
+  DropdownMenuTrigger
 }

@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useMe } from '@/hooks/use-me'
-import { ROLE_LABEL } from '@/lib/constants'
+import { ROLE_LABEL } from '@/shared/constants'
 import { Role } from '@prisma/client'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { useQuery } from '@tanstack/react-query'
@@ -24,9 +24,9 @@ import { Loader2, X } from 'lucide-react'
 import { useState } from 'react'
 import { SubmitHandler, useFieldArray } from 'react-hook-form'
 import { useDebounce } from 'use-debounce'
-import { getBoardUsers } from '../actions'
 import { useSearchUsers } from '../hooks/use-search-users'
 import { useShareBoard } from '../hooks/use-share-board'
+import { getBoardUsers } from '../queries'
 import { ShareBoardSchema } from '../validations'
 
 interface ShareBoardDialogProps {
@@ -117,9 +117,7 @@ export default function ShareBoardDialog({ boardSlug, children }: ShareBoardDial
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className='text-sm font-medium'>
-                            {user.firstName} {user.lastName}
-                          </p>
+                          <p className='text-sm font-medium'>{user.fullName}</p>
                           <p className='text-xs text-muted-foreground'>{user.email}</p>
                         </div>
                       </div>

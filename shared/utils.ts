@@ -1,4 +1,6 @@
-import { CardDetail, CardTimeline, ListWithCards } from '@/types/common'
+import { CardDetail } from '@/prisma/queries/card'
+import { ListWithCards } from '@/prisma/queries/list'
+import { CardTimeline } from '@/shared/types'
 import { CardReminderType } from '@prisma/client'
 import { QueryClient } from '@tanstack/react-query'
 import { clsx, type ClassValue } from 'clsx'

@@ -2,15 +2,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { UIList } from '@/types/ui'
-import { Butler, User } from '@prisma/client'
+import { UIButler } from '@/prisma/queries/butler'
+import { UIList } from '@/prisma/queries/list'
+import { UIUser } from '@/prisma/queries/user'
 import { formatDistanceToNow } from 'date-fns'
 import { Copy, Lightbulb, Pencil, Trash2 } from 'lucide-react'
 import { ButlerData } from '../types'
 import { transformToReadableString } from '../utils'
 
 interface ButlerCardProps {
-  rule: Butler & { creator: User }
+  rule: UIButler & { creator: UIUser }
   lists: UIList[]
 }
 

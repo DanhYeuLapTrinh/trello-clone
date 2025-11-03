@@ -2,13 +2,13 @@
 
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { getBoardLabels } from '@/features/boards/actions'
-import { sortedCardLabelColors } from '@/lib/constants'
-import { LabelDetail } from '@/types/common'
-import { LabelAction } from '@/types/ui'
+import { getBoardLabels } from '@/features/boards/queries'
+import { UILabelDetail } from '@/prisma/queries/label'
+import { sortedCardLabelColors } from '@/shared/constants'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, X } from 'lucide-react'
 import { useState } from 'react'
+import { LabelAction } from '../types'
 import ChooseLabelForm from './choose-label-form'
 import CreateLabelForm from './create-label-form'
 import UpdateLabelForm from './update-label-form'
@@ -16,7 +16,7 @@ import UpdateLabelForm from './update-label-form'
 interface LabelPopoverProps {
   boardSlug: string
   cardSlug: string
-  cardLabels: LabelDetail[]
+  cardLabels: UILabelDetail[]
   children?: React.ReactNode
 }
 

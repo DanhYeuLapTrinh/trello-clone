@@ -1,4 +1,4 @@
-import { getMe } from '@/features/users/actions'
+import { getMe } from '@/features/users/queries'
 import { useQuery } from '@tanstack/react-query'
 
 export const useMe = () => {

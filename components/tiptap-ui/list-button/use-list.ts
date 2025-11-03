@@ -13,7 +13,7 @@ import { ListOrderedIcon } from '@/components/tiptap-icons/list-ordered-icon'
 import { ListTodoIcon } from '@/components/tiptap-icons/list-todo-icon'
 
 // --- Lib ---
-import { findNodePosition, isNodeInSchema, isNodeTypeSelected, isValidPosition } from '@/lib/tiptap-utils'
+import { findNodePosition, isNodeInSchema, isNodeTypeSelected, isValidPosition } from '@/shared/tiptap-utils'
 
 export type ListType = 'bulletList' | 'orderedList' | 'taskList'
 

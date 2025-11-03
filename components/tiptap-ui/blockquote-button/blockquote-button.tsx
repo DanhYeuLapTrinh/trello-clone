@@ -10,12 +10,12 @@ import { BLOCKQUOTE_SHORTCUT_KEY, useBlockquote } from '@/components/tiptap-ui/b
 import { useTiptapEditor } from '@/hooks/use-tiptap-editor'
 
 // --- Lib ---
-import { parseShortcutKeys } from '@/lib/tiptap-utils'
+import { parseShortcutKeys } from '@/shared/tiptap-utils'
 
 // --- UI Primitives ---
+import { Badge } from '@/components/tiptap-ui-primitive/badge'
 import type { ButtonProps } from '@/components/tiptap-ui-primitive/button'
 import { Button } from '@/components/tiptap-ui-primitive/button'
-import { Badge } from '@/components/tiptap-ui-primitive/badge'
 
 export interface BlockquoteButtonProps extends Omit<ButtonProps, 'type'>, UseBlockquoteConfig {
   /**

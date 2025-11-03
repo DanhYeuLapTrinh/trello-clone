@@ -2,31 +2,10 @@
 
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
-import { NotFoundError } from '@/types/error'
-import { ButlerCategory } from '@prisma/client'
+import { NotFoundError } from '@/shared/error'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
 import { createButlerSchema } from './validations/server'
-
-export const getBoardButlers = async (slug: string, category: ButlerCategory) => {
-  const butlers = await prisma.butler.findMany({
-    where: {
-      board: {
-        slug: slug
-      },
-      category: category,
-      isDeleted: false
-    },
-    orderBy: {
-      createdAt: 'asc'
-    },
-    include: {
-      creator: true
-    }
-  })
-
-  return butlers
-}
 
 export const createButler = protectedActionClient
   .inputSchema(createButlerSchema, {

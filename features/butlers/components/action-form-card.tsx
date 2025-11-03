@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
-import { UIList } from '@/types/ui'
+import { cn } from '@/shared/utils'
 import { Plus } from 'lucide-react'
 import { useState } from 'react'
 import { z, ZodError } from 'zod'
 import { AutomationTemplate, Part, PartId } from '../types'
 import { getInitialState } from '../utils'
+import { UIList } from '@/prisma/queries/list'
 
 export default function ActionFormCard<T extends z.ZodTypeAny>({
   action,

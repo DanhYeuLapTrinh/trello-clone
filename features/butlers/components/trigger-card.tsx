@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { UIList } from '@/types/ui'
+import { UIList } from '@/prisma/queries/list'
 import { Trash2 } from 'lucide-react'
 import { ruleTriggerTemplates, scheduledTriggerTemplates } from '../constants'
 import { getFieldFromTrigger } from '../utils'

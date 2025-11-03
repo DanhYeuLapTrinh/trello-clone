@@ -1,7 +1,7 @@
 import { initFirebaseAdmin } from '@/lib/firebase-admin'
-import { slugify } from '@/lib/utils'
-import { FileInfo } from '@/types/common'
-import { BadRequestError, NotFoundError } from '@/types/error'
+import { BadRequestError, NotFoundError } from '@/shared/error'
+import { FileInfo } from '@/shared/types'
+import { slugify } from '@/shared/utils'
 
 class FirebaseService {
   private admin: ReturnType<typeof import('@/lib/firebase-admin').initFirebaseAdmin>

@@ -1,5 +1,5 @@
 import prisma from '@/prisma/prisma'
-import { NotFoundError } from '@/types/error'
+import { NotFoundError } from '@/shared/error'
 import { currentUser } from '@clerk/nextjs/server'
 import { User } from '@prisma/client'
 
@@ -10,6 +10,10 @@ class ClerkService {
 
       if (!clerkUser) return null
 
+      const fullName =
+        `${clerkUser.firstName ?? ''} ${clerkUser.lastName ?? ''}`.trim() ||
+        clerkUser.emailAddresses[0]?.emailAddress.split('@')[0]
+
       const user = await prisma.$transaction(async (tx) => {
         const upsertedUser = await tx.user.upsert({
           where: {
@@ -19,6 +23,7 @@ class ClerkService {
             email: clerkUser.emailAddresses[0]?.emailAddress,
             firstName: clerkUser.firstName,
             lastName: clerkUser.lastName,
+            fullName: fullName,
             imageUrl: clerkUser.imageUrl
           },
           create: {
@@ -26,6 +31,7 @@ class ClerkService {
             email: clerkUser.emailAddresses[0]?.emailAddress,
             firstName: clerkUser.firstName,
             lastName: clerkUser.lastName,
+            fullName: fullName,
             imageUrl: clerkUser.imageUrl
           }
         })
@@ -39,9 +45,7 @@ class ClerkService {
         if (!existingWorkspace) {
           const createdWorkspace = await tx.workspace.create({
             data: {
-              name: `${clerkUser.firstName ?? ''} ${clerkUser.lastName ?? ''}`.trim()
-                ? `${clerkUser.firstName ?? ''} ${clerkUser.lastName ?? ''}`.trim() + "'s Workspace"
-                : 'Không gian làm việc của tôi',
+              name: `${fullName}'s Workspace`,
               shortName: Date.now().toString(),
               websiteUrl: null,
               description: null,
@@ -59,7 +63,7 @@ class ClerkService {
           if (!existingBoard) {
             await tx.board.create({
               data: {
-                name: 'Bảng của tôi',
+                name: `${fullName}'s Board`,
                 slug: Date.now().toString(),
                 workspaceId: createdWorkspace.id,
                 ownerId: upsertedUser.id

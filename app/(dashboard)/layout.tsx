@@ -1,7 +1,7 @@
 import { AppSidebar } from '@/components/sidebar/app-sidebar'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
-import { getMe } from '@/features/users/actions'
-import { getMeWorkspaces } from '@/features/workspaces/actions'
+import { getMe } from '@/features/users/queries'
+import { getMeWorkspaces } from '@/features/workspaces/queries'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { redirect } from 'next/navigation'
 

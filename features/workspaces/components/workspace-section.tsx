@@ -1,31 +1,16 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { buttonVariants } from '@/components/ui/button'
 import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
-import { boardBackgroundClasses, boardVisibility } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { UIWorkspaceWithBoards } from '@/prisma/queries/workspace'
+import { boardBackgroundClasses, boardVisibility } from '@/shared/constants'
+import { cn } from '@/shared/utils'
 import { Plus, Settings, Trello, Users } from 'lucide-react'
 import Link from 'next/link'
 import { createElement } from 'react'
 
-type Board = {
-  id: string
-  name: string
-  slug: string
-  background: keyof typeof boardBackgroundClasses
-  visibility: keyof typeof boardVisibility
-}
-
-type Workspace = {
-  id: string
-  name: string
-  shortName: string
-  imageUrl: string | null
-  boards: Board[]
-}
-
 type WorkspaceSectionProps = {
   title: string
-  workspaces: Workspace[]
+  workspaces: UIWorkspaceWithBoards[]
   backgroundMap: Map<string, string>
   showActions?: boolean
 }

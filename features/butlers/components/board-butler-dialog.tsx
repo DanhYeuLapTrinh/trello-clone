@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/utils'
 import { ButlerCategory } from '@prisma/client'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { Bot, CalendarDays, Settings2, X } from 'lucide-react'

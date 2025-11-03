@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card'
 import CardItem from '@/features/cards/components/card-item'
 import CreateCardButton from '@/features/cards/components/create-card-button'
-import { ListWithCards } from '@/types/common'
+import { ListWithCards } from '@/prisma/queries/list'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import ListNameInput from './list-name-input'

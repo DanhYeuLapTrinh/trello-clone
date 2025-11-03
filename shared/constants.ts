@@ -1,6 +1,10 @@
-import { CardLabelColor } from '@/types/ui'
 import { BoardBackground, BoardVisibility, CardReminderType, Role } from '@prisma/client'
 import { Globe, LockKeyhole, LucideIcon, Users } from 'lucide-react'
+
+interface CardLabelColor {
+  baseColor: string
+  shades: { value: string; isDefaultSelect: boolean; isDefaultDisplay: boolean; textColor: string }[]
+}
 
 export const boardBackgroundClasses: Record<BoardBackground, string> = {
   OCEAN: 'bg-gradient-to-br from-sky-400 via-teal-500 to-blue-600',

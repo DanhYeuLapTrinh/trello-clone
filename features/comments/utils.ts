@@ -1,5 +1,5 @@
-import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/lib/utils'
-import { CardTimeline, TimelineItemType } from '@/types/common'
+import { CardTimeline, TimelineItemType } from '@/shared/types'
+import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/shared/utils'
 import { Comment, User } from '@prisma/client'
 import { QueryClient } from '@tanstack/react-query'
 

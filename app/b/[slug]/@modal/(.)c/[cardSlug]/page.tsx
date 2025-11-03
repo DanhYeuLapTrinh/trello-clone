@@ -1,6 +1,6 @@
-import { getCard, getCardActivitiesAndComments } from '@/features/cards/actions'
 import CardDetailDialog from '@/features/cards/components/card-detail-dialog'
-import { CardDetail } from '@/types/common'
+import { getCard, getCardActivitiesAndComments } from '@/features/cards/queries'
+import { CardDetail } from '@/prisma/queries/card'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { notFound } from 'next/navigation'
 

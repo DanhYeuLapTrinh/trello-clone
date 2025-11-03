@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Attachment } from '@prisma/client'
+import { UIAttachment } from '@/prisma/queries/attachment'
 import { LinkIcon, MoreHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import AttachmentActions from './attachment-actions'
 
 interface LinkItemProps {
-  attachment: Attachment
+  attachment: UIAttachment
   boardSlug: string
   cardSlug: string
 }

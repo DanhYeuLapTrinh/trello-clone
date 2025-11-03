@@ -1,13 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { AssigneeDetails, CreateDetails, MoveDetails, TimelineItemType } from '@/types/common'
-import { Activity, User } from '@prisma/client'
+import { UIActivity } from '@/prisma/queries/activity'
+import { UIUser } from '@/prisma/queries/user'
+import { AssigneeDetails, CreateDetails, MoveDetails, TimelineItemType } from '@/shared/types'
 import { formatDateRelativeVN } from '../utils'
 
 interface ActivityCardProps {
-  activity: Activity & { user: User } & { __type: TimelineItemType.Activity }
+  activity: UIActivity & { user: UIUser } & { __type: TimelineItemType.Activity }
 }
 
-const getActivityLabel = (activity: Activity & { user: User } & { __type: TimelineItemType.Activity }) => {
+const getActivityLabel = (activity: UIActivity & { user: UIUser } & { __type: TimelineItemType.Activity }) => {
   if (activity.model === 'CARD') {
     let details
     switch (activity.action) {

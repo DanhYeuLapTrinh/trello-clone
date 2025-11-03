@@ -1,9 +1,9 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
 import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
-import { getWorkspaceWithBoards } from '@/features/workspaces/actions'
-import { boardBackgroundClasses, boardVisibility } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { getWorkspaceWithBoards } from '@/features/workspaces/queries'
+import { boardBackgroundClasses, boardVisibility } from '@/shared/constants'
+import { cn } from '@/shared/utils'
 import { LockKeyhole, Plus, Trello } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -11,6 +11,7 @@ import { createElement } from 'react'
 
 export default async function WorkspaceDetailPage({ params }: { params: { shortName: string } }) {
   const { shortName } = await params
+
   const workspace = await getWorkspaceWithBoards(shortName)
 
   if (!workspace) {

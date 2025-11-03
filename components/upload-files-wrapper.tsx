@@ -1,6 +1,6 @@
 import { useUploadFiles } from '@/hooks/use-upload-files'
-import { DEFAULT_ALLOWED_TYPES } from '@/lib/constants'
-import { FileInfo } from '@/types/common'
+import { DEFAULT_ALLOWED_TYPES } from '@/shared/constants'
+import { FileInfo } from '@/shared/types'
 import { VariantProps } from 'class-variance-authority'
 import { useRef } from 'react'
 import { Button, buttonVariants } from './ui/button'

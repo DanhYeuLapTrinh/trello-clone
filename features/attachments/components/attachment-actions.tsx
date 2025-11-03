@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Attachment } from '@prisma/client'
+import { UIAttachment } from '@/prisma/queries/attachment'
 import { useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, X } from 'lucide-react'
 import { useState } from 'react'
@@ -17,7 +17,7 @@ import { UpdateAttachmentSchema } from '../validations'
 interface AttachmentActionsProps {
   boardSlug: string
   cardSlug: string
-  attachment: Attachment
+  attachment: UIAttachment
   children: React.ReactNode
 }
 

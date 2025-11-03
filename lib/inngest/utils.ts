@@ -10,7 +10,7 @@ import {
 import { ActionSchema } from '@/features/butlers/validations/server'
 import prisma from '@/prisma/prisma'
 import { User } from '@prisma/client'
-import { DEFAULT_POSITION, POSITION_GAP } from '../constants'
+import { DEFAULT_POSITION, POSITION_GAP } from '../../shared/constants'
 
 /**
  * Determines if a butler rule should execute based on the 'by' option

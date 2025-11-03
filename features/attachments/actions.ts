@@ -3,7 +3,7 @@
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
 import firebaseService from '@/services/firebase.service'
-import { ConflictError, NotFoundError } from '@/types/error'
+import { ConflictError, NotFoundError } from '@/shared/error'
 import { Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'

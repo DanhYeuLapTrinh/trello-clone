@@ -1,12 +1,12 @@
 import { Button } from '@/components/ui/button'
-import { Attachment } from '@prisma/client'
+import { UIAttachment } from '@/prisma/queries/attachment'
 import { Paperclip } from 'lucide-react'
 import AttachmentPopover from './attachment-popover'
 import FileItem from './file-item'
 import LinkItem from './link-item'
 
 interface AttachmentSectionProps {
-  attachments: Attachment[]
+  attachments: UIAttachment[]
   cardSlug: string
   boardSlug: string
 }

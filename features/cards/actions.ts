@@ -1,20 +1,19 @@
 'use server'
 
-import { POSITION_GAP } from '@/lib/constants'
 import { inngest } from '@/lib/inngest/client'
 import { cardReminderJob } from '@/lib/jobs/handlers'
 import { CardReminderSchema } from '@/lib/jobs/validations'
 import { protectedActionClient } from '@/lib/safe-action'
-import { getReminderDate, slugify, toUnixSeconds } from '@/lib/utils'
 import prisma from '@/prisma/prisma'
 import jobService from '@/services/job.service'
-import { AssigneeDetails, CardDetail, CardTimeline, CreateDetails, MoveDetails, TimelineItemType } from '@/types/common'
-import { BadRequestError, ConflictError, NotFoundError, UnauthorizedError } from '@/types/error'
+import { POSITION_GAP } from '@/shared/constants'
+import { BadRequestError, ConflictError, NotFoundError, UnauthorizedError } from '@/shared/error'
+import { AssigneeDetails, CreateDetails, MoveDetails } from '@/shared/types'
+import { getReminderDate, slugify, toUnixSeconds } from '@/shared/utils'
 import { ActivityAction, Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
 import { permanentRedirect, RedirectType } from 'next/navigation'
-import { getMe } from '../users/actions'
 import {
   createCardSchema,
   deleteCardDateSchema,
@@ -194,99 +193,6 @@ export const createCard = protectedActionClient
       throw error
     }
   })
-
-// Get card detail
-export const getCard = async (cardSlug: string): Promise<CardDetail> => {
-  try {
-    const { id: userId } = await getMe()
-
-    const card = await prisma.card.findUnique({
-      where: {
-        slug: cardSlug
-      },
-      include: {
-        list: true,
-        cardLabels: {
-          where: {
-            label: {
-              isDeleted: false
-            }
-          },
-          include: {
-            label: true
-          },
-          orderBy: {
-            updatedAt: 'asc'
-          }
-        },
-        subtasks: {
-          where: {
-            parentId: null,
-            isDeleted: false
-          },
-          orderBy: {
-            createdAt: 'asc'
-          },
-          include: {
-            children: {
-              where: {
-                isDeleted: false
-              },
-              orderBy: {
-                createdAt: 'asc'
-              }
-            }
-          }
-        },
-        assignees: {
-          where: {
-            user: {
-              isDeleted: false
-            }
-          },
-          select: {
-            user: {
-              select: {
-                id: true,
-                fullName: true,
-                email: true,
-                imageUrl: true
-              }
-            }
-          }
-        },
-        watchers: {
-          where: {
-            user: {
-              isDeleted: false,
-              id: userId
-            }
-          },
-          include: {
-            user: true
-          }
-        },
-        attachments: {
-          where: {
-            isDeleted: false
-          },
-          orderBy: {
-            createdAt: 'desc'
-          }
-        },
-        comments: true
-      }
-    })
-
-    if (!card) {
-      throw new NotFoundError('Card')
-    }
-
-    return card
-  } catch (error) {
-    throw error
-  }
-}
 
 // Move card within list (dnd)
 export const moveCardWithinList = protectedActionClient
@@ -634,46 +540,6 @@ export const deleteCardDate = protectedActionClient
       throw error
     }
   })
-
-export const getCardActivitiesAndComments = async (cardSlug: string): Promise<CardTimeline> => {
-  try {
-    const card = await prisma.card.findUnique({
-      where: { slug: cardSlug }
-    })
-
-    if (!card) {
-      throw new NotFoundError('Card')
-    }
-
-    const activities = (
-      await prisma.activity.findMany({
-        where: { cardId: card.id },
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: true
-        }
-      })
-    ).map((a) => ({ ...a, __type: TimelineItemType.Activity as const }))
-
-    const comments = (
-      await prisma.comment.findMany({
-        where: { cardId: card.id, isDeleted: false },
-        orderBy: { createdAt: 'desc' },
-        include: {
-          user: true
-        }
-      })
-    ).map((c) => ({ ...c, __type: TimelineItemType.Comment as const }))
-
-    const sortedList = [...activities, ...comments].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )
-
-    return { activities, comments, sortedList }
-  } catch (error) {
-    throw error
-  }
-}
 
 export const updateCardBackground = protectedActionClient
   .inputSchema(updateCardBackgroundSchema, {

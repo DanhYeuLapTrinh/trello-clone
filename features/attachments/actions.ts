@@ -3,10 +3,11 @@
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
 import firebaseService from '@/services/firebase.service'
-import { ConflictError, NotFoundError } from '@/shared/error'
+import { ConflictError, NotFoundError, UnauthorizedError } from '@/shared/error'
 import { Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
+import { checkBoardMemberPermission } from '../boards/queries'
 import { getWebsiteName } from './utils'
 import { addAttachmentSchema, deleteAttachmentSchema, updateAttachmentSchema } from './validations'
 
@@ -16,6 +17,12 @@ export const addAttachment = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể thêm đính kèm.')
+      }
+
       const board = await prisma.board.findUnique({
         where: { slug: parsedInput.boardSlug }
       })
@@ -58,6 +65,12 @@ export const deleteAttachment = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ có thành viên của bảng mới có thể xóa đính kèm.')
+      }
+
       const board = await prisma.board.findUnique({
         where: { slug: parsedInput.boardSlug }
       })

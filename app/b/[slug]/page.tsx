@@ -4,18 +4,31 @@ import BoardContent from '@/features/boards/components/board-content'
 import BoardNameInput from '@/features/boards/components/board-name-input'
 import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
 import ShareBoardDialog from '@/features/boards/components/share-board-dialog'
-import { getBoardLabels, getBoardListsWithCards, getBoardOverview, getBoardUsers } from '@/features/boards/queries'
+import {
+  checkBoardPermission,
+  getBoardLabels,
+  getBoardListsWithCards,
+  getBoardOverview,
+  getBoardUsers
+} from '@/features/boards/queries'
 import { ABLY_CHANNELS, boardBackgroundClasses } from '@/shared/constants'
 import { cn } from '@/shared/utils'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { Trello, UserPlus, Zap } from 'lucide-react'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 
 export default async function BoardDetailPage({ params }: { params: { slug: string } }) {
   const queryClient = new QueryClient()
   const { slug } = await params
 
   const board = await getBoardOverview(slug)
+
+  if (!board) {
+    return notFound()
+  }
+
+  const isAdmin = await checkBoardPermission(slug)
 
   await queryClient.prefetchQuery({
     queryKey: ['board', 'lists', 'cards', slug],
@@ -53,18 +66,19 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
             <BoardNameInput name={board.name} />
           </div>
 
-          <div className='space-x-2'>
-            <ShareBoardDialog boardSlug={board.slug}>
-              <Button variant='secondary'>
-                <UserPlus />
-                Chia sẻ
-              </Button>
-            </ShareBoardDialog>
-
-            <Link href={`/b/${board.slug}/butler`} className={buttonVariants({ variant: 'secondary', size: 'icon' })}>
-              <Zap />
-            </Link>
-          </div>
+          {isAdmin ? (
+            <div className='space-x-2'>
+              <ShareBoardDialog boardSlug={board.slug}>
+                <Button variant='secondary'>
+                  <UserPlus />
+                  Chia sẻ
+                </Button>
+              </ShareBoardDialog>
+              <Link href={`/b/${board.slug}/butler`} className={buttonVariants({ variant: 'secondary', size: 'icon' })}>
+                <Zap />
+              </Link>
+            </div>
+          ) : null}
         </div>
 
         <BoardContent boardId={board.id} slug={board.slug} channelName={ABLY_CHANNELS.BOARD(board.slug)} />

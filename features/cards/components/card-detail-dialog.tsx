@@ -40,6 +40,7 @@ import {
   MoreHorizontal,
   Paperclip,
   Plus,
+  SquareCheckBig,
   Tag,
   TextAlignStart,
   UserRoundPlus,
@@ -386,7 +387,12 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
                         </DatePopover>
                       ) : null}
 
-                      <SubtaskPopover boardSlug={boardSlug} cardSlug={cardDetail!.slug} />
+                      <SubtaskPopover boardSlug={boardSlug} cardSlug={cardDetail!.slug}>
+                        <Button variant='outline' size='sm'>
+                          <SquareCheckBig className='size-3.5' />
+                          <p className='text-xs'>Việc cần làm</p>
+                        </Button>
+                      </SubtaskPopover>
 
                       {!hadCardAssignees ? (
                         <AssigneePopover

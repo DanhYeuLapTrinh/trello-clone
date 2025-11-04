@@ -7,28 +7,31 @@ import { cn } from '@/shared/utils'
 import { Plus, Settings, Trello, Users } from 'lucide-react'
 import Link from 'next/link'
 import { createElement } from 'react'
+import { checkWorkspacePermission } from '../queries'
 
 type WorkspaceSectionProps = {
   title: string
   workspaces: UIWorkspaceWithBoards[]
   backgroundMap: Map<string, string>
-  showActions?: boolean
 }
 
-export default function WorkspaceSection({
-  title,
-  workspaces,
-  backgroundMap,
-  showActions = true
-}: WorkspaceSectionProps) {
+export default async function WorkspaceSection({ title, workspaces, backgroundMap }: WorkspaceSectionProps) {
   if (workspaces.length === 0) return null
+
+  const permissionChecks = workspaces.map((workspace) => checkWorkspacePermission(workspace.id))
+
+  const permissions = await Promise.all(permissionChecks)
+
+  const workspacesWithPermission = workspaces.map((workspace, index) => ({
+    ...workspace,
+    canCreateBoard: permissions[index]
+  }))
 
   return (
     <div className='space-y-4'>
       <p className='font-semibold text-foreground/80'>{title}</p>
-
       <div className='space-y-8'>
-        {workspaces.map((workspace) => (
+        {workspacesWithPermission.map((workspace) => (
           <div key={workspace.id} className='space-y-3'>
             <div className='flex items-center gap-2'>
               <div className='flex items-center gap-2 flex-1'>
@@ -47,37 +50,31 @@ export default function WorkspaceSection({
                     </AvatarFallback>
                   </Avatar>
                 )}
-
                 <p className='font-semibold'>{workspace.name}</p>
               </div>
-
-              {showActions && (
+              {workspace.canCreateBoard && (
                 <>
                   <Link
                     href={`/w/${workspace.shortName}/home`}
                     className={buttonVariants({ size: 'sm', variant: 'secondary' })}
                   >
-                    <Trello />
-                    Bảng
+                    <Trello /> Bảng
                   </Link>
                   <Link
                     href={`/w/${workspace.shortName}/members`}
                     className={buttonVariants({ size: 'sm', variant: 'secondary' })}
                   >
-                    <Users />
-                    Thành viên
+                    <Users /> Thành viên
                   </Link>
                   <Link
                     href={`/w/${workspace.shortName}/settings`}
                     className={buttonVariants({ size: 'sm', variant: 'secondary' })}
                   >
-                    <Settings />
-                    Cài đặt
+                    <Settings /> Cài đặt
                   </Link>
                 </>
               )}
             </div>
-
             <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
               {workspace.boards.map((board) => (
                 <Link href={`/b/${board.slug}`} key={board.id} className='h-28 rounded-md shadow-sm'>
@@ -86,20 +83,20 @@ export default function WorkspaceSection({
                       {createElement(boardVisibility[board.visibility].icon, { className: 'text-white size-4' })}
                     </div>
                   </div>
+
                   <div className='h-[30%] flex items-center px-2'>
                     <p className='text-sm font-medium truncate'>{board.name}</p>
                   </div>
                 </Link>
               ))}
-
-              {showActions && (
+              {workspace.canCreateBoard ? (
                 <CreateBoardDialog workspaceId={workspace.id}>
                   <div className='h-28 border border-border rounded-md border-dashed flex items-center gap-2 justify-center bg-muted/20 cursor-pointer'>
                     <Plus className='size-4' />
                     <p className='text-sm font-medium'>Tạo bảng mới</p>
                   </div>
                 </CreateBoardDialog>
-              )}
+              ) : null}
             </div>
           </div>
         ))}

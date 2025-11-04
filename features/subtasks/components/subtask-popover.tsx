@@ -13,9 +13,10 @@ import { CreateSubtaskSchema } from '../validations'
 interface SubtaskPopoverProps {
   boardSlug: string
   cardSlug: string
+  children: React.ReactNode
 }
 
-export default function SubtaskPopover({ boardSlug, cardSlug }: SubtaskPopoverProps) {
+export default function SubtaskPopover({ boardSlug, cardSlug, children }: SubtaskPopoverProps) {
   const [open, setOpen] = useState(false)
   const { methods, createSubtaskAction } = useCreateSubtask({
     defaultValues: {
@@ -34,12 +35,7 @@ export default function SubtaskPopover({ boardSlug, cardSlug }: SubtaskPopoverPr
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant='outline' size='sm'>
-          <SquareCheckBig className='size-3.5' />
-          <p className='text-xs'>Việc cần làm</p>
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent side='bottom' align='start' className='space-y-2 p-2'>
         <div className='flex items-center w-full'>
           <div className='flex-1' />

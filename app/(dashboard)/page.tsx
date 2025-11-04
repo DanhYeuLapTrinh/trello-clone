@@ -48,12 +48,7 @@ export default async function DashboardPage() {
 
   return (
     <div className='p-4 flex flex-col gap-10 max-w-4xl mx-auto'>
-      <WorkspaceSection
-        title='CÁC KHÔNG GIAN LÀM VIỆC CỦA BẠN'
-        workspaces={workspaces}
-        backgroundMap={backgroundMap}
-        showActions={true}
-      />
+      <WorkspaceSection title='CÁC KHÔNG GIAN LÀM VIỆC CỦA BẠN' workspaces={workspaces} backgroundMap={backgroundMap} />
 
       {guestWorkspaces.length > 0 && <Separator />}
 
@@ -61,7 +56,6 @@ export default async function DashboardPage() {
         title='CÁC KHÔNG GIAN LÀM VIỆC KHÁCH'
         workspaces={guestWorkspaces}
         backgroundMap={backgroundMap}
-        showActions={false}
       />
     </div>
   )

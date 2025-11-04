@@ -12,6 +12,7 @@ import {
   workspaceSelect
 } from '@/prisma/queries/workspace'
 import { NotFoundError } from '@/shared/error'
+import { Role } from '@prisma/client'
 import { getMe } from '../users/queries'
 
 /**
@@ -100,4 +101,41 @@ export const getWorkspaceWithBoards = async (shortName: string): Promise<UIWorks
   }
 
   return workspace
+}
+
+/**
+ * Check if the user has workspace permission (owner/admin)
+ * @param id - workspace id
+ * @returns True if the user has workspace permission, false otherwise
+ */
+export const checkWorkspacePermission = async (id: string): Promise<boolean> => {
+  try {
+    const { id: userId } = await getMe()
+
+    const workspace = await prisma.workspace.findUnique({
+      where: { id },
+      select: {
+        ownerId: true,
+        workspaceMemberships: {
+          where: { userId },
+          select: {
+            role: true
+          }
+        }
+      }
+    })
+
+    if (!workspace) {
+      return false
+    }
+
+    if (workspace.ownerId === userId) {
+      return true
+    }
+
+    const memberRole = workspace.workspaceMemberships[0]?.role
+    return memberRole === Role.Admin
+  } catch {
+    return false
+  }
 }

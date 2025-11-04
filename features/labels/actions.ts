@@ -2,9 +2,10 @@
 
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
-import { NotFoundError } from '@/shared/error'
+import { NotFoundError, UnauthorizedError } from '@/shared/error'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
+import { checkBoardMemberPermission } from '../boards/queries'
 import {
   assignLabelSchema,
   createLabelSchema,
@@ -20,6 +21,12 @@ export const createLabel = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể thêm label.')
+      }
+
       const board = await prisma.board.findUnique({
         where: {
           slug: parsedInput.boardSlug

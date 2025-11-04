@@ -14,6 +14,7 @@ import { ActivityAction, Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
 import { permanentRedirect, RedirectType } from 'next/navigation'
+import { checkBoardMemberPermission } from '../boards/queries'
 import {
   createCardSchema,
   deleteCardDateSchema,
@@ -114,6 +115,12 @@ export const createCard = protectedActionClient
         throw new NotFoundError('List')
       }
 
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.slug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể thêm thẻ.')
+      }
+
       const latestPosition = await prisma.card.findFirst({
         where: {
           listId: list.id
@@ -201,6 +208,12 @@ export const moveCardWithinList = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.slug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể di chuyển thẻ trong danh sách.')
+      }
+
       // Get all cards in the list ordered by position
       const cards = await prisma.card.findMany({
         where: {
@@ -257,86 +270,96 @@ export const moveCardBetweenLists = protectedActionClient
     handleValidationErrorsShape: async (ve) => flattenValidationErrors(ve).fieldErrors
   })
   .action(async ({ parsedInput, ctx }) => {
-    const { cardId, sourceListId, targetListId, newPosition, slug } = parsedInput
+    try {
+      const { cardId, sourceListId, targetListId, newPosition, slug } = parsedInput
 
-    if (sourceListId === targetListId) {
-      return
+      const canAccessBoard = await checkBoardMemberPermission(slug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể di chuyển thẻ giữa danh sách.')
+      }
+
+      if (sourceListId === targetListId) {
+        return
+      }
+
+      const [cardToMove, fromList, toList, targetListCards] = await Promise.all([
+        prisma.card.findUnique({
+          where: { id: cardId },
+          select: { id: true, title: true, position: true, listId: true }
+        }),
+        prisma.list.findUnique({
+          where: { id: sourceListId },
+          select: { id: true, name: true }
+        }),
+        prisma.list.findUnique({
+          where: { id: targetListId },
+          select: { id: true, name: true }
+        }),
+        prisma.card.findMany({
+          where: { listId: targetListId },
+          select: { id: true, position: true },
+          orderBy: { position: 'asc' }
+        })
+      ])
+
+      if (!cardToMove) throw new NotFoundError('Card')
+      if (!fromList) throw new NotFoundError('Source list')
+      if (!toList) throw new NotFoundError('Target list')
+
+      if (newPosition < 0 || newPosition > targetListCards.length) {
+        throw new BadRequestError(`Invalid position: ${newPosition}. Must be between 0 and ${targetListCards.length}`)
+      }
+
+      // Calculate new position based on gap-based system
+      let calculatedPosition: number
+
+      if (targetListCards.length === 0) {
+        calculatedPosition = 0
+      } else if (newPosition === 0) {
+        // Moving to the near top
+        calculatedPosition = targetListCards[0].position - POSITION_GAP
+      } else if (newPosition >= targetListCards.length) {
+        // Moving to the end
+        calculatedPosition = targetListCards[targetListCards.length - 1].position + POSITION_GAP
+      } else {
+        // Moving between two cards
+        const prevCard = targetListCards[newPosition - 1]
+        const nextCard = targetListCards[newPosition]
+        calculatedPosition = Math.floor((prevCard.position + nextCard.position) / 2)
+      }
+
+      await prisma.$transaction([
+        prisma.card.update({
+          where: { id: cardId },
+          data: {
+            listId: targetListId,
+            position: calculatedPosition
+          }
+        }),
+        prisma.activity.create({
+          data: {
+            userId: ctx.currentUser.id,
+            model: 'CARD',
+            action: 'MOVE',
+            details: {
+              fromListId: fromList.id,
+              fromListName: fromList.name,
+              toListId: toList.id,
+              toListName: toList.name,
+              position: newPosition
+            } as MoveDetails,
+            cardId
+          }
+        })
+      ])
+
+      revalidatePath(`/b/${slug}`)
+
+      return { message: 'Thẻ đã được di chuyển thành công.' }
+    } catch (error) {
+      throw error
     }
-
-    const [cardToMove, fromList, toList, targetListCards] = await Promise.all([
-      prisma.card.findUnique({
-        where: { id: cardId },
-        select: { id: true, title: true, position: true, listId: true }
-      }),
-      prisma.list.findUnique({
-        where: { id: sourceListId },
-        select: { id: true, name: true }
-      }),
-      prisma.list.findUnique({
-        where: { id: targetListId },
-        select: { id: true, name: true }
-      }),
-      prisma.card.findMany({
-        where: { listId: targetListId },
-        select: { id: true, position: true },
-        orderBy: { position: 'asc' }
-      })
-    ])
-
-    if (!cardToMove) throw new NotFoundError('Card')
-    if (!fromList) throw new NotFoundError('Source list')
-    if (!toList) throw new NotFoundError('Target list')
-
-    if (newPosition < 0 || newPosition > targetListCards.length) {
-      throw new BadRequestError(`Invalid position: ${newPosition}. Must be between 0 and ${targetListCards.length}`)
-    }
-
-    // Calculate new position based on gap-based system
-    let calculatedPosition: number
-
-    if (targetListCards.length === 0) {
-      calculatedPosition = 0
-    } else if (newPosition === 0) {
-      // Moving to the near top
-      calculatedPosition = targetListCards[0].position - POSITION_GAP
-    } else if (newPosition >= targetListCards.length) {
-      // Moving to the end
-      calculatedPosition = targetListCards[targetListCards.length - 1].position + POSITION_GAP
-    } else {
-      // Moving between two cards
-      const prevCard = targetListCards[newPosition - 1]
-      const nextCard = targetListCards[newPosition]
-      calculatedPosition = Math.floor((prevCard.position + nextCard.position) / 2)
-    }
-
-    await prisma.$transaction([
-      prisma.card.update({
-        where: { id: cardId },
-        data: {
-          listId: targetListId,
-          position: calculatedPosition
-        }
-      }),
-      prisma.activity.create({
-        data: {
-          userId: ctx.currentUser.id,
-          model: 'CARD',
-          action: 'MOVE',
-          details: {
-            fromListId: fromList.id,
-            fromListName: fromList.name,
-            toListId: toList.id,
-            toListName: toList.name,
-            position: newPosition
-          } as MoveDetails,
-          cardId
-        }
-      })
-    ])
-
-    revalidatePath(`/b/${slug}`)
-
-    return { message: 'Thẻ đã được di chuyển thành công.' }
   })
 
 // Update card title, description, slug
@@ -346,6 +369,12 @@ export const updateCard = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể cập nhật thẻ.')
+      }
+
       const card = await prisma.card.findUnique({
         where: { id: parsedInput.cardId },
         select: { title: true, slug: true }
@@ -424,6 +453,12 @@ export const updateCardDate = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể cập nhật nhắc nhở thẻ.')
+      }
+
       const startDate = parsedInput.parsedStartDate || null
       const endDate = parsedInput.parsedEndDateTime || null
 
@@ -503,6 +538,12 @@ export const deleteCardDate = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể xóa nhắc nhở thẻ.')
+      }
+
       const board = await prisma.board.findUnique({
         where: { slug: parsedInput.boardSlug }
       })
@@ -547,6 +588,12 @@ export const updateCardBackground = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể cập nhật nền thẻ.')
+      }
+
       const board = await prisma.board.findUnique({
         where: { slug: parsedInput.boardSlug }
       })
@@ -584,6 +631,12 @@ export const toggleWatchCard = protectedActionClient
   })
   .action(async ({ parsedInput, ctx }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể theo dõi thẻ.')
+      }
+
       const { boardSlug, cardSlug } = parsedInput
       const userId = ctx.currentUser.id
 
@@ -702,6 +755,12 @@ export const toggleAssignCard = protectedActionClient
   })
   .action(async ({ parsedInput, ctx }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể cập nhật thành viên thẻ.')
+      }
+
       const card = await prisma.card.findFirst({
         where: {
           slug: parsedInput.cardSlug,
@@ -746,7 +805,7 @@ export const toggleAssignCard = protectedActionClient
       const getUser = (member: typeof actorMember | null, fallback: typeof owner) => {
         if (member) return member.user
         if (ctx.currentUser.id === fallback.id || parsedInput.targetId === fallback.id) return fallback
-        throw new UnauthorizedError('Bạn không phải là thành viên của bảng này.')
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể cập nhật thành viên thẻ.')
       }
 
       const actor = getUser(actorMember, owner)
@@ -871,6 +930,12 @@ export const toggleCompleteCard = protectedActionClient
   })
   .action(async ({ parsedInput, ctx }) => {
     try {
+      const canAccessBoard = await checkBoardMemberPermission(parsedInput.boardSlug)
+
+      if (!canAccessBoard) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể cập nhật trạng thái thẻ.')
+      }
+
       const { cardSlug, boardSlug } = parsedInput
 
       const card = await prisma.card.findFirst({

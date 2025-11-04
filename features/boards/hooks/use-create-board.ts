@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { BoardVisibility } from '@prisma/client'
 import { useAction } from 'next-safe-action/hooks'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
@@ -14,7 +15,7 @@ export const useCreateBoard = (workspaceId: string) => {
       name: '',
       workspaceId,
       background: 'OCEAN',
-      visibility: 'WORKSPACE'
+      visibility: BoardVisibility.WORKSPACE
     },
     resolver: zodResolver(createBoardSchema)
   })

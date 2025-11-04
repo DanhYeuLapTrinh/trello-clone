@@ -1,7 +1,7 @@
 'use server'
 
 import prisma from '@/prisma/prisma'
-import { boardSelect, boardVisibilityWhere } from '@/prisma/queries/board'
+import { boardAccessWhere, boardSelect, boardVisibilityWhere } from '@/prisma/queries/board'
 import {
   UIWorkspace,
   UIWorkspaceWithBoards,
@@ -52,10 +52,9 @@ export const getMeWorkspacesWithBoards = async (): Promise<UIWorkspaceWithBoards
 }
 
 /**
- * Get workspaces with boards that the current user:
- * + is workspace member
- * + is board member of that workspace
- * @returns The workspaces that the current user is member or has at least 1 board membership
+ * Get workspaces where user is a member or has board access.
+ * Workspace members see all non-private boards plus private boards they're on.
+ * Non-members only see boards they have direct membership to.
  */
 export const getGuestWorkspacesWithBoards = async (): Promise<UIWorkspaceWithBoards[]> => {
   const { id } = await getMe()
@@ -76,10 +75,8 @@ export const getGuestWorkspacesWithBoards = async (): Promise<UIWorkspaceWithBoa
 }
 
 /**
- * Get a workspace with boards by short name and user id
+ * Get workspace details
  * @param shortName - the short name of the workspace
- * @param userId - the id of the user
- * @returns The workspace with boards
  */
 export const getWorkspaceWithBoards = async (shortName: string): Promise<UIWorkspaceWithBoards> => {
   const { id } = await getMe()
@@ -88,7 +85,7 @@ export const getWorkspaceWithBoards = async (shortName: string): Promise<UIWorks
     select: {
       ...workspaceSelect,
       boards: {
-        where: boardVisibilityWhere(id),
+        where: boardAccessWhere(id),
         select: boardSelect
       }
     },

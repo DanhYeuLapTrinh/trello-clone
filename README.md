@@ -20,7 +20,7 @@ A personal project building a Trello-like task management system with Next.js 15
 - Complete/incomplete status
 
 **Butler Automation**
-- Rule-based automation (e.g., "when card added to list, then move card")
+- Rule-based automation (e.g., "when card added to list, then move card to the top of the list, and mark the card as complete")
 - Scheduled automation (daily, weekly, custom intervals)
 - Trigger conditions and actions
 
@@ -68,7 +68,6 @@ FIREBASE_PROJECT_ID="..."
 3. Set up the database:
 ```bash
 npx prisma migrate dev
-npm run db:seed
 ```
 
 4. Run the dev server:

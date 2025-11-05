@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { MoreHorizontal } from 'lucide-react'
 import { useState } from 'react'
 
 interface ListNameInputProps {
@@ -42,17 +41,6 @@ export default function ListNameInput({ name }: ListNameInputProps) {
           <p className='font-medium text-sm'>{name}</p>
         </Button>
       )}
-
-      <Button
-        variant='ghost'
-        size='icon'
-        className='hover:bg-muted-foreground/20'
-        // prevent dnd
-        onMouseDown={(e) => e.stopPropagation()}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <MoreHorizontal className='size-4' />
-      </Button>
     </div>
   )
 }

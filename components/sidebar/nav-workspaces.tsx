@@ -18,6 +18,7 @@ import { getMeWorkspaces } from '@/features/workspaces/queries'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 const subItems = [
   {
@@ -42,55 +43,70 @@ const subItems = [
 
 export function NavWorkspaces({ userId }: { userId: string }) {
   const pathname = usePathname()
+  const [openWorkspace, setOpenWorkspace] = useState<string | null>(null)
 
   const { data: workspaces = [] } = useQuery({
     queryKey: ['workspaces', userId],
     queryFn: getMeWorkspaces
   })
 
+  useEffect(() => {
+    const current = pathname.split('/')[2]
+    setOpenWorkspace(current)
+  }, [pathname])
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Các Không gian làm việc</SidebarGroupLabel>
       <SidebarMenu>
-        {workspaces.map((workspace) => (
-          <Collapsible key={workspace.name} asChild defaultOpen={workspace.shortName === pathname.split('/')[2]}>
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip={workspace.name}>
-                <span>{workspace.name}</span>
-              </SidebarMenuButton>
+        {workspaces.map((workspace) => {
+          const isOpen = openWorkspace === workspace.shortName
 
-              <CollapsibleTrigger asChild>
-                <SidebarMenuAction className='data-[state=open]:rotate-90'>
-                  <ChevronRight />
-                  <span className='sr-only'>Toggle</span>
-                </SidebarMenuAction>
-              </CollapsibleTrigger>
+          return (
+            <Collapsible
+              key={workspace.name}
+              asChild
+              open={isOpen}
+              onOpenChange={(open) => setOpenWorkspace(open ? workspace.shortName : null)}
+            >
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip={workspace.name}>
+                  <span>{workspace.name}</span>
+                </SidebarMenuButton>
 
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {subItems?.map((subItem) => {
-                    const segments = pathname.split('/')
-                    const isActive =
-                      segments[1] === subItem.urlValue[0] &&
-                      segments[2] === workspace.shortName &&
-                      segments[3] === subItem.urlValue[1]
+                <CollapsibleTrigger asChild>
+                  <SidebarMenuAction className='data-[state=open]:rotate-90'>
+                    <ChevronRight />
+                    <span className='sr-only'>Toggle</span>
+                  </SidebarMenuAction>
+                </CollapsibleTrigger>
 
-                    return (
-                      <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton asChild className={isActive ? 'bg-primary/10' : ''}>
-                          <Link href={subItem.url(workspace.shortName)}>
-                            <subItem.icon />
-                            <span className={isActive ? 'text-primary font-medium' : ''}>{subItem.title}</span>
-                          </Link>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    )
-                  })}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-          </Collapsible>
-        ))}
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    {subItems?.map((subItem) => {
+                      const segments = pathname.split('/')
+                      const isActive =
+                        segments[1] === subItem.urlValue[0] &&
+                        segments[2] === workspace.shortName &&
+                        segments[3] === subItem.urlValue[1]
+
+                      return (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton asChild className={isActive ? 'bg-primary/10' : ''}>
+                            <Link href={subItem.url(workspace.shortName)}>
+                              <subItem.icon />
+                              <span className={isActive ? 'text-primary font-medium' : ''}>{subItem.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )
+                    })}
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+          )
+        })}
       </SidebarMenu>
     </SidebarGroup>
   )

@@ -1,15 +1,12 @@
 'use server'
 
 import { inngest } from '@/lib/inngest/client'
-import { cardReminderJob } from '@/lib/jobs/handlers'
-import { CardReminderSchema } from '@/lib/jobs/validations'
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
-import jobService from '@/services/job.service'
 import { POSITION_GAP } from '@/shared/constants'
 import { BadRequestError, ConflictError, NotFoundError, UnauthorizedError } from '@/shared/error'
 import { AssigneeDetails, CreateDetails, MoveDetails } from '@/shared/types'
-import { getReminderDate, slugify, toUnixSeconds } from '@/shared/utils'
+import { getReminderDate, slugify } from '@/shared/utils'
 import { ActivityAction, Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
@@ -27,70 +24,6 @@ import {
   updateCardDateSchema,
   updateCardSchema
 } from './validations'
-
-// Updates recipients in an existing reminder job by deleting the old job and creating a new one
-async function updateReminderJobRecipients(messageId: string, newRecipients: string[]): Promise<string | null> {
-  const message = await jobService.getJob(messageId)
-
-  if (message && message.body && message.notBefore) {
-    const typedMessageBody = JSON.parse(JSON.parse(message.body)) as { payload: CardReminderSchema }
-
-    await jobService.safeDeleteJob(messageId)
-
-    if (newRecipients.length > 0) {
-      const jobResult = await cardReminderJob.dispatch(
-        {
-          ...typedMessageBody.payload,
-          recipients: newRecipients
-        },
-        {
-          notBefore: message.notBefore / 1000
-        }
-      )
-      return Array.isArray(jobResult) ? jobResult[0].messageId : jobResult.messageId
-    }
-
-    return null
-  }
-
-  return null
-}
-
-// Creates a new reminder job for a card
-async function createCardReminderJob(params: {
-  boardId: string
-  cardId: string
-  endDate: Date
-  reminderType: CardReminderSchema['reminderType']
-  recipientIds: string[]
-}): Promise<string | null> {
-  const { boardId, cardId, endDate, reminderType, recipientIds } = params
-
-  if (reminderType === 'NONE' || recipientIds.length === 0) {
-    return null
-  }
-
-  // FIXME: upstash current limit quota is 604800 (7 days max in the future for notBefore)
-  const reminderDate = getReminderDate(endDate, reminderType)
-
-  if (reminderDate <= new Date()) {
-    return null
-  }
-
-  const jobResult = await cardReminderJob.dispatch(
-    {
-      boardId,
-      cardId,
-      endDate: endDate.toISOString(),
-      reminderType,
-      reminderDate: reminderDate.toISOString(),
-      recipients: recipientIds
-    },
-    { notBefore: toUnixSeconds(reminderDate) }
-  )
-
-  return Array.isArray(jobResult) ? jobResult[0].messageId : jobResult.messageId
-}
 
 // Create new card
 export const createCard = protectedActionClient
@@ -483,45 +416,41 @@ export const updateCardDate = protectedActionClient
         throw new NotFoundError('Card')
       }
 
-      const board = card.list.board
-
-      let newMessageId: string | null = null
-
-      if (card.messageId) {
-        await jobService.safeDeleteJob(card.messageId)
-      }
-
-      // Create new reminder job if needed
-      if (endDate && parsedInput.reminderType !== 'NONE' && reminderDate) {
-        try {
-          const recipientIds = Array.from(
-            new Set([
-              ...card.assignees.map((assignee) => assignee.userId),
-              ...card.watchers.map((watcher) => watcher.userId)
-            ])
-          )
-
-          newMessageId = await createCardReminderJob({
-            boardId: board.id,
-            cardId: card.id,
-            endDate,
-            reminderType: parsedInput.reminderType,
-            recipientIds
-          })
-        } catch {
-          throw new BadRequestError('Không thể tạo lịch nhắc nhở. Vui lòng thử lại.')
-        }
-      }
-
       await prisma.card.update({
         where: { id: card.id },
         data: {
           startDate,
           endDate,
-          reminderType: parsedInput.reminderType,
-          messageId: newMessageId
+          reminderType: parsedInput.reminderType
         }
       })
+
+      // Cancel existing reminder if any
+      await inngest.send({
+        name: 'card/reminder.cancelled',
+        data: { cardId: card.id }
+      })
+
+      // Schedule new reminder if needed
+      if (endDate && parsedInput.reminderType !== 'NONE' && reminderDate) {
+        const recipientIds = Array.from(
+          new Set([
+            ...card.assignees.map((assignee) => assignee.userId),
+            ...card.watchers.map((watcher) => watcher.userId)
+          ])
+        )
+
+        if (recipientIds.length > 0) {
+          try {
+            await inngest.send({
+              name: 'card/reminder.scheduled',
+              data: { cardId: card.id }
+            })
+          } catch {
+            throw new BadRequestError('Không thể tạo lịch nhắc nhở. Vui lòng thử lại.')
+          }
+        }
+      }
 
       revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
 
@@ -560,17 +489,18 @@ export const deleteCardDate = protectedActionClient
         throw new NotFoundError('Card')
       }
 
-      if (card.messageId) {
-        await jobService.safeDeleteJob(card.messageId)
-      }
+      // Cancel any existing reminder
+      await inngest.send({
+        name: 'card/reminder.cancelled',
+        data: { cardId: card.id }
+      })
 
       await prisma.card.update({
         where: { id: card.id },
         data: {
           startDate: null,
           endDate: null,
-          reminderType: 'NONE',
-          messageId: null
+          reminderType: 'NONE'
         }
       })
 
@@ -658,8 +588,6 @@ export const toggleWatchCard = protectedActionClient
 
       if (!card) throw new NotFoundError('Card')
 
-      let messageId = card.messageId
-
       const result = await prisma.$transaction(async (tx) => {
         const existing = await tx.cardWatcher.findUnique({
           where: { cardId_userId: { cardId: card.id, userId } }
@@ -668,74 +596,47 @@ export const toggleWatchCard = protectedActionClient
         // Unwatch
         if (existing) {
           await tx.cardWatcher.delete({ where: { id: existing.id } })
-
-          if (messageId) {
-            const message = await jobService.getJob(messageId)
-
-            // If message exists and is still in CREATED status, we can update the recipients
-            if (message && message.body && message.notBefore) {
-              const typedMessageBody = JSON.parse(JSON.parse(message.body)) as { payload: CardReminderSchema }
-
-              // Only remove user from recipients if they're also NOT assigned
-              const isAssigned = card.assignees.some((assignee) => assignee.userId === userId)
-
-              if (!isAssigned) {
-                // User is no longer watching AND not assigned - remove from recipients
-                const newRecipients = typedMessageBody.payload.recipients.filter((recipient) => recipient !== userId)
-                messageId = await updateReminderJobRecipients(messageId, newRecipients)
-              }
-              // else: User is still assigned, no need to update job
-            } else {
-              // Job has been delivered/cancelled, clear the messageId
-              messageId = null
-            }
-          }
-
-          return { watching: false }
+          return { watching: false, shouldUpdateReminder: true }
         } else {
           // Watch
           await tx.cardWatcher.create({ data: { cardId: card.id, userId } })
-
-          if (messageId) {
-            const message = await jobService.getJob(messageId)
-
-            if (message && message.body && message.notBefore) {
-              const typedMessageBody = JSON.parse(JSON.parse(message.body)) as { payload: CardReminderSchema }
-
-              // Only add user to recipients if they're not already in it
-              if (!typedMessageBody.payload.recipients.includes(userId)) {
-                const newRecipients = [...typedMessageBody.payload.recipients, userId]
-                messageId = await updateReminderJobRecipients(messageId, newRecipients)
-              }
-              // else: User already in recipients (was assigned), no need to update job
-            } else {
-              // Job has been delivered/cancelled, clear the messageId
-              messageId = null
-            }
-          } else {
-            // No job exists yet -> create new one if card has a reminder
-            if (card.endDate && card.reminderType !== 'NONE') {
-              const recipientIds = Array.from(new Set([...card.watchers.map((watcher) => watcher.userId), userId]))
-
-              messageId = await createCardReminderJob({
-                boardId: card.list.board.id,
-                cardId: card.id,
-                endDate: card.endDate,
-                reminderType: card.reminderType,
-                recipientIds
-              })
-            }
-          }
-
-          return { watching: true }
+          return { watching: true, shouldUpdateReminder: true }
         }
       })
 
-      if (messageId !== card.messageId) {
-        await prisma.card.update({
-          where: { id: card.id },
-          data: { messageId }
+      // Update reminder if card has one and user was added/removed
+      if (result.shouldUpdateReminder && card.endDate && card.reminderType !== 'NONE') {
+        // Cancel existing reminder
+        await inngest.send({
+          name: 'card/reminder.cancelled',
+          data: { cardId: card.id }
         })
+
+        // Get updated recipients (after watch/unwatch)
+        const updatedCard = await prisma.card.findUnique({
+          where: { id: card.id },
+          select: {
+            assignees: { select: { userId: true } },
+            watchers: { select: { userId: true } }
+          }
+        })
+
+        if (updatedCard) {
+          const recipientIds = Array.from(
+            new Set([
+              ...updatedCard.assignees.map((assignee) => assignee.userId),
+              ...updatedCard.watchers.map((watcher) => watcher.userId)
+            ])
+          )
+
+          // Only reschedule if there are recipients
+          if (recipientIds.length > 0) {
+            await inngest.send({
+              name: 'card/reminder.scheduled',
+              data: { cardId: card.id }
+            })
+          }
+        }
       }
 
       revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)
@@ -824,79 +725,15 @@ export const toggleAssignCard = protectedActionClient
 
       const action: ActivityAction = existing ? 'UNASSIGN_MEMBER' : 'ASSIGN_MEMBER'
 
-      let messageId = card.messageId
-
       await prisma.$transaction(async (tx) => {
         if (existing) {
           // Unassign
           await tx.cardAssignee.delete({ where: { id: existing.id } })
-
-          // Update reminder job recipients if exists
-          if (messageId) {
-            const message = await jobService.getJob(messageId)
-
-            if (message && message.body && message.notBefore) {
-              const typedMessageBody = JSON.parse(JSON.parse(message.body)) as { payload: CardReminderSchema }
-
-              // Only remove user from recipients if they're also NOT watching
-              const isWatching = card.watchers.some((watcher) => watcher.userId === parsedInput.targetId)
-
-              if (!isWatching) {
-                // User is no longer assigned AND not watching - remove from recipients
-                const newRecipients = typedMessageBody.payload.recipients.filter(
-                  (recipient) => recipient !== parsedInput.targetId
-                )
-                messageId = await updateReminderJobRecipients(messageId, newRecipients)
-              }
-              // else: User is still watching, no need to update job
-            } else {
-              // Job has been delivered/cancelled, clear the messageId
-              messageId = null
-            }
-          }
         } else {
           // Assign
           await tx.cardAssignee.create({
             data: { cardId: card.id, userId: parsedInput.targetId }
           })
-
-          // Update reminder job recipients if exists
-          if (messageId) {
-            const message = await jobService.getJob(messageId)
-
-            if (message && message.body && message.notBefore) {
-              const typedMessageBody = JSON.parse(JSON.parse(message.body)) as { payload: CardReminderSchema }
-
-              // Only add user to recipients if they're not already in it
-              if (!typedMessageBody.payload.recipients.includes(parsedInput.targetId)) {
-                const newRecipients = [...typedMessageBody.payload.recipients, parsedInput.targetId]
-                messageId = await updateReminderJobRecipients(messageId, newRecipients)
-              }
-              // else: User already in recipients (was watching), no need to update job
-            } else {
-              // Job has been delivered/cancelled, clear the messageId
-              messageId = null
-            }
-          } else {
-            // No job exists yet -> create new one if card has a reminder
-            if (card.endDate && card.reminderType !== 'NONE') {
-              const recipientIds = Array.from(
-                new Set([
-                  ...card.assignees.map((assignee) => assignee.userId),
-                  ...card.watchers.map((watcher) => watcher.userId),
-                  parsedInput.targetId
-                ])
-              )
-
-              messageId = await createCardReminderJob({
-                boardId,
-                cardId: card.id,
-                endDate: card.endDate,
-                reminderType: card.reminderType,
-                recipientIds
-              })
-            }
-          }
         }
 
         await tx.activity.create({
@@ -910,11 +747,39 @@ export const toggleAssignCard = protectedActionClient
         })
       })
 
-      if (messageId !== card.messageId) {
-        await prisma.card.update({
-          where: { id: card.id },
-          data: { messageId }
+      // Update reminder if card has one
+      if (card.endDate && card.reminderType !== 'NONE') {
+        // Cancel existing reminder
+        await inngest.send({
+          name: 'card/reminder.cancelled',
+          data: { cardId: card.id }
         })
+
+        // Get updated recipients (after assign/unassign)
+        const updatedCard = await prisma.card.findUnique({
+          where: { id: card.id },
+          select: {
+            assignees: { select: { userId: true } },
+            watchers: { select: { userId: true } }
+          }
+        })
+
+        if (updatedCard) {
+          const recipientIds = Array.from(
+            new Set([
+              ...updatedCard.assignees.map((assignee) => assignee.userId),
+              ...updatedCard.watchers.map((watcher) => watcher.userId)
+            ])
+          )
+
+          // Only reschedule if there are recipients
+          if (recipientIds.length > 0) {
+            await inngest.send({
+              name: 'card/reminder.scheduled',
+              data: { cardId: card.id }
+            })
+          }
+        }
       }
 
       revalidatePath(`/b/${parsedInput.boardSlug}/c/${parsedInput.cardSlug}`)

@@ -69,7 +69,7 @@ export default function CardItem({ card, slug }: CardItemProps) {
 
   return (
     <Card
-      className='p-0 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary group relative gap-0 mr-1'
+      className='p-0 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary group relative gap-0'
       onClick={handleCardClick}
     >
       {card.imageUrl ? (

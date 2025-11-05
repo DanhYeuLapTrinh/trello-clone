@@ -222,7 +222,6 @@ model List {
 
 model Card {
   id           String           @id @default(uuid())
-  messageId    String?
   title        String
   slug         String           @unique
   description  String?

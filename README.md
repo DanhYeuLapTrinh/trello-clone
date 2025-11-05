@@ -111,5 +111,4 @@ npm run type-check   # Run TypeScript checks
 
 - Butler automation system inspired by Trello's Butler
 - Email reminders sent via Inngest scheduled functions
-- Real-time collaboration limited to board members
 - File uploads stored in Firebase Storage

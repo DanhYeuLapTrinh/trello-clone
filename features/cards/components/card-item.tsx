@@ -3,7 +3,9 @@
 import { Card } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { CardPreview } from '@/prisma/queries/card'
+import { ListWithCards } from '@/prisma/queries/list'
 import { cn } from '@/shared/utils'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Clock,
   Eye,
@@ -16,7 +18,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { createElement, useEffect, useState } from 'react'
+import { createElement } from 'react'
 import { useToggleCompleteCard } from '../hooks/use-toggle-complete-card'
 import {
   formatCardDateRange,
@@ -33,12 +35,7 @@ interface CardItemProps {
 
 export default function CardItem({ card, slug }: CardItemProps) {
   const router = useRouter()
-  const [completed, setCompleted] = useState(card.isCompleted)
-
-  // Sync local state with prop when card.isCompleted changes (e.g., from butler automation)
-  useEffect(() => {
-    setCompleted(card.isCompleted)
-  }, [card.isCompleted])
+  const queryClient = useQueryClient()
 
   const { toggleCompleteCardAction } = useToggleCompleteCard(slug, card.slug)
 
@@ -60,13 +57,19 @@ export default function CardItem({ card, slug }: CardItemProps) {
   }
 
   const handleToggleCompleteCard = () => {
-    setCompleted((prev) => !prev)
+    queryClient.setQueryData(['board', 'lists', 'cards', slug], (oldData: ListWithCards[]) => {
+      return oldData.map((list) => ({
+        ...list,
+        cards: list.cards.map((c) => (c.id === card.id ? { ...c, isCompleted: !c.isCompleted } : c))
+      }))
+    })
+
     toggleCompleteCardAction.execute({ cardSlug: card.slug, boardSlug: slug })
   }
 
   return (
     <Card
-      className='p-0 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary group relative gap-0 mr-1'
+      className='p-0 rounded-md hover:cursor-pointer hover:ring-2 hover:ring-primary group relative gap-0'
       onClick={handleCardClick}
     >
       {card.imageUrl ? (
@@ -96,15 +99,15 @@ export default function CardItem({ card, slug }: CardItemProps) {
           <Checkbox
             className={cn(
               'rounded-full border-foreground mt-0.5',
-              completed
+              card.isCompleted
                 ? 'data-[state=checked]:bg-lime-600 data-[state=checked]:border-lime-600'
                 : 'hidden group-hover:block'
             )}
-            checked={completed}
+            checked={card.isCompleted}
             onCheckedChange={handleToggleCompleteCard}
             onClick={(e) => e.stopPropagation()}
           />
-          <p className={cn('text-sm w-[85%]', completed ? 'text-muted-foreground' : '')}>{card.title}</p>
+          <p className={cn('text-sm w-[85%]', card.isCompleted ? 'text-muted-foreground' : '')}>{card.title}</p>
         </div>
 
         {isDisplayIcon ? (

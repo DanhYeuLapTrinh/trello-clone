@@ -6,6 +6,7 @@ import {
   BoardMember,
   Butler,
   Card,
+  CardAssignee,
   CardLabel,
   CardWatcher,
   Comment,
@@ -14,7 +15,8 @@ import {
   PrismaClient,
   Subtask,
   User,
-  Workspace
+  Workspace,
+  WorkspaceMember
 } from '@prisma/client'
 import fs from 'fs'
 import path from 'path'
@@ -40,6 +42,10 @@ const workspaces = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'work
 const butlers = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'butler.json'), 'utf8')).data as Butler[]
 const boardMembers = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'board-member.json'), 'utf8'))
   .data as BoardMember[]
+const workspaceMembers = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'workspace-member.json'), 'utf8'))
+  .data as WorkspaceMember[]
+const cardAssignees = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'card-assignee.json'), 'utf8'))
+  .data as CardAssignee[]
 
 /** --- System Data --- */
 async function seedSystem() {
@@ -109,7 +115,28 @@ async function seedSystem() {
     }
   })
 
-  // 3. Seed Boards (depends on Workspaces and Users)
+  // 3. Seed Workspace Members (depends on Workspaces and Users)
+  console.log('  👥 Seeding workspace members...')
+  await prisma.$transaction(async (tx) => {
+    for (const workspaceMember of workspaceMembers) {
+      await tx.workspaceMember.upsert({
+        where: { id: workspaceMember.id },
+        update: {
+          role: workspaceMember.role,
+          workspaceId: workspaceMember.workspaceId,
+          userId: workspaceMember.userId
+        },
+        create: {
+          id: workspaceMember.id,
+          role: workspaceMember.role,
+          workspaceId: workspaceMember.workspaceId,
+          userId: workspaceMember.userId
+        }
+      })
+    }
+  })
+
+  // 4. Seed Boards (depends on Workspaces and Users)
   console.log('  📋 Seeding boards...')
   await prisma.$transaction(async (tx) => {
     for (const board of boards) {
@@ -143,8 +170,8 @@ async function seedSystem() {
     }
   })
 
-  // 4. Seed Butlers (depends on Boards)
-  console.log('  📝 Seeding butlers...')
+  // 5. Seed Butlers (depends on Boards)
+  console.log('  🤖 Seeding butlers...')
   await prisma.$transaction(async (tx) => {
     for (const butler of butlers) {
       await tx.butler.upsert({
@@ -174,7 +201,7 @@ async function seedSystem() {
     }
   })
 
-  // 5. Seed Lists (depends on Boards)
+  // 6. Seed Lists (depends on Boards)
   console.log('  📝 Seeding lists...')
   await prisma.$transaction(async (tx) => {
     for (const list of lists) {
@@ -202,7 +229,7 @@ async function seedSystem() {
     }
   })
 
-  // 6. Seed Labels (depends on Boards)
+  // 7. Seed Labels (depends on Boards)
   console.log('  🏷️ Seeding labels...')
   await prisma.$transaction(async (tx) => {
     for (const label of labels) {
@@ -228,14 +255,13 @@ async function seedSystem() {
     }
   })
 
-  // 7. Seed Cards (depends on Lists)
+  // 8. Seed Cards (depends on Lists)
   console.log('  🃏 Seeding cards...')
   await prisma.$transaction(async (tx) => {
     for (const card of cards) {
       await tx.card.upsert({
         where: { id: card.id },
         update: {
-          messageId: card.messageId,
           title: card.title,
           slug: card.slug,
           description: card.description,
@@ -251,7 +277,7 @@ async function seedSystem() {
         create: {
           id: card.id,
           creatorId: card.creatorId,
-          messageId: card.messageId,
+
           title: card.title,
           slug: card.slug,
           description: card.description,
@@ -269,7 +295,7 @@ async function seedSystem() {
     }
   })
 
-  // 7. Seed Board Members (depends on Boards and Users)
+  // 9. Seed Board Members (depends on Boards and Users)
   console.log('  👥 Seeding board members...')
   await prisma.$transaction(async (tx) => {
     for (const boardMember of boardMembers) {
@@ -299,7 +325,7 @@ async function seedSystem() {
 async function seedDemoData() {
   console.log('🌱 Seeding demo data...')
 
-  // 8. Seed Subtasks (depends on Cards, self-referential)
+  // 10. Seed Subtasks (depends on Cards, self-referential)
   console.log('  ✅ Seeding subtasks...')
   await prisma.$transaction(async (tx) => {
     // First pass: create subtasks without parent references
@@ -338,7 +364,31 @@ async function seedDemoData() {
     }
   })
 
-  // 9. Seed Card Watchers (depends on Cards and Users)
+  // 11. Seed Card Assignees (depends on Cards and Users)
+  console.log('  👤 Seeding card assignees...')
+  await prisma.$transaction(async (tx) => {
+    for (const assignee of cardAssignees) {
+      await tx.cardAssignee.upsert({
+        where: {
+          cardId_userId: {
+            cardId: assignee.cardId,
+            userId: assignee.userId
+          }
+        },
+        update: {
+          cardId: assignee.cardId,
+          userId: assignee.userId
+        },
+        create: {
+          id: assignee.id,
+          cardId: assignee.cardId,
+          userId: assignee.userId
+        }
+      })
+    }
+  })
+
+  // 12. Seed Card Watchers (depends on Cards and Users)
   console.log('  👀 Seeding card watchers...')
   await prisma.$transaction(async (tx) => {
     for (const watcher of cardWatchers) {
@@ -363,7 +413,7 @@ async function seedDemoData() {
     }
   })
 
-  // 10. Seed Card Labels (depends on Cards and Labels)
+  // 13. Seed Card Labels (depends on Cards and Labels)
   console.log('  🏷️ Seeding card labels...')
   await prisma.$transaction(async (tx) => {
     for (const cardLabel of cardLabels) {
@@ -388,7 +438,7 @@ async function seedDemoData() {
     }
   })
 
-  // 11. Seed Comments (depends on Cards and Users)
+  // 14. Seed Comments (depends on Cards and Users)
   console.log('  💬 Seeding comments...')
   await prisma.$transaction(async (tx) => {
     for (const comment of comments) {
@@ -414,7 +464,7 @@ async function seedDemoData() {
     }
   })
 
-  // 12. Seed Attachments (depends on Cards)
+  // 15. Seed Attachments (depends on Cards)
   console.log('  📎 Seeding attachments...')
   await prisma.$transaction(async (tx) => {
     for (const attachment of attachments) {
@@ -442,7 +492,7 @@ async function seedDemoData() {
     }
   })
 
-  // 13. Seed Activities (depends on Cards and Users)
+  // 16. Seed Activities (depends on Cards and Users)
   console.log('  📊 Seeding activities...')
   await prisma.$transaction(async (tx) => {
     for (const activity of activities) {

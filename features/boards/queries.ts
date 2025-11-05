@@ -14,7 +14,7 @@ import { getMe } from '../users/queries'
  * @param slug - board slug
  * @returns The overview of the board
  */
-export const getBoardOverview = async (slug: string): Promise<BoardOverView> => {
+export const getBoardOverview = async (slug: string): Promise<BoardOverView | null> => {
   const { id } = await getMe()
 
   try {
@@ -25,10 +25,6 @@ export const getBoardOverview = async (slug: string): Promise<BoardOverView> => 
       },
       select: boardOverviewSelect
     })) as BoardOverView | null
-
-    if (!board) {
-      throw new NotFoundError('Board')
-    }
 
     return board
   } catch (error) {
@@ -45,13 +41,17 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
   try {
     const { id } = await getMe()
 
-    const board = (await prisma.board.findUnique({
+    const board = (await prisma.board.findFirst({
       where: {
-        slug
+        slug,
+        ...boardAccessWhere(id)
       },
       select: {
         lists: {
-          select: listWithCardsSelect(id)
+          select: listWithCardsSelect(id),
+          orderBy: {
+            position: 'asc'
+          }
         }
       }
     })) as { lists: ListWithCards[] } | null
@@ -73,10 +73,12 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
  */
 export const getBoardLabels = async (slug: string): Promise<UILabel[]> => {
   try {
+    const { id } = await getMe()
+
     const labels = await prisma.label.findMany({
       select: labelSelect,
       where: {
-        board: { slug },
+        board: { slug, ...boardAccessWhere(id) },
         ...labelActiveWhere
       },
       orderBy: labelOrderBy
@@ -95,8 +97,10 @@ export const getBoardLabels = async (slug: string): Promise<UILabel[]> => {
  */
 export const getBoardUsers = async (slug: string): Promise<BoardUser[]> => {
   try {
-    const board = await prisma.board.findUnique({
-      where: { slug },
+    const { id } = await getMe()
+
+    const board = await prisma.board.findFirst({
+      where: { slug, ...boardAccessWhere(id) },
       select: {
         owner: {
           select: userSelect
@@ -144,10 +148,12 @@ export const getBoardUsers = async (slug: string): Promise<BoardUser[]> => {
  * @returns The lists of the board
  */
 export const getBoardLists = async (slug: string): Promise<UIList[]> => {
+  const { id } = await getMe()
+
   const lists = await prisma.list.findMany({
     select: listSelect,
     where: {
-      board: { slug }
+      board: { slug, ...boardAccessWhere(id) }
     }
   })
 
@@ -155,16 +161,18 @@ export const getBoardLists = async (slug: string): Promise<UIList[]> => {
 }
 
 /**
- * Check if the user has permission to create a butler
- * @param boardId - board id
- * @returns True if the user has permission to create a butler, false otherwise
+ * Check if the user has membership permission
+ * @param slug - board slug
+ * @returns True if the user has membership permission, false otherwise
  */
-export const checkCreateButlerPermission = async (boardId: string): Promise<boolean> => {
+export const checkBoardMemberPermission = async (slug: string): Promise<boolean> => {
   try {
     const { id } = await getMe()
+
     const board = await prisma.board.findUnique({
-      where: { id: boardId },
+      where: { slug },
       select: {
+        id: true,
         ownerId: true
       }
     })
@@ -174,18 +182,52 @@ export const checkCreateButlerPermission = async (boardId: string): Promise<bool
     }
 
     const boardMember = await prisma.boardMember.findUnique({
-      where: { boardId_userId: { boardId, userId: id } },
+      where: { boardId_userId: { boardId: board.id, userId: id } },
       select: {
         role: true
       }
     })
 
-    if (!boardMember) {
+    return !!boardMember || board.ownerId === id
+  } catch (error) {
+    throw error
+  }
+}
+
+/**
+ * Check if the user has board permission (admin/owner)
+ * @param slug - board slug
+ * @returns True if the user has board permission, false otherwise
+ */
+export const checkBoardPermission = async (slug: string): Promise<boolean> => {
+  try {
+    const { id } = await getMe()
+
+    const board = await prisma.board.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        ownerId: true,
+        boardMemberships: {
+          where: { userId: id },
+          select: {
+            role: true
+          }
+        }
+      }
+    })
+
+    if (!board) {
       return false
     }
 
-    return boardMember?.role === Role.Admin || board.ownerId === id
-  } catch (error) {
-    throw error
+    if (board.ownerId === id) {
+      return true
+    }
+
+    const memberRole = board.boardMemberships[0]?.role
+    return memberRole === Role.Admin
+  } catch {
+    return false
   }
 }

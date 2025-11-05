@@ -1,7 +1,7 @@
 'use server'
 
 import prisma from '@/prisma/prisma'
-import { boardSelect, boardVisibilityWhere } from '@/prisma/queries/board'
+import { boardAccessWhere, boardSelect, boardVisibilityWhere } from '@/prisma/queries/board'
 import {
   UIWorkspace,
   UIWorkspaceWithBoards,
@@ -12,6 +12,7 @@ import {
   workspaceSelect
 } from '@/prisma/queries/workspace'
 import { NotFoundError } from '@/shared/error'
+import { Role } from '@prisma/client'
 import { getMe } from '../users/queries'
 
 /**
@@ -52,10 +53,9 @@ export const getMeWorkspacesWithBoards = async (): Promise<UIWorkspaceWithBoards
 }
 
 /**
- * Get workspaces with boards that the current user:
- * + is workspace member
- * + is board member of that workspace
- * @returns The workspaces that the current user is member or has at least 1 board membership
+ * Get workspaces where user is a member or has board access.
+ * Workspace members see all non-private boards plus private boards they're on.
+ * Non-members only see boards they have direct membership to.
  */
 export const getGuestWorkspacesWithBoards = async (): Promise<UIWorkspaceWithBoards[]> => {
   const { id } = await getMe()
@@ -76,10 +76,8 @@ export const getGuestWorkspacesWithBoards = async (): Promise<UIWorkspaceWithBoa
 }
 
 /**
- * Get a workspace with boards by short name and user id
+ * Get workspace details
  * @param shortName - the short name of the workspace
- * @param userId - the id of the user
- * @returns The workspace with boards
  */
 export const getWorkspaceWithBoards = async (shortName: string): Promise<UIWorkspaceWithBoards> => {
   const { id } = await getMe()
@@ -88,7 +86,7 @@ export const getWorkspaceWithBoards = async (shortName: string): Promise<UIWorks
     select: {
       ...workspaceSelect,
       boards: {
-        where: boardVisibilityWhere(id),
+        where: boardAccessWhere(id),
         select: boardSelect
       }
     },
@@ -103,4 +101,41 @@ export const getWorkspaceWithBoards = async (shortName: string): Promise<UIWorks
   }
 
   return workspace
+}
+
+/**
+ * Check if the user has workspace permission (owner/admin)
+ * @param id - workspace id
+ * @returns True if the user has workspace permission, false otherwise
+ */
+export const checkWorkspacePermission = async (id: string): Promise<boolean> => {
+  try {
+    const { id: userId } = await getMe()
+
+    const workspace = await prisma.workspace.findUnique({
+      where: { id },
+      select: {
+        ownerId: true,
+        workspaceMemberships: {
+          where: { userId },
+          select: {
+            role: true
+          }
+        }
+      }
+    })
+
+    if (!workspace) {
+      return false
+    }
+
+    if (workspace.ownerId === userId) {
+      return true
+    }
+
+    const memberRole = workspace.workspaceMemberships[0]?.role
+    return memberRole === Role.Admin
+  } catch {
+    return false
+  }
 }

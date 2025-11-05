@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { Loader2, SquareCheckBig, X } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { useState } from 'react'
 import { SubmitHandler } from 'react-hook-form'
 import { useCreateSubtask } from '../hooks/use-create-subtask'
@@ -13,9 +13,10 @@ import { CreateSubtaskSchema } from '../validations'
 interface SubtaskPopoverProps {
   boardSlug: string
   cardSlug: string
+  children: React.ReactNode
 }
 
-export default function SubtaskPopover({ boardSlug, cardSlug }: SubtaskPopoverProps) {
+export default function SubtaskPopover({ boardSlug, cardSlug, children }: SubtaskPopoverProps) {
   const [open, setOpen] = useState(false)
   const { methods, createSubtaskAction } = useCreateSubtask({
     defaultValues: {
@@ -34,12 +35,7 @@ export default function SubtaskPopover({ boardSlug, cardSlug }: SubtaskPopoverPr
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant='outline' size='sm'>
-          <SquareCheckBig className='size-3.5' />
-          <p className='text-xs'>Việc cần làm</p>
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent side='bottom' align='start' className='space-y-2 p-2'>
         <div className='flex items-center w-full'>
           <div className='flex-1' />

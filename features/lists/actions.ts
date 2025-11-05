@@ -3,11 +3,12 @@
 import { inngest } from '@/lib/inngest/client'
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
-import { POSITION_GAP } from '@/shared/constants'
-import { ConflictError, NotFoundError } from '@/shared/error'
+import { DEFAULT_POSITION, POSITION_GAP } from '@/shared/constants'
+import { ConflictError, NotFoundError, UnauthorizedError } from '@/shared/error'
 import { Prisma } from '@prisma/client/edge'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
+import { checkBoardMemberPermission } from '../boards/queries'
 import { createListSchema, moveListSchema } from './validations'
 
 export const createList = protectedActionClient
@@ -16,6 +17,12 @@ export const createList = protectedActionClient
   })
   .action(async ({ parsedInput, ctx }) => {
     try {
+      const canCreateList = await checkBoardMemberPermission(parsedInput.slug)
+
+      if (!canCreateList) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể thêm danh sách.')
+      }
+
       const latestPosition = await prisma.list.findFirst({
         where: {
           board: {
@@ -26,7 +33,7 @@ export const createList = protectedActionClient
           position: 'desc'
         }
       })
-      const newPosition = latestPosition ? latestPosition.position + POSITION_GAP : 0
+      const newPosition = latestPosition ? latestPosition.position + POSITION_GAP : DEFAULT_POSITION
 
       const [list] = await prisma.$transaction(async (tx) => {
         const list = await tx.list.create({
@@ -66,6 +73,12 @@ export const moveList = protectedActionClient
   })
   .action(async ({ parsedInput }) => {
     try {
+      const canMoveList = await checkBoardMemberPermission(parsedInput.slug)
+
+      if (!canMoveList) {
+        throw new UnauthorizedError('Chỉ thành viên của bảng mới có thể di chuyển danh sách.')
+      }
+
       // Get the list to move
       const listToMove = await prisma.list.findUnique({
         where: { id: parsedInput.listId }

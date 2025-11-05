@@ -1,15 +1,20 @@
 import 'server-only'
 
+import CardReminderMail from '@/components/mail-templates/card-reminder-mail'
 import { ButlerData, ListPositionOption, StatusOption } from '@/features/butlers/types'
 import prisma from '@/prisma/prisma'
 import ablyService from '@/services/ably.service'
+import mailService from '@/services/mail.service'
+import { getReminderDate } from '@/shared/utils'
 import { ButlerCategory, HandlerKey } from '@prisma/client'
+import { render } from '@react-email/render'
+import { format } from 'date-fns'
 import { ABLY_CHANNELS, ABLY_EVENTS, DEFAULT_POSITION, POSITION_GAP } from '../../shared/constants'
 import { inngest } from './client'
 import { masterCronScheduler } from './cron'
 import { executeCardAction, executeCardStatusAction, executeScheduledAction, shouldExecuteButler } from './utils'
 
-// Functions
+// Rule Functions
 export const handleCardCreated = inngest.createFunction(
   {
     id: 'handle-card-created'
@@ -769,6 +774,108 @@ export const handleScheduledXWeeks = inngest.createFunction(
   }
 )
 
+// Email Functions
+export const handleCardReminder = inngest.createFunction(
+  {
+    id: 'handle-card-reminder',
+    cancelOn: [
+      {
+        event: 'card/reminder.cancelled',
+        if: 'async.data.cardId == event.data.cardId'
+      }
+    ]
+  },
+  {
+    event: 'card/reminder.scheduled'
+  },
+  async ({ event, step }) => {
+    const { cardId } = event.data
+
+    const card = await step.run('fetch-card-data', async () => {
+      return await prisma.card.findUnique({
+        where: { id: cardId },
+        include: {
+          list: {
+            include: {
+              board: { select: { id: true, name: true, slug: true } }
+            }
+          },
+          assignees: { select: { user: { select: { id: true, email: true } } } },
+          watchers: { select: { user: { select: { id: true, email: true } } } }
+        }
+      })
+    })
+
+    if (!card) {
+      return { message: 'Card not found' }
+    }
+
+    if (!card.endDate || card.reminderType === 'NONE') {
+      return { message: 'No reminder set for card' }
+    }
+
+    const reminderDate = await step.run('calculate-reminder-date', () => {
+      const endDate = new Date(card.endDate!)
+      return getReminderDate(endDate, card.reminderType)
+    })
+
+    // Sleep until reminder date
+    await step.sleepUntil('wait-for-reminder-date', reminderDate)
+
+    // Re-fetch card data to get latest state before sending
+    await step.run('send-reminder-email', async () => {
+      const latestCard = await prisma.card.findUnique({
+        where: { id: cardId },
+        include: {
+          list: {
+            include: {
+              board: { select: { id: true, name: true, slug: true } }
+            }
+          },
+          assignees: { select: { user: { select: { email: true } } } },
+          watchers: { select: { user: { select: { email: true } } } }
+        }
+      })
+
+      if (!latestCard || !latestCard.endDate) {
+        return { message: 'Card no longer has reminder' }
+      }
+
+      const board = latestCard.list.board
+
+      const emails = [
+        ...latestCard.assignees.map((a) => a.user.email),
+        ...latestCard.watchers.map((w) => w.user.email)
+      ].filter((email, index, self) => email && self.indexOf(email) === index)
+
+      if (emails.length === 0) {
+        return { message: 'No recipients for card' }
+      }
+
+      const html = await render(
+        CardReminderMail({
+          boardName: board.name,
+          cardTitle: latestCard.title,
+          endDate: format(latestCard.endDate, "d 'tháng' M, 'năm' yyyy 'lúc' HH:mm"),
+          // TODO: replace with production URL
+          cardUrl: `http://localhost:3000/b/${board.slug}/c/${latestCard.slug}`
+        })
+      )
+
+      await mailService.sendEmails({
+        payload: {
+          from: 'Trello Clone <system@mail.dahn.work>',
+          to: emails,
+          subject: `Thẻ ${latestCard.title} trong bảng ${board.name} sắp hết hạn`,
+          html
+        }
+      })
+    })
+
+    return { message: 'Reminder successfully sent.' }
+  }
+)
+
 export const functions = [
   handleCardCreated,
   handleListCreated,
@@ -776,5 +883,6 @@ export const functions = [
   handleScheduledDaily,
   handleScheduledWeekly,
   handleScheduledXWeeks,
-  masterCronScheduler
+  masterCronScheduler,
+  handleCardReminder
 ]

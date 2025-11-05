@@ -20,14 +20,14 @@ const items = {
   main: [
     {
       name: 'Bảng',
-      url: '/',
-      urlValue: [''],
+      url: '/boards',
+      urlValue: ['boards'],
       icon: Trello
     },
     {
       name: 'Trang chủ',
-      url: '#',
-      urlValue: ['home'],
+      url: '/',
+      urlValue: [''],
       icon: Activity
     }
   ]

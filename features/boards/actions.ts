@@ -4,11 +4,13 @@ import BoardInviteEmail from '@/components/mail-templates/board-invite-mail'
 import { protectedActionClient } from '@/lib/safe-action'
 import prisma from '@/prisma/prisma'
 import mailService from '@/services/mail.service'
-import { NotFoundError } from '@/shared/error'
+import { NotFoundError, UnauthorizedError } from '@/shared/error'
 import { slugify } from '@/shared/utils'
 import { render } from '@react-email/render'
 import { flattenValidationErrors } from 'next-safe-action'
 import { revalidatePath } from 'next/cache'
+import { checkWorkspacePermission } from '../workspaces/queries'
+import { checkBoardPermission } from './queries'
 import { createBoardSchema, shareBoardSchema } from './validations'
 
 export const createBoard = protectedActionClient
@@ -17,6 +19,12 @@ export const createBoard = protectedActionClient
   })
   .action(async ({ parsedInput, ctx }) => {
     try {
+      const canCreateBoard = await checkWorkspacePermission(parsedInput.workspaceId)
+
+      if (!canCreateBoard) {
+        throw new UnauthorizedError('Bạn không có quyền tạo bảng.')
+      }
+
       const board = await prisma.board.create({
         data: {
           name: parsedInput.name,
@@ -52,8 +60,23 @@ export const shareBoard = protectedActionClient
         throw new NotFoundError('Board')
       }
 
+      const canShareBoard = await checkBoardPermission(boardSlug)
+
+      if (!canShareBoard) {
+        throw new UnauthorizedError('Bạn không có quyền chia sẻ bảng này.')
+      }
+
+      const existingMembers = await prisma.boardMember.findMany({
+        where: {
+          boardId: board.id,
+          userId: { in: value.map((member) => member.userId) }
+        }
+      })
+
+      const newMembers = value.filter((member) => !existingMembers.some((m) => m.userId === member.userId))
+
       await prisma.boardMember.createMany({
-        data: value.map((member) => ({
+        data: newMembers.map((member) => ({
           boardId: board.id,
           userId: member.userId,
           role

@@ -49,15 +49,18 @@ export const boardAccessWhere = (userId: string): Prisma.BoardWhereInput => ({
       }
     },
     {
+      visibility: BoardVisibility.WORKSPACE,
+      workspace: {
+        ownerId: userId
+      }
+    },
+    {
       visibility: BoardVisibility.PRIVATE,
       OR: [{ ownerId: userId }, { boardMemberships: { some: { userId } } }]
     }
   ]
 })
 
-/**
- * Simplified board visibility where condition (for nested queries in workspaces)
- */
 export const boardVisibilityWhere = (userId: string): Prisma.BoardWhereInput => ({
   OR: [
     {
@@ -66,10 +69,7 @@ export const boardVisibilityWhere = (userId: string): Prisma.BoardWhereInput => 
       }
     },
     {
-      visibility: 'PUBLIC'
-    },
-    {
-      visibility: 'WORKSPACE',
+      visibility: BoardVisibility.PUBLIC,
       workspace: {
         workspaceMemberships: {
           some: { userId }
@@ -77,7 +77,27 @@ export const boardVisibilityWhere = (userId: string): Prisma.BoardWhereInput => 
       }
     },
     {
-      visibility: 'PRIVATE',
+      visibility: BoardVisibility.PUBLIC,
+      workspace: {
+        ownerId: userId
+      }
+    },
+    {
+      visibility: BoardVisibility.WORKSPACE,
+      workspace: {
+        workspaceMemberships: {
+          some: { userId }
+        }
+      }
+    },
+    {
+      visibility: BoardVisibility.WORKSPACE,
+      workspace: {
+        ownerId: userId
+      }
+    },
+    {
+      visibility: BoardVisibility.PRIVATE,
       OR: [
         { ownerId: userId },
         {

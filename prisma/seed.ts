@@ -262,7 +262,6 @@ async function seedSystem() {
       await tx.card.upsert({
         where: { id: card.id },
         update: {
-          messageId: card.messageId,
           title: card.title,
           slug: card.slug,
           description: card.description,
@@ -278,7 +277,7 @@ async function seedSystem() {
         create: {
           id: card.id,
           creatorId: card.creatorId,
-          messageId: card.messageId,
+
           title: card.title,
           slug: card.slug,
           description: card.description,

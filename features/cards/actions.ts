@@ -577,7 +577,6 @@ export const toggleWatchCard = protectedActionClient
         },
         select: {
           id: true,
-          messageId: true,
           endDate: true,
           reminderType: true,
           assignees: { select: { userId: true } },
@@ -669,7 +668,6 @@ export const toggleAssignCard = protectedActionClient
         },
         select: {
           id: true,
-          messageId: true,
           endDate: true,
           reminderType: true,
           assignees: { select: { userId: true } },

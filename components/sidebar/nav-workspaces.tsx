@@ -1,6 +1,6 @@
 'use client'
 
-import { ChevronRight, Settings, Trello, Users } from 'lucide-react'
+import { ChevronRight, Trello } from 'lucide-react'
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import {
@@ -26,19 +26,20 @@ const subItems = [
     urlValue: ['w', 'home'],
     icon: Trello,
     url: (shortName: string) => `/w/${shortName}/home`
-  },
-  {
-    title: 'Thành viên',
-    urlValue: ['w', 'members'],
-    icon: Users,
-    url: (shortName: string) => `/w/${shortName}/members`
-  },
-  {
-    title: 'Cài đặt',
-    urlValue: ['w', 'settings'],
-    icon: Settings,
-    url: (shortName: string) => `/w/${shortName}/settings`
   }
+  // TODO: implement this
+  // {
+  //   title: 'Thành viên',
+  //   urlValue: ['w', 'members'],
+  //   icon: Users,
+  //   url: (shortName: string) => `/w/${shortName}/members`
+  // },
+  // {
+  //   title: 'Cài đặt',
+  //   urlValue: ['w', 'settings'],
+  //   icon: Settings,
+  //   url: (shortName: string) => `/w/${shortName}/settings`
+  // }
 ]
 
 export function NavWorkspaces({ userId }: { userId: string }) {

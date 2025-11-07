@@ -4,7 +4,7 @@ import CreateBoardDialog from '@/features/boards/components/create-board-dialog'
 import { UIWorkspaceWithBoards } from '@/prisma/queries/workspace'
 import { boardBackgroundClasses, boardVisibility } from '@/shared/constants'
 import { cn } from '@/shared/utils'
-import { Plus, Settings, Trello, Users } from 'lucide-react'
+import { Plus, Trello } from 'lucide-react'
 import Link from 'next/link'
 import { createElement } from 'react'
 import { checkWorkspacePermission } from '../queries'
@@ -60,7 +60,8 @@ export default async function WorkspaceSection({ title, workspaces, backgroundMa
                   >
                     <Trello /> Bảng
                   </Link>
-                  <Link
+                  {/* TODO: implement this */}
+                  {/* <Link
                     href={`/w/${workspace.shortName}/members`}
                     className={buttonVariants({ size: 'sm', variant: 'secondary' })}
                   >
@@ -71,7 +72,7 @@ export default async function WorkspaceSection({ title, workspaces, backgroundMa
                     className={buttonVariants({ size: 'sm', variant: 'secondary' })}
                   >
                     <Settings /> Cài đặt
-                  </Link>
+                  </Link> */}
                 </>
               )}
             </div>

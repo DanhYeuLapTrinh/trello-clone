@@ -1,6 +1,6 @@
 'use client'
 
-import { Activity, Command, Trello } from 'lucide-react'
+import { Command, Trello } from 'lucide-react'
 import * as React from 'react'
 
 import { NavMain } from '@/components/sidebar/nav-main'
@@ -23,13 +23,14 @@ const items = {
       url: '/boards',
       urlValue: ['boards'],
       icon: Trello
-    },
-    {
-      name: 'Trang chủ',
-      url: '/',
-      urlValue: [''],
-      icon: Activity
     }
+    // TODO: implement this
+    // {
+    //   name: 'Trang chủ',
+    //   url: '/',
+    //   urlValue: [''],
+    //   icon: Activity
+    // }
   ]
 }
 

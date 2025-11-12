@@ -1,4 +1,4 @@
-export default async function CardDetailPage({ params }: { params: { cardSlug: string } }) {
+export default async function CardDetailPage({ params }: { params: Promise<{ cardSlug: string }> }) {
   const { cardSlug } = await params
 
   return (

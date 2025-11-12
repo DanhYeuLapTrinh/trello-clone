@@ -1,6 +1,7 @@
 import prisma from '@/prisma/prisma'
 import { UIUser, userSelect } from '@/prisma/queries/user'
 import { ConflictError } from '@/shared/error'
+import { Prisma } from '@prisma/client'
 
 class ClerkService {
   public async syncUserFromClerk({
@@ -28,18 +29,37 @@ class ClerkService {
         })
 
         if (!upsertedUser) {
-          // New user from clerk, sync to database
-          upsertedUser = await tx.user.create({
-            data: {
-              clerkId,
-              email,
-              firstName,
-              lastName,
-              fullName,
-              imageUrl
-            },
-            select: userSelect
-          })
+          try {
+            // New user from clerk, sync to database
+            upsertedUser = await tx.user.create({
+              data: {
+                clerkId,
+                email,
+                firstName,
+                lastName,
+                fullName,
+                imageUrl
+              },
+              select: userSelect
+            })
+          } catch (error) {
+            // Handle race condition: if another request created the user simultaneously,
+            // fetch it from the database instead of failing
+            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+              upsertedUser = await tx.user.findUnique({
+                where: {
+                  clerkId
+                },
+                select: userSelect
+              })
+
+              if (!upsertedUser) {
+                throw new Error('Failed to create or fetch user')
+              }
+            } else {
+              throw error
+            }
+          }
         } else {
           // User already exists, check if email is already in use
           const existingEmailUser = await tx.user.findUnique({

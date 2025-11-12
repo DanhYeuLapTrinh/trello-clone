@@ -4,7 +4,11 @@ import { CardDetail } from '@/prisma/queries/card'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { notFound } from 'next/navigation'
 
-export default async function InterceptedCardDetailPage({ params }: { params: { slug: string; cardSlug: string } }) {
+export default async function InterceptedCardDetailPage({
+  params
+}: {
+  params: Promise<{ slug: string; cardSlug: string }>
+}) {
   const queryClient = new QueryClient()
   const { slug, cardSlug } = await params
 

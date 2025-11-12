@@ -29,16 +29,15 @@ export default function ListNameInput({ name }: ListNameInputProps) {
           onPointerDown={(e) => e.stopPropagation()}
         />
       ) : (
-        // FIXME: UI broken when the name is too long and harder to drag
         <Button
           variant='ghost'
           onClick={toggleEditName}
-          className='hover:bg-muted-foreground/20'
+          className='hover:bg-muted-foreground/20 max-w-full'
           // prevent dnd
           onMouseDown={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <p className='font-medium text-sm'>{name}</p>
+          <p className='font-medium text-sm truncate'>{name}</p>
         </Button>
       )}
     </div>

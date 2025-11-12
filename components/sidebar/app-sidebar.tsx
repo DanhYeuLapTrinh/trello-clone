@@ -24,13 +24,6 @@ const items = {
       urlValue: [''],
       icon: Trello
     }
-    // TODO: implement this
-    // {
-    //   name: 'Trang chủ',
-    //   url: '/',
-    //   urlValue: [''],
-    //   icon: Activity
-    // }
   ]
 }
 

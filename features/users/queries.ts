@@ -4,8 +4,9 @@ import prisma from '@/prisma/prisma'
 import { UIUser, userSelect } from '@/prisma/queries/user'
 import { NotFoundError, UnauthorizedError } from '@/shared/error'
 import { auth } from '@clerk/nextjs/server'
+import { cache } from 'react'
 
-export const getMe = async (): Promise<UIUser> => {
+export const getMe = cache(async (): Promise<UIUser> => {
   const { userId: clerkId } = await auth()
 
   if (!clerkId) {
@@ -24,4 +25,4 @@ export const getMe = async (): Promise<UIUser> => {
   }
 
   return user
-}
+})

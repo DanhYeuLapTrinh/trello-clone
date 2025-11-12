@@ -514,7 +514,6 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
 
                     {!isEditDescription ? (
                       cardDetail!.description ? (
-                        // FIXME: overflow if content is too long
                         <div className='cursor-pointer hover:bg-muted mt-4' onClick={startEditDescription}>
                           <SanitizedHtml html={cardDetail!.description} />
                         </div>

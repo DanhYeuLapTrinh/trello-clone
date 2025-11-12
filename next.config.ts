@@ -8,7 +8,6 @@ const nextConfig: NextConfig = {
     'localhost',
     '127.0.0.1'
   ],
-  cacheComponents: true,
   images: {
     remotePatterns: [
       {

@@ -7,6 +7,7 @@ import { commentActiveWhere, commentOrderBy, commentSelect } from '@/prisma/quer
 import { userSelect } from '@/prisma/queries/user'
 import { NotFoundError } from '@/shared/error'
 import { CardTimeline, TimelineItemType } from '@/shared/types'
+import { cache } from 'react'
 import { getMe } from '../users/queries'
 
 /**
@@ -14,7 +15,7 @@ import { getMe } from '../users/queries'
  * @param cardSlug - card slug
  * @returns The detail of the card
  */
-export const getCard = async (cardSlug: string): Promise<CardDetail> => {
+export const getCard = cache(async (cardSlug: string): Promise<CardDetail> => {
   try {
     const { id } = await getMe()
 
@@ -33,14 +34,14 @@ export const getCard = async (cardSlug: string): Promise<CardDetail> => {
   } catch (error) {
     throw error
   }
-}
+})
 
 /**
  * Get the activities and comments of a card
  * @param cardSlug - card slug
  * @returns The activities and comments of the card
  */
-export const getCardActivitiesAndComments = async (cardSlug: string): Promise<CardTimeline> => {
+export const getCardActivitiesAndComments = cache(async (cardSlug: string): Promise<CardTimeline> => {
   try {
     const card = await prisma.card.findUnique({
       where: { slug: cardSlug }
@@ -84,4 +85,4 @@ export const getCardActivitiesAndComments = async (cardSlug: string): Promise<Ca
   } catch (error) {
     throw error
   }
-}
+})

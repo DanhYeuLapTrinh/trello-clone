@@ -87,7 +87,7 @@ export const shareBoard = protectedActionClient
         BoardInviteEmail({
           inviterName: currentUser.fullName || 'Trello Clone',
           boardName: board.name,
-          boardUrl: `http://localhost:3000/b/${board.slug}`,
+          boardUrl: `${process.env.APP_URL}/b/${board.slug}`,
           description:
             description || 'Tham gia cùng họ trên Trello để nắm bắt, sắp xếp và giải quyết việc cần làm ở mọi nơi.'
         })

@@ -32,20 +32,20 @@ export default async function BoardDetailPage({ params }: { params: Promise<{ sl
 
   const isAdmin = await checkBoardPermission(slug)
 
-  await queryClient.prefetchQuery({
-    queryKey: ['board', 'lists', 'cards', slug],
-    queryFn: () => getBoardListsWithCards(slug)
-  })
-
-  await queryClient.prefetchQuery({
-    queryKey: ['board', 'labels', slug],
-    queryFn: () => getBoardLabels(slug)
-  })
-
-  await queryClient.prefetchQuery({
-    queryKey: ['board', 'users', slug],
-    queryFn: () => getBoardUsers(slug)
-  })
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: ['board', 'lists', 'cards', slug],
+      queryFn: () => getBoardListsWithCards(slug)
+    }),
+    queryClient.prefetchQuery({
+      queryKey: ['board', 'labels', slug],
+      queryFn: () => getBoardLabels(slug)
+    }),
+    queryClient.prefetchQuery({
+      queryKey: ['board', 'users', slug],
+      queryFn: () => getBoardUsers(slug)
+    })
+  ])
 
   const boardUsers = queryClient.getQueryData<BoardUser[]>(['board', 'users', slug]) || []
 

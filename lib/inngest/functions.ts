@@ -134,7 +134,7 @@ export const handleCardCreated = inngest.createFunction(
         })
         executedActionSummaries.push(actionResult)
 
-        if (actionResult.status !== 'success') {
+        if (actionResult.status !== 'success' && actionResult.status !== 'skipped') {
           allActionsSucceeded = false
         }
       }
@@ -313,7 +313,7 @@ export const handleListCreated = inngest.createFunction(
 
         executedActionSummaries.push(actionResult)
 
-        if (actionResult.status !== 'success') {
+        if (actionResult.status !== 'success' && actionResult.status !== 'skipped') {
           allActionsSucceeded = false
         }
       }
@@ -430,7 +430,7 @@ export const handleCardStatus = inngest.createFunction(
         const actionResult = await executeCardStatusAction(cardId, action, stepId, card, step)
         executedActionSummaries.push(actionResult)
 
-        if (actionResult.status !== 'success') {
+        if (actionResult.status !== 'success' && actionResult.status !== 'skipped') {
           allActionsSucceeded = false
         }
       }
@@ -530,7 +530,7 @@ export const handleScheduledDaily = inngest.createFunction(
         const actionResult = await executeScheduledAction(action, stepId, step)
         executedActionSummaries.push(actionResult)
 
-        if (actionResult.status !== 'success') {
+        if (actionResult.status !== 'success' && actionResult.status !== 'skipped') {
           allActionsSucceeded = false
         }
       }
@@ -635,7 +635,7 @@ export const handleScheduledWeekly = inngest.createFunction(
         const actionResult = await executeScheduledAction(action, stepId, step)
         executedActionSummaries.push(actionResult)
 
-        if (actionResult.status !== 'success') {
+        if (actionResult.status !== 'success' && actionResult.status !== 'skipped') {
           allActionsSucceeded = false
         }
       }
@@ -743,7 +743,7 @@ export const handleScheduledXWeeks = inngest.createFunction(
         const actionResult = await executeScheduledAction(action, stepId, step)
         executedActionSummaries.push(actionResult)
 
-        if (actionResult.status !== 'success') {
+        if (actionResult.status !== 'success' && actionResult.status !== 'skipped') {
           allActionsSucceeded = false
         }
       }
@@ -857,8 +857,7 @@ export const handleCardReminder = inngest.createFunction(
           boardName: board.name,
           cardTitle: latestCard.title,
           endDate: format(latestCard.endDate, "d 'tháng' M, 'năm' yyyy 'lúc' HH:mm"),
-          // TODO: replace with production URL
-          cardUrl: `http://localhost:3000/b/${board.slug}/c/${latestCard.slug}`
+          cardUrl: `${process.env.APP_URL}/b/${board.slug}/c/${latestCard.slug}`
         })
       )
 

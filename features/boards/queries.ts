@@ -7,6 +7,7 @@ import { listSelect, ListWithCards, listWithCardsSelect, UIList } from '@/prisma
 import { userSelect } from '@/prisma/queries/user'
 import { NotFoundError } from '@/shared/error'
 import { Role } from '@prisma/client'
+import { cache } from 'react'
 import { getMe } from '../users/queries'
 
 /**
@@ -37,7 +38,7 @@ export const getBoardOverview = async (slug: string): Promise<BoardOverView | nu
  * @param slug - board slug
  * @returns The lists with cards of the board
  */
-export const getBoardListsWithCards = async (slug: string): Promise<ListWithCards[]> => {
+export const getBoardListsWithCards = cache(async (slug: string): Promise<ListWithCards[]> => {
   try {
     const { id } = await getMe()
 
@@ -64,14 +65,14 @@ export const getBoardListsWithCards = async (slug: string): Promise<ListWithCard
   } catch (error) {
     throw error
   }
-}
+})
 
 /**
  * Get the labels of a board
  * @param slug - board slug
  * @returns The labels of the board
  */
-export const getBoardLabels = async (slug: string): Promise<UILabel[]> => {
+export const getBoardLabels = cache(async (slug: string): Promise<UILabel[]> => {
   try {
     const { id } = await getMe()
 
@@ -88,14 +89,14 @@ export const getBoardLabels = async (slug: string): Promise<UILabel[]> => {
   } catch (error) {
     throw error
   }
-}
+})
 
 /**
  * Get the members of a board including owner
  * @param slug - board slug
  * @returns The members of a board including owner
  */
-export const getBoardUsers = async (slug: string): Promise<BoardUser[]> => {
+export const getBoardUsers = cache(async (slug: string): Promise<BoardUser[]> => {
   try {
     const { id } = await getMe()
 
@@ -140,7 +141,7 @@ export const getBoardUsers = async (slug: string): Promise<BoardUser[]> => {
   } catch (error) {
     throw error
   }
-}
+})
 
 /**
  * Get the lists of a board

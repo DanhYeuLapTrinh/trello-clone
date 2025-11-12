@@ -1,4 +1,5 @@
 import AppProvider from '@/components/app.provider'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import type { Metadata } from 'next'
 import { Fira_Code, Noto_Sans } from 'next/font/google'
 import './globals.css'
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={`${notoSans.className} ${firaCode.variable} antialiased`}>
+        <SpeedInsights />
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

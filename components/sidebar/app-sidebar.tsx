@@ -20,8 +20,8 @@ const items = {
   main: [
     {
       name: 'Bảng',
-      url: '/boards',
-      urlValue: ['boards'],
+      url: '/',
+      urlValue: [''],
       icon: Trello
     }
     // TODO: implement this

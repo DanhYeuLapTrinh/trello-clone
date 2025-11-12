@@ -1,40 +1,72 @@
 import prisma from '@/prisma/prisma'
-import { NotFoundError } from '@/shared/error'
-import { currentUser } from '@clerk/nextjs/server'
-import { User } from '@prisma/client'
+import { UIUser, userSelect } from '@/prisma/queries/user'
+import { ConflictError } from '@/shared/error'
 
 class ClerkService {
-  public async syncUserFromClerk(clerkUserId: string): Promise<User | null> {
+  public async syncUserFromClerk({
+    clerkId,
+    firstName,
+    lastName,
+    email,
+    imageUrl
+  }: {
+    clerkId: string
+    firstName: string | null
+    lastName: string | null
+    email: string
+    imageUrl: string
+  }): Promise<UIUser | null> {
     try {
-      const clerkUser = await currentUser()
-
-      if (!clerkUser) return null
-
-      const fullName =
-        `${clerkUser.firstName ?? ''} ${clerkUser.lastName ?? ''}`.trim() ||
-        clerkUser.emailAddresses[0]?.emailAddress.split('@')[0]
+      const fullName = `${firstName ?? ''} ${lastName ?? ''}`.trim() || email.split('@')[0]
 
       const user = await prisma.$transaction(async (tx) => {
-        const upsertedUser = await tx.user.upsert({
+        let upsertedUser = await tx.user.findUnique({
           where: {
-            clerkId: clerkUser.id
+            clerkId
           },
-          update: {
-            email: clerkUser.emailAddresses[0]?.emailAddress,
-            firstName: clerkUser.firstName,
-            lastName: clerkUser.lastName,
-            fullName: fullName,
-            imageUrl: clerkUser.imageUrl
-          },
-          create: {
-            clerkId: clerkUserId,
-            email: clerkUser.emailAddresses[0]?.emailAddress,
-            firstName: clerkUser.firstName,
-            lastName: clerkUser.lastName,
-            fullName: fullName,
-            imageUrl: clerkUser.imageUrl
-          }
+          select: userSelect
         })
+
+        if (!upsertedUser) {
+          // New user from clerk, sync to database
+          upsertedUser = await tx.user.create({
+            data: {
+              clerkId,
+              email,
+              firstName,
+              lastName,
+              fullName,
+              imageUrl
+            },
+            select: userSelect
+          })
+        } else {
+          // User already exists, check if email is already in use
+          const existingEmailUser = await tx.user.findUnique({
+            where: {
+              email
+            },
+            select: {
+              clerkId: true
+            }
+          })
+
+          // If email is in use by another user, throw conflict error
+          if (existingEmailUser && existingEmailUser.clerkId !== clerkId) {
+            throw new ConflictError('Email already in use')
+          }
+
+          // Email is not in use, update user
+          upsertedUser = await tx.user.update({
+            where: {
+              clerkId
+            },
+            data: {
+              email
+            },
+            select: userSelect
+          })
+        }
 
         const existingWorkspace = await tx.workspace.findFirst({
           where: {
@@ -74,28 +106,6 @@ class ClerkService {
 
         return upsertedUser
       })
-
-      return user
-    } catch (error) {
-      throw error
-    }
-  }
-
-  public async ensureUserExists(clerkUserId: string) {
-    try {
-      let user = await prisma.user.findUnique({
-        where: {
-          clerkId: clerkUserId
-        }
-      })
-
-      if (!user) {
-        user = await this.syncUserFromClerk(clerkUserId)
-      }
-
-      if (!user) {
-        throw new NotFoundError('User')
-      }
 
       return user
     } catch (error) {

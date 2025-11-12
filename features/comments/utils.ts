@@ -1,15 +1,14 @@
+import { UIUser } from '@/prisma/queries/user'
 import { CardTimeline, TimelineItemType } from '@/shared/types'
 import { getTempId, updateBoardListsQuery, updateCardDetailQuery } from '@/shared/utils'
-import { Comment, User } from '@prisma/client'
+import { Comment } from '@prisma/client'
 import { QueryClient } from '@tanstack/react-query'
 
 export const createTempComment = (
   content: string,
-  firstName: string,
-  lastName: string,
   fullName: string,
   imageUrl: string
-): Comment & { user: User } & { __type: TimelineItemType.Comment } => {
+): Comment & { user: UIUser } & { __type: TimelineItemType.Comment } => {
   const now = new Date()
 
   return {
@@ -23,15 +22,9 @@ export const createTempComment = (
     __type: TimelineItemType.Comment,
     user: {
       id: getTempId('user'),
-      clerkId: getTempId('clerk'),
       email: getTempId('email'),
-      firstName,
-      lastName,
       fullName,
-      imageUrl,
-      isDeleted: false,
-      createdAt: now,
-      updatedAt: now
+      imageUrl
     }
   }
 }
@@ -53,8 +46,6 @@ export const createCommentQueries = ({
   boardSlug,
   cardSlug,
   content,
-  firstName,
-  lastName,
   fullName,
   imageUrl
 }: {
@@ -62,16 +53,14 @@ export const createCommentQueries = ({
   boardSlug: string
   cardSlug: string
   content: string
-  firstName: string
-  lastName: string
   fullName: string
   imageUrl: string
 }) => {
   updateCardTimelineQuery(queryClient, boardSlug, cardSlug, (prev) => {
     return {
       ...prev,
-      comments: [createTempComment(content, firstName, lastName, fullName, imageUrl), ...prev.comments],
-      sortedList: [createTempComment(content, firstName, lastName, fullName, imageUrl), ...prev.sortedList]
+      comments: [createTempComment(content, fullName, imageUrl), ...prev.comments],
+      sortedList: [createTempComment(content, fullName, imageUrl), ...prev.sortedList]
     }
   })
 

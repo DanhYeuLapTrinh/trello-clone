@@ -183,8 +183,6 @@ export default function CardDetailDialog({ children, isOpen, cardSlug, boardSlug
       boardSlug,
       cardSlug,
       content: comment,
-      firstName: user?.firstName ?? '',
-      lastName: user?.lastName ?? '',
       fullName: user?.fullName ?? '',
       imageUrl: user?.imageUrl ?? ''
     })

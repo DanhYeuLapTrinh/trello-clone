@@ -1,4 +1,4 @@
-import clerkService from '@/services/clerk.service'
+import { getMe } from '@/features/users/queries'
 import { AppError, UnauthorizedError } from '@/shared/error'
 import { auth } from '@clerk/nextjs/server'
 import { createSafeActionClient } from 'next-safe-action'
@@ -28,7 +28,7 @@ const protectedActionClient = createSafeActionClient({
     throw new UnauthorizedError('No user ID found')
   }
 
-  const user = await clerkService.ensureUserExists(userId)
+  const user = await getMe()
 
   return next({
     ctx: {

@@ -53,7 +53,7 @@ export default async function BoardDetailPage({ params }: { params: { slug: stri
     <HydrationBoundary state={dehydrate(queryClient)}>
       <div className={cn('h-screen flex flex-col', boardBackgroundClasses[board.background])}>
         <div className='px-3 py-2 bg-background flex items-center justify-between gap-4 shrink-0'>
-          <Link href='/boards'>
+          <Link href='/'>
             <Trello className='size-7' />
           </Link>
 

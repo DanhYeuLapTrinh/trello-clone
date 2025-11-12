@@ -5,7 +5,7 @@ import { ButlerCategory } from '@prisma/client'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { notFound } from 'next/navigation'
 
-export default async function InterceptedBoardButlerPage({ params }: { params: { slug: string } }) {
+export default async function InterceptedBoardButlerPage({ params }: { params: Promise<{ slug: string }> }) {
   const queryClient = new QueryClient()
   const { slug } = await params
 

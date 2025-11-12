@@ -1,6 +1,9 @@
 'use server'
 
 import { protectedActionClient } from '@/lib/safe-action'
+import prisma from '@/prisma/prisma'
+import { userSelect } from '@/prisma/queries/user'
+import clerkService from '@/services/clerk.service'
 import firebaseService from '@/services/firebase.service'
 import { deleteFileSchema, uploadFilesSchema } from '@/shared/validations'
 import { flattenValidationErrors } from 'next-safe-action'
@@ -63,3 +66,32 @@ export const getFileMetadata = protectedActionClient
       throw error
     }
   })
+
+export async function syncUserFromClerk({
+  clerkId,
+  email,
+  firstName,
+  lastName,
+  imageUrl
+}: {
+  clerkId: string
+  firstName: string | null
+  lastName: string | null
+  email: string
+  imageUrl: string
+}) {
+  const existingUser = await prisma.user.findUnique({
+    where: { clerkId },
+    select: userSelect
+  })
+
+  if (!existingUser) {
+    await clerkService.syncUserFromClerk({
+      clerkId,
+      email,
+      firstName,
+      lastName,
+      imageUrl
+    })
+  }
+}

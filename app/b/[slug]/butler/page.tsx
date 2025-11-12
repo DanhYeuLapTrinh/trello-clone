@@ -1,7 +1,7 @@
 import { checkBoardPermission } from '@/features/boards/queries'
 import { notFound } from 'next/navigation'
 
-export default async function BoardButlerPage({ params }: { params: { slug: string } }) {
+export default async function BoardButlerPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
   const canCreateButler = await checkBoardPermission(slug)

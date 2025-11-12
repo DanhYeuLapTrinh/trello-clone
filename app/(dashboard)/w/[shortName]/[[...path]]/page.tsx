@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createElement } from 'react'
 
-export default async function WorkspaceDetailPage({ params }: { params: { shortName: string } }) {
+export default async function WorkspaceDetailPage({ params }: { params: Promise<{ shortName: string }> }) {
   const { shortName } = await params
 
   const workspace = await getWorkspaceWithBoards(shortName)

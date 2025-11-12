@@ -20,7 +20,7 @@ import { Trello, UserPlus, Zap } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
-export default async function BoardDetailPage({ params }: { params: { slug: string } }) {
+export default async function BoardDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const queryClient = new QueryClient()
   const { slug } = await params
 
